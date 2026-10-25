@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="referrer" content="no-referrer"><meta name="robots" content="noindex,nofollow">
-<title>MMHVAULT · P9.72 GitHub Pages Auth QA</title>
+<title>MMHVAULT · P9.74 GitHub Pages Auth QA</title>
 <style>
 :root{color-scheme:dark;--gold:#e8bd64;--text:#eaf0fa;--muted:#a8bdcd;--blue:#08253a;--line:#3a5a74;--danger:#f6ab99;--ok:#89e6b9}
 *{box-sizing:border-box}html{font-family:Inter,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;background:#03101e;color:var(--text)}body{margin:0;min-height:100vh;background:radial-gradient(ellipse 75% 50% at 75% 0%,#174266 0,transparent 68%),linear-gradient(155deg,#04111f,#0a1728 65%,#071018);padding:clamp(16px,3vw,44px)}
@@ -14,7 +14,7 @@ main{max-width:1090px;margin:0 auto}.top{display:flex;gap:14px;align-items:cente
 </head>
 <body>
 <main>
-<header class="top"><div><div class="brand">MMHVAULT</div><span class="small">P9.73 · GitHub Pages QA · Isolated Supabase</span></div><span class="flag">STAGING ONLY · 不连接正式财务数据</span></header>
+<header class="top"><div><div class="brand">MMHVAULT</div><span class="small">P9.74 · GitHub Pages QA · Isolated Supabase</span></div><span class="flag">STAGING ONLY · 不连接正式财务数据</span></header>
 <div class="deploy-warning hidden" id="deployNotice" role="status">您目前不是从正式测试地址打开页面。请先将 <code>index.html</code> 上传到新仓库并启用 GitHub Pages，然后打开 <a href="https://myintmoehein0115024.github.io/MMHVAULT-Auth-QA/" rel="noopener noreferrer">https://myintmoehein0115024.github.io/MMHVAULT-Auth-QA/</a>。不要直接双击本地 HTML。</div>
 <section class="intro"><h1>用户名与密码登录 · 可选安全增强</h1><p>隔离测试项目的用户名登录无需绑定邮箱、TOTP 或事先批准设备。登录后，个人数据仍必须由 Supabase Auth 用户身份与 RLS 严格隔离。<strong>邮箱注册入口尚未开发</strong>，未来会使用同一套用户级数据隔离机制。本页不会持久保存密码或 JWT；请勿输入正式站点密码。</p></section>
 <div class="cols">
@@ -23,7 +23,7 @@ main{max-width:1090px;margin:0 auto}.top{display:flex;gap:14px;align-items:cente
  <section class="panel"><h2>3 · 注册一个新测试账号</h2><p>只有服务端确认开启测试注册、且取得真实 Turnstile 验证令牌时才能提交。用户名 4–20 个字符；新密码 6–20 个字符。此宽松规则仅用于隔离测试，正式金融站建议至少 12 个字符。</p><form id="registerForm" class="stack"><div><label for="regUsername">测试账号名</label><input id="regUsername" autocomplete="off" maxlength="20" placeholder="tester_2026" required pattern="[a-z][a-z0-9_]{3,19}"></div><div><label for="regDisplay">显示昵称</label><input id="regDisplay" maxlength="60" placeholder="Test Member" required></div><div><label for="regPassword">全新测试密码（6–20 个字符）</label><input id="regPassword" type="password" minlength="6" maxlength="20" autocomplete="new-password" required></div><button id="registerButton" type="submit" disabled>创建测试账号</button><div id="registerMessage" class="msg" aria-live="polite">测试注册尚未开放</div></form><div id="recoveryBox" class="hidden" style="margin-top:14px"><div class="notice">注册成功将生成 8 枚恢复码，默认不显示。请仅在没有录屏/截图的私密环境中主动查看并保存在安全的密码管理器里；不要发到聊天中。</div><div id="recoveryCodes" class="token hidden" aria-label="一次性恢复码"></div><div class="row" style="margin-top:8px"><button class="secondary" id="showCodes" type="button">显示一次性恢复码（请勿截图）</button><button class="secondary hidden" id="clearCodes" type="button">已安全保存，清除恢复码</button></div></div></section>
  <section class="panel"><h2>4 · 已有测试账号登录</h2><p>测试注册关闭后，管理员可以单独开放已有账号登录，不必重新开放注册。</p><form id="loginForm" class="stack"><div><label for="loginUsername">测试用户名</label><input id="loginUsername" autocomplete="off" maxlength="20" placeholder="tester_2026" required></div><div><label for="loginPassword">测试密码</label><input id="loginPassword" type="password" maxlength="128" autocomplete="current-password" required></div><button id="loginButton" type="submit" disabled>用户名登录</button><div id="loginMessage" class="msg" aria-live="polite">测试登录尚未开放</div></form></section>
  <section class="panel"><h2>5 · 核验 Auth 身份（无需设备审批）</h2><p>成功注册或登录后，会使用 Supabase Auth 的公开用户接口复核签发的访问令牌。令牌只在此页面内存中保存，不显示、不写入浏览器存储。</p><div class="row"><button class="secondary" id="verifyUser" disabled>验证当前测试会话</button><button class="secondary" id="forgetSession">清除本页会话（非注销）</button></div><div id="sessionMessage" class="msg" aria-live="polite" style="margin-top:12px">没有测试会话</div><div class="help">本步骤只核验 Supabase Auth 会话。普通账号数据的权限取决于数据库 RLS，而不取决于是否启用可选设备安全功能；生产财务表仍需另行审查。</div></section>
- <section class="panel"><h2>6 · 可选 TOTP 身份验证</h2><p>这项功能不是普通登录的必需条件。用户可主动绑定身份验证器，在改密码等敏感操作前进行二次身份验证；当前页面仅测试真实 MFA，不执行密码修改。</p>
+ <section class="panel"><h2>6 · 可选 TOTP 身份验证</h2><p>这项功能不是普通登录的必需条件。用户可主动绑定身份验证器，在改密码等敏感操作前进行二次身份验证；当前页面测试真实 MFA；启用 TOTP 的用户修改密码时，必须先验证动态码升级到 AAL2。</p>
  <div class="stack"><div class="row"><button class="secondary" id="mfaInspect" disabled>检查 TOTP 绑定状态</button><button class="secondary" id="mfaEnroll" disabled>首次绑定 TOTP</button></div>
  <div id="mfaMessage" class="msg" aria-live="polite">请先使用已有测试账号登录。</div>
  <div class="notice guard-note">TOTP 绑定可能使其他登录会话失效。请在私密环境中操作；二维码、手动密钥、验证码、完整 JWT 和恢复码均不得截图或发送到聊天。</div>
@@ -42,6 +42,17 @@ main{max-width:1090px;margin:0 auto}.top{display:flex;gap:14px;align-items:cente
  <div class="row"><button class="secondary" id="ownerTest" disabled>检查我的隔离测试数据</button><span class="small">仅发送当前会话令牌至隔离 Supabase REST API</span></div>
  <div id="ownerMessage" class="msg" aria-live="polite" style="margin-top:12px">请先使用用户名和密码登录，再执行真实 RLS 读取测试。</div>
  <div class="help">数据库已对两个测试账号分别验证：各可见 1 条自身测试记录、0 条他人记录。此处还需完成真实浏览器网络调用，才能验收前端联调。</div></section>
+<section class="panel full" id="passwordSection"><h2>9 · 安全修改密码（可选 TOTP）</h2>
+<p>普通用户名用户可以自行修改密码，不需要设备批准或邮箱注册。必须先登录，并再次提供<strong>当前密码</strong>。如果账号已绑定 TOTP，必须先到第 6 区完成六位动态码验证。新密码 6–20 位，仅限隔离测试环境。</p>
+<form class="stack" id="changePasswordForm" autocomplete="off">
+<div><label for="changeUsername">当前登录的测试用户名</label><input id="changeUsername" maxlength="20" pattern="[a-z][a-z0-9_]{3,19}" autocomplete="off" spellcheck="false" required placeholder="先登录，自动填入用户名"></div>
+<div><label for="oldPassword">当前密码（重新验证）</label><input id="oldPassword" type="password" maxlength="128" autocomplete="current-password" required></div>
+<div><label for="newPassword">新密码（6–20 个字符）</label><input id="newPassword" type="password" minlength="6" maxlength="20" autocomplete="new-password" required></div>
+<div><label for="confirmNewPassword">再输入一次新密码</label><input id="confirmNewPassword" type="password" minlength="6" maxlength="20" autocomplete="new-password" required></div>
+<button id="changePasswordButton" type="submit" disabled>验证旧密码并更新密码</button>
+<div id="passwordChangeMessage" class="msg" aria-live="polite">请先登录测试账号。未绑定 TOTP 的账号不需要额外验证码；已绑定者必须完成 TOTP 验证。</div>
+<div class="notice guard-note">修改成功后将清除当前网页会话并要求使用新密码重新登录；服务器还会尝试全局撤销刷新令牌。但旧的短期访问令牌可能直到过期前仍有效，不能把网页清除会话视为已立即注销所有设备。不要上传真实密码或验证码。</div>
+</form></section>
 </div>
 <footer class="footer">这是 GitHub Pages 上的隔离验收工具，并非正式 MMHVAULT 金融网站。不要上传服务端 Secret、完整 JWT、真实密码或恢复码。请使用新建的隔离测试账号；本页面不提供绕过 CAPTCHA 的功能。</footer>
 </main>
@@ -52,16 +63,17 @@ const BASE='https://louxgfaqwajihtadznbw.supabase.co';
 const ENDPOINT=BASE+'/functions/v1/mmhvault-username-auth';
 const PUBLIC_KEY='sb_publishable_ybvR0N64tgKBzdlJeMQi9A_hvnziPce';
 let flags={registration_enabled:false,login_enabled:false},token='',widget=null,accessToken='',pending=false,recoveryCodesTemp=[],factorId='',pendingTotp=null,totpQrUrl='',mfaDone=false;
+let currentUsername='';
 const by=id=>document.getElementById(id);
 const msg=(id,text,state='')=>{const e=by(id);e.textContent=text;e.className='msg '+state;};
-function controls(){by('registerButton').disabled=pending||!flags.registration_enabled||!token;by('loginButton').disabled=pending||!flags.login_enabled;by('verifyUser').disabled=!accessToken||pending;by('mfaInspect').disabled=pending||!accessToken;by('mfaEnroll').disabled=pending||!accessToken||!!factorId;by('mfaVerify').disabled=pending||!accessToken||!factorId;by('deviceRequest').disabled=pending||!accessToken||!mfaDone;by('deviceStatus').disabled=pending||!accessToken;by('ownerTest').disabled=pending||!accessToken;}
+function controls(){by('registerButton').disabled=pending||!flags.registration_enabled||!token;by('loginButton').disabled=pending||!flags.login_enabled;by('verifyUser').disabled=!accessToken||pending;by('mfaInspect').disabled=pending||!accessToken;by('mfaEnroll').disabled=pending||!accessToken||!!factorId;by('mfaVerify').disabled=pending||!accessToken||!factorId;by('deviceRequest').disabled=pending||!accessToken||!mfaDone;by('deviceStatus').disabled=pending||!accessToken;by('ownerTest').disabled=pending||!accessToken;by('changePasswordButton').disabled=pending||!accessToken||!flags.login_enabled;}
 function origin(){return location.origin;}
 by('origin').textContent=origin()==='null'?'file://（请打开已发布的 GitHub Pages）':origin();
 if(location.origin!==EXPECTED_ORIGIN)by('deployNotice').classList.remove('hidden');
 async function call(body,timeout=12000){const abort=new AbortController();const timer=setTimeout(()=>abort.abort(),timeout);try{const r=await fetch(ENDPOINT,{method:'POST',mode:'cors',cache:'no-store',headers:{'Content-Type':'application/json','apikey':PUBLIC_KEY},body:JSON.stringify(body),signal:abort.signal});let data={};try{data=await r.json();}catch(_){}return {ok:r.ok,status:r.status,data};}finally{clearTimeout(timer);}}
 function hideTotp(){by('mfaPrivate').classList.add('hidden');by('mfaQr').removeAttribute('src');by('mfaQr').classList.add('hidden');by('mfaSecret').textContent='';by('mfaSecret').classList.add('hidden');by('mfaReveal').classList.remove('hidden');by('mfaConceal').classList.add('hidden');if(totpQrUrl){URL.revokeObjectURL(totpQrUrl);totpQrUrl='';}}
 function resetMfa(){hideTotp();factorId='';pendingTotp=null;mfaDone=false;by('mfaCode').value='';by('mfaSetup').classList.add('hidden');msg('mfaMessage','请先使用测试账号登录。');msg('deviceMessage','这是自愿的高级安全测试；登录并验证 TOTP 后可提交申请。');controls();}
-function forget(){accessToken='';recoveryCodesTemp=[];by('recoveryCodes').textContent='';by('recoveryBox').classList.add('hidden');by('regPassword').value='';by('loginPassword').value='';resetMfa();msg('sessionMessage','本页内存中的令牌已清除。本操作不注销或撤销 Supabase 服务器会话。');msg('ownerMessage','请先登录，然后测试自己账号的数据隔离。');}
+function forget(){accessToken='';currentUsername='';by('changeUsername').value='';by('oldPassword').value='';by('newPassword').value='';by('confirmNewPassword').value='';recoveryCodesTemp=[];by('recoveryCodes').textContent='';by('recoveryBox').classList.add('hidden');by('regPassword').value='';by('loginPassword').value='';resetMfa();msg('sessionMessage','本页内存中的令牌已清除。本操作不注销或撤销 Supabase 服务器会话。');msg('ownerMessage','请先登录，然后测试自己账号的数据隔离。');}
 by('forgetSession').addEventListener('click',forget);
 window.addEventListener('pagehide',()=>{accessToken='';token='';recoveryCodesTemp=[];by('recoveryCodes').textContent='';hideTotp();pendingTotp=null;factorId='';});
 by('checkStatus').addEventListener('click',async()=>{if(location.origin!==EXPECTED_ORIGIN){msg('statusMessage','请从正式的 GitHub Pages HTTPS 测试网址打开，而不是本地文件。','warn');return;}if(pending)return;pending=true;controls();msg('statusMessage','正在连接独立测试服务…');try{const r=await call({action:'status'});if(r.ok&&r.data.environment==='isolated_staging'&&r.data.service_ready===true&&typeof r.data.registration_enabled==='boolean'&&typeof r.data.login_enabled==='boolean'){
@@ -79,9 +91,9 @@ by('verifyUser').addEventListener('click',verifyUser);
 by('showCodes').addEventListener('click',()=>{if(!recoveryCodesTemp.length)return;by('recoveryCodes').textContent=recoveryCodesTemp.join('\n');by('recoveryCodes').classList.remove('hidden');by('showCodes').classList.add('hidden');by('clearCodes').classList.remove('hidden');});
 by('clearCodes').addEventListener('click',()=>{recoveryCodesTemp=[];by('recoveryCodes').textContent='';by('recoveryCodes').classList.add('hidden');by('showCodes').classList.remove('hidden');by('clearCodes').classList.add('hidden');by('recoveryBox').classList.add('hidden');});
 by('registerForm').addEventListener('submit',async e=>{e.preventDefault();if(pending||!flags.registration_enabled||!token){msg('registerMessage','注册未启用或尚未完成真实验证码。','warn');return;}const username=by('regUsername').value.trim().toLowerCase(),display_name=by('regDisplay').value.trim(),password=by('regPassword').value;if(!/^[a-z][a-z0-9_]{3,19}$/.test(username)||password.length<6||password.length>20||!display_name){msg('registerMessage','账号需 4–20 个字符（英文小写字母开头，可含数字和下划线）；新密码需 6–20 个字符。','error');return;}
-pending=true;controls();const captcha_token=token;token='';msg('registerMessage','正在向独立测试项目提交真实注册…');try{const r=await call({action:'register',username,display_name,password,captcha_token},18000);if(r.ok&&r.status===201&&r.data.created===true&&Array.isArray(r.data.recovery_codes)&&r.data.recovery_codes.length===8&&r.data.session?.access_token){accessToken=r.data.session.access_token;resetMfa();recoveryCodesTemp=[...r.data.recovery_codes];by('recoveryCodes').textContent='';by('recoveryCodes').classList.add('hidden');by('showCodes').classList.remove('hidden');by('clearCodes').classList.add('hidden');by('recoveryBox').classList.remove('hidden');msg('registerMessage','测试账号已创建。恢复码默认隐藏，请在私密环境中主动查看、安全保存，再验证 Auth 会话。','good');by('regPassword').value='';}else{msg('registerMessage','注册未完成：'+(r.data.error||'HTTP '+r.status)+ '。请查看服务端配置或数据库约束；不要重复尝试真实密码。','error');}}
+pending=true;controls();const captcha_token=token;token='';msg('registerMessage','正在向独立测试项目提交真实注册…');try{const r=await call({action:'register',username,display_name,password,captcha_token},18000);if(r.ok&&r.status===201&&r.data.created===true&&Array.isArray(r.data.recovery_codes)&&r.data.recovery_codes.length===8&&r.data.session?.access_token){accessToken=r.data.session.access_token;currentUsername=username;by('changeUsername').value=username;resetMfa();recoveryCodesTemp=[...r.data.recovery_codes];by('recoveryCodes').textContent='';by('recoveryCodes').classList.add('hidden');by('showCodes').classList.remove('hidden');by('clearCodes').classList.add('hidden');by('recoveryBox').classList.remove('hidden');msg('registerMessage','测试账号已创建。恢复码默认隐藏，请在私密环境中主动查看、安全保存，再验证 Auth 会话。','good');by('regPassword').value='';}else{msg('registerMessage','注册未完成：'+(r.data.error||'HTTP '+r.status)+ '。请查看服务端配置或数据库约束；不要重复尝试真实密码。','error');}}
 catch(_){msg('registerMessage','网络失败／超时，无法确认账号是否创建。请先查询测试项目 Auth 用户再决定重试。','error');}finally{pending=false;resetCaptcha();by('regPassword').value='';controls();}});
-by('loginForm').addEventListener('submit',async e=>{e.preventDefault();if(pending||!flags.login_enabled){msg('loginMessage','测试登录尚未启用。','warn');return;}const username=by('loginUsername').value.trim().toLowerCase(),password=by('loginPassword').value;if(!/^[a-z][a-z0-9_]{3,19}$/.test(username)||!password){msg('loginMessage','请填写测试用户名与密码。','error');return;}pending=true;controls();msg('loginMessage','验证登录中…');try{const r=await call({action:'login',username,password});if(r.ok&&r.data.session?.access_token){accessToken=r.data.session.access_token;resetMfa();msg('loginMessage','测试登录成功。可继续检查 Supabase Auth 用户身份。旧账号密码规则不变。','good');}else msg('loginMessage','登录未完成：'+(r.data.error||'HTTP '+r.status),'error');}catch(_){msg('loginMessage','无法连接测试服务，未确认登录结果。','error');}finally{by('loginPassword').value='';pending=false;controls();}});
+by('loginForm').addEventListener('submit',async e=>{e.preventDefault();if(pending||!flags.login_enabled){msg('loginMessage','测试登录尚未启用。','warn');return;}const username=by('loginUsername').value.trim().toLowerCase(),password=by('loginPassword').value;if(!/^[a-z][a-z0-9_]{3,19}$/.test(username)||!password){msg('loginMessage','请填写测试用户名与密码。','error');return;}pending=true;controls();msg('loginMessage','验证登录中…');try{const r=await call({action:'login',username,password});if(r.ok&&r.data.session?.access_token){accessToken=r.data.session.access_token;currentUsername=username;by('changeUsername').value=username;resetMfa();msg('loginMessage','测试登录成功。可继续检查 Supabase Auth 用户身份。旧账号密码规则不变。','good');}else msg('loginMessage','登录未完成：'+(r.data.error||'HTTP '+r.status),'error');}catch(_){msg('loginMessage','无法连接测试服务，未确认登录结果。','error');}finally{by('loginPassword').value='';pending=false;controls();}});
 // MFA: Supabase GoTrue endpoints. All identity material stays in this tab memory only.
 function cleanError(err,fallback){return typeof err?.error_code==='string'?err.error_code:typeof err?.code==='string'?err.code:fallback;}
 async function authReq(path,method='GET',payload){
@@ -182,6 +194,40 @@ by('ownerTest').addEventListener('click',async()=>{
   msg('ownerMessage','真实 Supabase RLS 查询通过：当前账号仅看见自己的 1 条测试记录，无需 TOTP 或设备批准。其他账号的隔离已另通过数据库角色测试。','good');
  }catch(_){msg('ownerMessage','测试请求失败或超时，暂时不能确认浏览器端 RLS 结果。','error');}
  finally{clearTimeout(timeout);pending=false;controls();}
+});
+
+// P9.74: sensitive mutation goes through the isolated server endpoint (not direct client updateUser).
+async function callSecured(body,timeout=20000){
+ if(location.origin!==EXPECTED_ORIGIN||!accessToken)throw Error('请先登录');
+ const controller=new AbortController(),timer=setTimeout(()=>controller.abort(),timeout);
+ try{
+  const r=await fetch(ENDPOINT,{method:'POST',mode:'cors',cache:'no-store',
+   headers:{'Content-Type':'application/json','apikey':PUBLIC_KEY,'Authorization':'Bearer '+accessToken},
+   body:JSON.stringify(body),signal:controller.signal});
+  let data={};try{data=await r.json();}catch(_){}
+  return {ok:r.ok,status:r.status,data};
+ }finally{clearTimeout(timer);}
+}
+by('changePasswordForm').addEventListener('submit',async e=>{
+ e.preventDefault();if(pending||!accessToken||!flags.login_enabled){msg('passwordChangeMessage','请先登录测试账号，并检查服务器连接。','warn');return;}
+ const username=by('changeUsername').value.trim().toLowerCase();
+ const oldPassword=by('oldPassword').value,newPassword=by('newPassword').value,confirmPassword=by('confirmNewPassword').value;
+ if(!/^[a-z][a-z0-9_]{3,19}$/.test(username)||username!==currentUsername){msg('passwordChangeMessage','请使用当前已登录的用户名。','error');return;}
+ if(oldPassword.length<1||oldPassword.length>128||newPassword.length<6||newPassword.length>20||newPassword===oldPassword||newPassword!==confirmPassword){msg('passwordChangeMessage','请检查旧密码及新密码：新密码必须 6–20 位、与旧密码不同且两次一致。','warn');return;}
+ pending=true;controls();msg('passwordChangeMessage','正在由隔离服务器重新验证当前密码和可选 MFA …');
+ try{
+  const r=await callSecured({action:'change_password',username,current_password:oldPassword,new_password:newPassword});
+  if(r.ok&&r.status===200&&r.data.changed===true){
+    const revoked=r.data.global_refresh_revocation_confirmed===true;
+    forget();
+    msg('passwordChangeMessage',revoked?'测试密码修改成功；刷新会话全局撤销请求已确认。请使用新密码重新登录。':'测试密码修改成功，但会话撤销未能确认；请立即重新登录并检查其他会话。',revoked?'good':'warn');
+  }else{
+   const error=String(r.data.error||'HTTP '+r.status);
+   const messages={invalid_credentials:'当前密码或账号验证失败。',authentication_required:'会话失效，请重新登录。',mfa_required:'账号启用了 TOTP，请先在第 6 区验证六位动态码。',password_policy:'新密码不符合测试规则或与当前密码相同。',too_many_requests:'尝试次数过多，请稍后再试。',login_not_active:'测试登录服务已关闭。',temporarily_unavailable:'服务器暂时不可用，请勿连续重试。'};
+   msg('passwordChangeMessage',messages[error]||'修改未完成：'+error,'error');
+  }
+ }catch(_){msg('passwordChangeMessage','网络超时，无法确定密码是否已更新。请先尝试重新登录确认，不要立即反复提交。','error');}
+ finally{by('oldPassword').value='';by('newPassword').value='';by('confirmNewPassword').value='';pending=false;controls();}
 });
 controls();
 })();

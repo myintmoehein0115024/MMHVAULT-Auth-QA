@@ -14,16 +14,16 @@ main{max-width:1090px;margin:0 auto}.top{display:flex;gap:14px;align-items:cente
 </head>
 <body>
 <main>
-<header class="top"><div><div class="brand">MMHVAULT</div><span class="small">P9.72 · GitHub Pages QA · Isolated Supabase</span></div><span class="flag">STAGING ONLY · 不连接正式财务数据</span></header>
+<header class="top"><div><div class="brand">MMHVAULT</div><span class="small">P9.73 · GitHub Pages QA · Isolated Supabase</span></div><span class="flag">STAGING ONLY · 不连接正式财务数据</span></header>
 <div class="deploy-warning hidden" id="deployNotice" role="status">您目前不是从正式测试地址打开页面。请先将 <code>index.html</code> 上传到新仓库并启用 GitHub Pages，然后打开 <a href="https://myintmoehein0115024.github.io/MMHVAULT-Auth-QA/" rel="noopener noreferrer">https://myintmoehein0115024.github.io/MMHVAULT-Auth-QA/</a>。不要直接双击本地 HTML。</div>
-<section class="intro"><h1>用户名注册与 TOTP 设备授权 · 真实验收</h1><p>此页面部署在单独的 GitHub Pages 仓库，连接独立 Supabase 测试项目。注册由服务端开关控制，默认关闭。页面不会保存密码、JWT 或恢复令牌；请使用<strong>全新测试密码</strong>，勿输入正式 MMHVAULT 密码。</p></section>
+<section class="intro"><h1>用户名与密码登录 · 可选安全增强</h1><p>隔离测试项目的用户名登录无需绑定邮箱、TOTP 或事先批准设备。登录后，个人数据仍必须由 Supabase Auth 用户身份与 RLS 严格隔离。<strong>邮箱注册入口尚未开发</strong>，未来会使用同一套用户级数据隔离机制。本页不会持久保存密码或 JWT；请勿输入正式站点密码。</p></section>
 <div class="cols">
  <section class="panel full"><div class="row"><h2 class="grow">1 · 检查服务连接</h2><span id="environment-pill" class="state-pill">未检查</span></div><p>本检查只向隔离项目发送 <code>status</code> 请求，不上传用户名、密码、邮箱或验证码。</p><div class="row"><button id="checkStatus">检查注册和登录状态</button><span class="small">源地址：<code id="origin">—</code></span></div><div class="status-grid" style="margin-top:15px"><div><strong>服务连接</strong><span id="serviceState">未验证</span></div><div><strong>新账号注册</strong><span id="registrationState">未验证</span></div><div><strong>已有账号登录</strong><span id="loginState">未验证</span></div></div><div id="statusMessage" class="msg" style="margin-top:12px" aria-live="polite">请先检查连接状态。网络失败不代表服务已经关闭。</div></section>
  <section class="panel"><h2>2 · Cloudflare Turnstile</h2><p>将 Cloudflare 控制台中的<strong>公开 Sitekey</strong> 粘贴到此处；不要输入或上传 Secret key。</p><div class="stack"><div><label for="sitekey">Sitekey（公开）</label><input id="sitekey" autocomplete="off" spellcheck="false" placeholder="请输入真实测试 Widget 的公开 Sitekey"></div><button class="secondary" id="loadCaptcha">加载真实验证码组件</button><div id="captchaArea" class="cf-slot" aria-label="Turnstile challenge"></div><div id="captchaMessage" class="msg" aria-live="polite">等待加载验证码</div><div class="notice">要求：Cloudflare Turnstile Widget 允许域名 <code>myintmoehein0115024.github.io</code>，服务端 Secret 只存放在测试项目 Supabase Secrets 中，验证用途（action）必须为 <code>mmhvault_register</code>。官方自动通过测试密钥不能用于这里的真实验收。</div></div></section>
  <section class="panel"><h2>3 · 注册一个新测试账号</h2><p>只有服务端确认开启测试注册、且取得真实 Turnstile 验证令牌时才能提交。用户名 4–20 个字符；新密码 6–20 个字符。此宽松规则仅用于隔离测试，正式金融站建议至少 12 个字符。</p><form id="registerForm" class="stack"><div><label for="regUsername">测试账号名</label><input id="regUsername" autocomplete="off" maxlength="20" placeholder="tester_2026" required pattern="[a-z][a-z0-9_]{3,19}"></div><div><label for="regDisplay">显示昵称</label><input id="regDisplay" maxlength="60" placeholder="Test Member" required></div><div><label for="regPassword">全新测试密码（6–20 个字符）</label><input id="regPassword" type="password" minlength="6" maxlength="20" autocomplete="new-password" required></div><button id="registerButton" type="submit" disabled>创建测试账号</button><div id="registerMessage" class="msg" aria-live="polite">测试注册尚未开放</div></form><div id="recoveryBox" class="hidden" style="margin-top:14px"><div class="notice">注册成功将生成 8 枚恢复码，默认不显示。请仅在没有录屏/截图的私密环境中主动查看并保存在安全的密码管理器里；不要发到聊天中。</div><div id="recoveryCodes" class="token hidden" aria-label="一次性恢复码"></div><div class="row" style="margin-top:8px"><button class="secondary" id="showCodes" type="button">显示一次性恢复码（请勿截图）</button><button class="secondary hidden" id="clearCodes" type="button">已安全保存，清除恢复码</button></div></div></section>
  <section class="panel"><h2>4 · 已有测试账号登录</h2><p>测试注册关闭后，管理员可以单独开放已有账号登录，不必重新开放注册。</p><form id="loginForm" class="stack"><div><label for="loginUsername">测试用户名</label><input id="loginUsername" autocomplete="off" maxlength="20" placeholder="tester_2026" required></div><div><label for="loginPassword">测试密码</label><input id="loginPassword" type="password" maxlength="128" autocomplete="current-password" required></div><button id="loginButton" type="submit" disabled>用户名登录</button><div id="loginMessage" class="msg" aria-live="polite">测试登录尚未开放</div></form></section>
- <section class="panel"><h2>5 · 核验 Auth 身份</h2><p>成功注册或登录后，会使用 Supabase Auth 的公开用户接口复核签发的访问令牌。令牌只在此页面内存中保存，不显示、不写入浏览器存储。</p><div class="row"><button class="secondary" id="verifyUser" disabled>验证当前测试会话</button><button class="secondary" id="forgetSession">清除本页会话（非注销）</button></div><div id="sessionMessage" class="msg" aria-live="polite" style="margin-top:12px">没有测试会话</div><div class="help">此操作并不代表 MFA / 设备授权或生产 RLS 已通过。用户名账号的首次可信设备审批仍需独立身份核验，不能凭密码或新绑定的 TOTP 自动批准。</div></section>
- <section class="panel"><h2>6 · 绑定 TOTP 身份验证器</h2><p>先在上方登录测试账号。使用手机上的身份验证器添加六位动态码；这是独立 Supabase Auth 的真实 MFA 流程，不是模拟验证码。</p>
+ <section class="panel"><h2>5 · 核验 Auth 身份（无需设备审批）</h2><p>成功注册或登录后，会使用 Supabase Auth 的公开用户接口复核签发的访问令牌。令牌只在此页面内存中保存，不显示、不写入浏览器存储。</p><div class="row"><button class="secondary" id="verifyUser" disabled>验证当前测试会话</button><button class="secondary" id="forgetSession">清除本页会话（非注销）</button></div><div id="sessionMessage" class="msg" aria-live="polite" style="margin-top:12px">没有测试会话</div><div class="help">本步骤只核验 Supabase Auth 会话。普通账号数据的权限取决于数据库 RLS，而不取决于是否启用可选设备安全功能；生产财务表仍需另行审查。</div></section>
+ <section class="panel"><h2>6 · 可选 TOTP 身份验证</h2><p>这项功能不是普通登录的必需条件。用户可主动绑定身份验证器，在改密码等敏感操作前进行二次身份验证；当前页面仅测试真实 MFA，不执行密码修改。</p>
  <div class="stack"><div class="row"><button class="secondary" id="mfaInspect" disabled>检查 TOTP 绑定状态</button><button class="secondary" id="mfaEnroll" disabled>首次绑定 TOTP</button></div>
  <div id="mfaMessage" class="msg" aria-live="polite">请先使用已有测试账号登录。</div>
  <div class="notice guard-note">TOTP 绑定可能使其他登录会话失效。请在私密环境中操作；二维码、手动密钥、验证码、完整 JWT 和恢复码均不得截图或发送到聊天。</div>
@@ -32,11 +32,16 @@ main{max-width:1090px;margin:0 auto}.top{display:flex;gap:14px;align-items:cente
  <div><label for="mfaCode">身份验证器显示的 6 位动态验证码</label><input id="mfaCode" autocomplete="one-time-code" inputmode="numeric" maxlength="6" pattern="[0-9]{6}" placeholder="仅在这里输入，不发聊天"></div>
  <button id="mfaVerify" disabled>验证动态码，升级会话至 AAL2</button>
  <div class="help">已有 TOTP 用户：登录后点击“检查 TOTP 绑定状态”，输入验证码并验证。首次绑定：点击“首次绑定 TOTP”，安全扫码，再输入验证码。</div></div></section>
- <section class="panel"><h2>7 · 设备授权申请与状态</h2><p>通过 TOTP 验证后可提交当前登录会话的设备申请。首次设备审批需要独立身份确认，页面不会自动批准，也不会越过 RLS。</p>
+ <section class="panel"><h2>7 · 可选可信设备管理（独立安全测试）</h2><p>仅供选择启用更严格设备安全的用户测试。此申请<strong>不应成为普通个人数据的访问门槛</strong>；测试项目保留旧的受设备门禁保护的示例表。首次批准仍需独立身份确认，不会自动放行。</p>
  <div class="stack"><div><label for="deviceLabel">设备名称（不包含真实个人信息）</label><input id="deviceLabel" maxlength="80" value="QA Browser Device" autocomplete="off"></div>
  <div class="row"><button id="deviceRequest" disabled>提交设备授权申请</button><button class="secondary" id="deviceStatus" disabled>查询设备状态</button></div>
- <div id="deviceMessage" class="msg" aria-live="polite">登录并完成 TOTP 验证后可提交申请。</div>
- <div class="notice guard-note">pending＝待授权，不等于 approved＝已批准。无邮箱用户名账号的首台设备仍需单独审查；本页面不提供自动首次批准功能。</div></div></section>
+ <div id="deviceMessage" class="msg" aria-live="polite">这是自愿的高级安全测试；登录并验证 TOTP 后可提交申请。</div>
+ <div class="notice guard-note">pending＝待审核；approved＝该特殊设备测试门禁通过。普通用户的自有数据访问采用独立的 RLS 规则，不会强制走此审批流程。</div></div></section>
+ <section class="panel full" id="ownerSection"><h2>8 · 自有数据隔离（无需绑定 TOTP 或设备授权）</h2>
+ <p>此项验证新的 P9.73 测试表：即使没有批准设备，已登录账号也只能读取自己的示例数据，不能读取其他账号的记录。数据全是虚构的 QA 测试记录，不包含财务资料。</p>
+ <div class="row"><button class="secondary" id="ownerTest" disabled>检查我的隔离测试数据</button><span class="small">仅发送当前会话令牌至隔离 Supabase REST API</span></div>
+ <div id="ownerMessage" class="msg" aria-live="polite" style="margin-top:12px">请先使用用户名和密码登录，再执行真实 RLS 读取测试。</div>
+ <div class="help">数据库已对两个测试账号分别验证：各可见 1 条自身测试记录、0 条他人记录。此处还需完成真实浏览器网络调用，才能验收前端联调。</div></section>
 </div>
 <footer class="footer">这是 GitHub Pages 上的隔离验收工具，并非正式 MMHVAULT 金融网站。不要上传服务端 Secret、完整 JWT、真实密码或恢复码。请使用新建的隔离测试账号；本页面不提供绕过 CAPTCHA 的功能。</footer>
 </main>
@@ -49,14 +54,14 @@ const PUBLIC_KEY='sb_publishable_ybvR0N64tgKBzdlJeMQi9A_hvnziPce';
 let flags={registration_enabled:false,login_enabled:false},token='',widget=null,accessToken='',pending=false,recoveryCodesTemp=[],factorId='',pendingTotp=null,totpQrUrl='',mfaDone=false;
 const by=id=>document.getElementById(id);
 const msg=(id,text,state='')=>{const e=by(id);e.textContent=text;e.className='msg '+state;};
-function controls(){by('registerButton').disabled=pending||!flags.registration_enabled||!token;by('loginButton').disabled=pending||!flags.login_enabled;by('verifyUser').disabled=!accessToken||pending;by('mfaInspect').disabled=pending||!accessToken;by('mfaEnroll').disabled=pending||!accessToken||!!factorId;by('mfaVerify').disabled=pending||!accessToken||!factorId;by('deviceRequest').disabled=pending||!accessToken||!mfaDone;by('deviceStatus').disabled=pending||!accessToken;}
+function controls(){by('registerButton').disabled=pending||!flags.registration_enabled||!token;by('loginButton').disabled=pending||!flags.login_enabled;by('verifyUser').disabled=!accessToken||pending;by('mfaInspect').disabled=pending||!accessToken;by('mfaEnroll').disabled=pending||!accessToken||!!factorId;by('mfaVerify').disabled=pending||!accessToken||!factorId;by('deviceRequest').disabled=pending||!accessToken||!mfaDone;by('deviceStatus').disabled=pending||!accessToken;by('ownerTest').disabled=pending||!accessToken;}
 function origin(){return location.origin;}
 by('origin').textContent=origin()==='null'?'file://（请打开已发布的 GitHub Pages）':origin();
 if(location.origin!==EXPECTED_ORIGIN)by('deployNotice').classList.remove('hidden');
 async function call(body,timeout=12000){const abort=new AbortController();const timer=setTimeout(()=>abort.abort(),timeout);try{const r=await fetch(ENDPOINT,{method:'POST',mode:'cors',cache:'no-store',headers:{'Content-Type':'application/json','apikey':PUBLIC_KEY},body:JSON.stringify(body),signal:abort.signal});let data={};try{data=await r.json();}catch(_){}return {ok:r.ok,status:r.status,data};}finally{clearTimeout(timer);}}
 function hideTotp(){by('mfaPrivate').classList.add('hidden');by('mfaQr').removeAttribute('src');by('mfaQr').classList.add('hidden');by('mfaSecret').textContent='';by('mfaSecret').classList.add('hidden');by('mfaReveal').classList.remove('hidden');by('mfaConceal').classList.add('hidden');if(totpQrUrl){URL.revokeObjectURL(totpQrUrl);totpQrUrl='';}}
-function resetMfa(){hideTotp();factorId='';pendingTotp=null;mfaDone=false;by('mfaCode').value='';by('mfaSetup').classList.add('hidden');msg('mfaMessage','请先使用测试账号登录。');msg('deviceMessage','登录并完成 TOTP 验证后可提交申请。');controls();}
-function forget(){accessToken='';recoveryCodesTemp=[];by('recoveryCodes').textContent='';by('recoveryBox').classList.add('hidden');by('regPassword').value='';by('loginPassword').value='';resetMfa();msg('sessionMessage','本页内存中的令牌已清除。本操作不注销或撤销 Supabase 服务器会话。');}
+function resetMfa(){hideTotp();factorId='';pendingTotp=null;mfaDone=false;by('mfaCode').value='';by('mfaSetup').classList.add('hidden');msg('mfaMessage','请先使用测试账号登录。');msg('deviceMessage','这是自愿的高级安全测试；登录并验证 TOTP 后可提交申请。');controls();}
+function forget(){accessToken='';recoveryCodesTemp=[];by('recoveryCodes').textContent='';by('recoveryBox').classList.add('hidden');by('regPassword').value='';by('loginPassword').value='';resetMfa();msg('sessionMessage','本页内存中的令牌已清除。本操作不注销或撤销 Supabase 服务器会话。');msg('ownerMessage','请先登录，然后测试自己账号的数据隔离。');}
 by('forgetSession').addEventListener('click',forget);
 window.addEventListener('pagehide',()=>{accessToken='';token='';recoveryCodesTemp=[];by('recoveryCodes').textContent='';hideTotp();pendingTotp=null;factorId='';});
 by('checkStatus').addEventListener('click',async()=>{if(location.origin!==EXPECTED_ORIGIN){msg('statusMessage','请从正式的 GitHub Pages HTTPS 测试网址打开，而不是本地文件。','warn');return;}if(pending)return;pending=true;controls();msg('statusMessage','正在连接独立测试服务…');try{const r=await call({action:'status'});if(r.ok&&r.data.environment==='isolated_staging'&&r.data.service_ready===true&&typeof r.data.registration_enabled==='boolean'&&typeof r.data.login_enabled==='boolean'){
@@ -138,7 +143,7 @@ by('mfaVerify').addEventListener('click',async()=>{
  const user=await authReq('/user');if(!validUuid(user.id))throw Error('user_verify_failed');
  mfaDone=true;
  msg('mfaMessage','Supabase 已验证 TOTP，返回了新的会话令牌。注意：可信设备批准仍未完成。','good');
- msg('deviceMessage','TOTP 已验证。可以申请此设备，但审批仍需要独立身份核查。','warn');
+ msg('deviceMessage','TOTP 已验证；可选申请此设备。普通自有资料无须等待设备审批。','good');
  }catch(e){mfaDone=false;msg('mfaMessage','TOTP 未通过：'+(e.message||'network_error')+'。不要连续尝试过多次，可检查手机时间。','error');}
  finally{pending=false;controls();}
 });
@@ -154,11 +159,30 @@ by('deviceStatus').addEventListener('click',async()=>{
  if(pending||!accessToken)return;pending=true;controls();
  try{const d=await rpcReq('mmh_device_status_v1');const state=String(d?.state||'unknown');
  const labels={unregistered:'未注册',pending:'等待独立审核',approved:'设备已批准',denied:'申请被拒绝',revoked:'设备授权已撤销'};
- msg('deviceMessage','服务器当前设备状态：'+(labels[state]||state)+'。'+(state==='approved'?'权限仍由 RLS 和会话门禁检查。':'未批准前，受保护数据仍然不可访问。'),state==='approved'?'good':'warn');}
+ msg('deviceMessage','服务器当前设备状态：'+(labels[state]||state)+'。'+(state==='approved'?'权限仍由 RLS 和会话门禁检查。':'旧的设备门禁测试表仍受限制；普通自有资料不会强制要求设备审批。'),state==='approved'?'good':'warn');}
  catch(e){msg('deviceMessage','状态查询失败：'+(e.message||'network_error'),'error');}
  finally{pending=false;controls();}
 });
 
+by('ownerTest').addEventListener('click',async()=>{
+ if(pending||!accessToken)return;
+ pending=true;controls();msg('ownerMessage','正在以当前账号的实际 Auth 会话测试 RLS…');
+ const controller=new AbortController();const timeout=setTimeout(()=>controller.abort(),12000);
+ try{
+  const response=await fetch(BASE+'/rest/v1/mmh_p973_owner_isolation_qa?select=id&limit=10',{
+   method:'GET',mode:'cors',cache:'no-store',
+   headers:{'apikey':PUBLIC_KEY,'Authorization':'Bearer '+accessToken,'Accept':'application/json'},
+   signal:controller.signal
+  });
+  if(!response.ok){msg('ownerMessage','隔离测试未完成：HTTP '+response.status+'。请检查测试项目 Data API 与授权配置。','error');return;}
+  const data=await response.json();
+  if(!Array.isArray(data)||data.length!==1||typeof data[0]?.id!=='number'){
+   msg('ownerMessage','返回了非预期记录数量（'+(Array.isArray(data)?data.length:'无效结果')+'）；请停止测试并检查 RLS。','error');return;
+  }
+  msg('ownerMessage','真实 Supabase RLS 查询通过：当前账号仅看见自己的 1 条测试记录，无需 TOTP 或设备批准。其他账号的隔离已另通过数据库角色测试。','good');
+ }catch(_){msg('ownerMessage','测试请求失败或超时，暂时不能确认浏览器端 RLS 结果。','error');}
+ finally{clearTimeout(timeout);pending=false;controls();}
+});
 controls();
 })();
 </script>

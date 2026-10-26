@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="referrer" content="no-referrer"><meta name="robots" content="noindex,nofollow">
-<title>MMHVAULT · P9.91 GitHub Pages Auth QA</title>
+<title>MMHVAULT · P9.92 GitHub Pages Auth QA</title>
 <style>
 :root{color-scheme:dark;--gold:#e8bd64;--text:#eaf0fa;--muted:#a8bdcd;--blue:#08253a;--line:#3a5a74;--danger:#f6ab99;--ok:#89e6b9}
 *{box-sizing:border-box}html{font-family:Inter,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;background:#03101e;color:var(--text)}body{margin:0;min-height:100vh;background:radial-gradient(ellipse 75% 50% at 75% 0%,#174266 0,transparent 68%),linear-gradient(155deg,#04111f,#0a1728 65%,#071018);padding:clamp(16px,3vw,44px)}
@@ -22,11 +22,16 @@ main{max-width:1090px;margin:0 auto}.top{display:flex;gap:14px;align-items:cente
 .p991-google-link:focus-visible{outline:3px solid #fff;outline-offset:3px}
 #p991Section code{overflow-wrap:anywhere}
 @media(max-width:760px){#p991Section .cols{grid-template-columns:1fr}}
+#p992Section{scroll-margin-top:24px}
+#p992Section .cols{align-items:start}
+#p992Section .msg{overflow-wrap:anywhere}
+#p992Section .stack{min-width:0}
+@media(max-width:760px){#p992Section .cols{grid-template-columns:1fr}}
 </style>
 </head>
 <body>
 <main>
-<header class="top"><div><div class="brand">MMHVAULT</div><span class="small">P9.91 · GitHub Pages QA · Isolated Supabase</span></div><span class="flag">STAGING ONLY · 不连接正式财务数据</span></header>
+<header class="top"><div><div class="brand">MMHVAULT</div><span class="small">P9.92 · GitHub Pages QA · Isolated Supabase</span></div><span class="flag">STAGING ONLY · 不连接正式财务数据</span></header>
 <div class="deploy-warning hidden" id="deployNotice" role="status">您目前不是从正式测试地址打开页面。请先将 <code>index.html</code> 上传到新仓库并启用 GitHub Pages，然后打开 <a href="https://myintmoehein0115024.github.io/MMHVAULT-Auth-QA/" rel="noopener noreferrer">https://myintmoehein0115024.github.io/MMHVAULT-Auth-QA/</a>。不要直接双击本地 HTML。</div>
 <section id="emailCallbackBanner" class="hidden" role="status" aria-live="polite" aria-atomic="true">
  <div class="banner-title" id="emailCallbackTitle">邮箱恢复状态</div>
@@ -232,6 +237,35 @@ main{max-width:1090px;margin:0 auto}.top{display:flex;gap:14px;align-items:cente
   </div>
  </div>
  <p class="small">本测试不执行生产账号操作。不等于生产 Google 登录已通过；Google 身份关联成功后，还需要独立进行 Google 登录及旧会话安全回归。</p>
+</section>
+<section class="panel full" id="p992Section">
+ <h2>16 · 三种登录方式与同 UID 验收（P9.92）</h2>
+ <p>分别用用户名密码、邮箱密码、<strong>独立 Google OAuth 登录</strong>检验同一原始 Supabase UID 和本人的隔离 QA 数据。Google 登录会使用 <code>/auth/v1/authorize</code>，<strong>不会再次调用 Google 绑定接口</strong>。</p>
+ <div class="notice guard-note"><strong>安全边界：</strong>仅限隔离项目、现有测试账号 <code>haochen05024</code>。先依次验收 16A 和 16B，然后才允许 16C。若启用了 TOTP，当前会话先到第 6 区完成 AAL2。网页不保存 JWT、密码、Google Token 或 Client Secret 到浏览器存储。</div>
+ <div class="cols">
+  <div class="stack">
+   <h2 style="margin-bottom:0">16A · 用户名＋密码</h2>
+   <p class="small">在第 4 区登录 <code>haochen05024</code>，回来验证原 UID 与本人 RLS 数据，并暂存 UID 基线在<strong>当前标签页内存</strong>。</p>
+   <button id="p992UsernameCheck" type="button">检查用户名登录与 UID</button>
+   <div id="p992UsernameMsg" class="msg" aria-live="polite">待检查。先在第 4 区登录。</div>
+  </div>
+  <div class="stack">
+   <h2 style="margin-bottom:0">16B · 邮箱＋密码</h2>
+   <p class="small">再到第 10B 区使用<strong>同一账号的已验证邮箱</strong>登录，返回核对与 16A 相同的 UID 和 QA 数据条数。</p>
+   <button id="p992EmailCheck" type="button">核对邮箱登录与原 UID</button>
+   <div id="p992EmailMsg" class="msg" aria-live="polite">待检查。请先完成 16A。</div>
+  </div>
+ </div>
+ <div class="stack" style="margin-top:17px">
+  <h2 style="margin-bottom:0">16C · 独立 Google 登录</h2>
+  <p class="small">16A、16B 均通过后，点击下方链接打开<strong>新标签页</strong>，使用已关联的 Google 测试账号登录。此次授权请求<strong>不发送原用户名／邮箱的 Bearer</strong>，回调后的新会话将单独读取 Supabase Auth 和 RLS 数据。</p>
+  <button type="button" id="p992PrepareGoogle" class="secondary">准备独立 Google 登录测试</button>
+  <a id="p992GoogleLogin" class="p991-google-link hidden" target="_blank" rel="noopener noreferrer">打开 Google 独立登录（新标签页）</a>
+  <div id="p992GoogleMsg" class="msg" aria-live="polite">待准备。请先完成 16A 和 16B。</div>
+  <div id="p992CallbackMsg" class="msg" aria-live="polite">Google 授权完成后，验收结果会显示在<strong>授权返回的新标签页</strong>这里。没有新会话验证就不显示通过。</div>
+  <div class="notice">与 P9.91 的「关联 Google」不同：这次是<strong>真正的独立 Google 登录</strong>。请勿重复关联，也不要删除或合并账号。Google 登录回调遇到错误或 PKCE 验证要求时将明确显示未通过；不要截图地址栏中的临时 token、code。</div>
+ </div>
+ <p class="small">最终验收需：16A / 16B 两项 UID 一致，16C Google OAuth 新会话属于 <code>haochen05024</code> 且可读取原有 QA 数据。未授权前不能宣称三种登录全通过。</p>
 </section>
 </main>
 <script>
@@ -554,20 +588,25 @@ async function acceptEmailCallback(){
  if(location.origin!==EXPECTED_ORIGIN||location.pathname!=='/MMHVAULT-Auth-QA/')return;
  const fragment=location.hash.slice(1);
  const query=new URLSearchParams(location.search);
- if(!fragment&&!query.has('error'))return;
+ if(!fragment&&!query.has('error')&&!query.has('code'))return;
  const p=new URLSearchParams(fragment);
  // P9.91: If Supabase uses PKCE and returns a one-time code, strip it
  // before anything else can navigate. The original tab verifies linking.
  if(query.has('code')){
   history.replaceState(null,'',location.pathname);
-  msg('emailLinkMessage','Google 授权已返回，请关闭当前标签页，回到原来的测试标签页执行第 15B 区验证。','good');
-  recoveryNotice('Google 授权返回 · 待核验','请切回发起授权的原标签页，点击第 15B 区核验 Google 身份和原 UID。此页面没有保存回调凭据。','p991Section','查看第 15 区');
+  msg('emailLinkMessage','OAuth 返回一次性 code；当前纯浏览器测试页没有对应的 PKCE verifier，尚无法证明新登录成功。不要继续使用或展示该 code。','good');
+  recoveryNotice('OAuth code 返回 · 尚未验收','这次不标记通过，请检查授权流程与回调模式；不要将 code 发给聊天。','p992Section','查看第 15 区');
   return;
  }
  if(!p.has('access_token')&&!p.has('error')&&!query.has('error'))return;
  // Remove secrets immediately after reading them, prior to network requests.
  history.replaceState(null,'',location.pathname);
  if(p.has('error')||query.has('error')){
+  if(!p.has('type')){
+   msg('p992CallbackMsg','Google OAuth 或身份关联回调出现错误。请检查原账号、Google 授权与隔离回调配置；未创建成功验收。','warn');
+   recoveryNotice('Google OAuth 授权未完成','请检查 OAuth 流程，不能视为登录成功。不要重复删除或绑定账号。','p992Section','查看第 16 区');
+   return;
+  }
   msg('emailLinkMessage','一次性链接没有通过认证服务器验证。请重新申请一封找回邮件，不要重复使用旧链接。','error');
   recoveryNotice('恢复链接已失效或被使用','本次链接不可继续重置密码。您无需重新注册邮箱：到第 10C 区重新获取一封重置邮件；新的链接请只点击一次。','emailRecoverForm','前往第 10C 区重新申请');
   return;
@@ -577,13 +616,15 @@ async function acceptEmailCallback(){
  // Only verify the Auth token in memory, immediately cleared from the URL;
  // never adopt it as this page's login session in the callback tab.
  if(bearer.length>=60&&!kind){
-  try{
-   const googleReturn=await userForEmail(bearer);
-   if(!googleReturn?.id)throw Error('identity_not_verified');
-   msg('emailLinkMessage','Google OAuth 已返回认证服务。请回到发起授权的原标签页，通过第 15B 区核对原 UID；这里不建立新会话。','good');
-   recoveryNotice('Google 授权返回 · 需要原 UID 核验','现在请关闭此回调标签，回到原标签页执行第 15B 区；只有 Google 身份与原 UID 和本人 QA 数据都核实后才算通过。','p991Section','查看第 15 区');
-  }catch(_){
-   msg('emailLinkMessage','OAuth 返回的身份未能得到验证。不要认为 Google 已成功关联；请回原标签页做第 15B 区检查。','warn');
+  // P9.92: Verify independent OAuth callback with its OWN bearer; never replace
+  // the old tab's in-memory username/email login. No token is persisted.
+  const googleCallbackOk=await p992OAuthReturn(bearer);
+  if(googleCallbackOk){
+   msg('emailLinkMessage','Google OAuth 新会话已验收。请查看本标签第 16C 区的真实身份及本人数据结果。','good');
+   recoveryNotice('P9.92 · Google 登录已确认','已独立核验 Google 回调产生的新会话及原有 UID 数据。','p992Section','查看第 16C 区验收结果');
+  }else{
+   msg('emailLinkMessage','OAuth 已返回，但新会话暂未通过独立验收。请查看第 16C 区提示；不要误判为成功。','warn');
+   recoveryNotice('Google OAuth · 待核实','可能是 Google 关联回调、TOTP 尚未完成或认证网络故障。请查看第 16C 区；不代表账号损坏。','p992Section','查看第 16 区');
   }
   return;
  }
@@ -974,6 +1015,96 @@ by('p991Verify').addEventListener('click',async()=>{
    msg('p991VerifyMsg','网络或认证检查失败，目前不能确认是否已成功关联。请勿重复点击授权，先核对第 14B 区。','error');
  }finally{pending=false;controls();by('p991Verify').disabled=false;}
 });
+
+
+// P9.92 separate Google OAuth sign-in (NOT identity linking).
+// 16A/B compare Auth UUID and owner RLS counts in RAM only; 16C callback
+// validates an independent OAuth bearer and server-owned canonical username.
+const P992_EXPECT_USERNAME='haochen05024';
+const P992_OAUTH_URL=BASE+'/auth/v1/authorize?provider=google&redirect_to='+encodeURIComponent(P991_CALLBACK);
+let p992Baseline=null,p992EmailPassed=false;
+function p992Fingerprint(u){return String(u||'').slice(0,8)+'…'+String(u||'').slice(-4)}
+async function p992ReadCurrent(){
+ if(!accessToken)throw Error('请先登录 QA 测试账号');
+ const [u,r]=await Promise.all([userForEmail(accessToken),p990Call('inspect',accessToken)]);
+ const d=r.data;
+ if(!r.response.ok||!u?.id||d.account_authenticated!==true||d.mapped_username_key!==P992_EXPECT_USERNAME||
+ d.username_bound_same_uid!==true||d.username_email_mapping_current!==true||
+ d.qa_data_access_ok!==true||!Number.isInteger(d.qa_data_owner_row_count)||d.qa_data_owner_row_count<1)
+  throw Error('身份、用户名映射或受保护 QA 数据未通过；启用 TOTP 的账号需先完成第 6 区');
+ return {uid:u.id,count:d.qa_data_owner_row_count};
+}
+by('p992UsernameCheck').addEventListener('click',async()=>{
+ if(pending)return;
+ p992Baseline=null;p992EmailPassed=false;
+ by('p992GoogleLogin').classList.add('hidden');by('p992GoogleLogin').removeAttribute('href');
+ if(!accessToken||currentUsername!==P992_EXPECT_USERNAME||emailIdentityActive){
+   msg('p992UsernameMsg','请先在第 4 区用 haochen05024 登录，再来点击本按钮。','warn');return;
+ }
+ pending=true;controls();by('p992UsernameCheck').disabled=true;
+ try{
+  const current=await p992ReadCurrent();p992Baseline=current;
+  msg('p992UsernameMsg','✅ 用户名登录通过：UID 标识 '+p992Fingerprint(current.uid)+'，本人 QA '+current.count+' 条。现在到第 10B 区用原邮箱登录。','good');
+ }catch(e){msg('p992UsernameMsg','用户名验收未通过：'+String(e?.message||'请求失败'),'warn');}
+ finally{pending=false;controls();by('p992UsernameCheck').disabled=false;}
+});
+by('p992EmailCheck').addEventListener('click',async()=>{
+ if(pending)return;
+ if(!p992Baseline){msg('p992EmailMsg','请先完成 16A 记录原 UID 基线。','warn');return;}
+ if(!emailIdentityActive||!accessToken){msg('p992EmailMsg','请先在第 10B 区重新使用原邮箱＋密码登录。','warn');return;}
+ pending=true;controls();by('p992EmailCheck').disabled=true;
+ try{
+  const current=await p992ReadCurrent();
+  if(current.uid!==p992Baseline.uid||current.count!==p992Baseline.count)
+   throw Error('与 16A 的 UID 或 QA 记录数量不一致，停止 Google 验收');
+  p992EmailPassed=true;
+  msg('p992EmailMsg','✅ 邮箱登录通过：与用户名登录是同一个 UID（'+p992Fingerprint(current.uid)+'）；本人 QA '+current.count+' 条。','good');
+ }catch(e){p992EmailPassed=false;msg('p992EmailMsg','邮箱对比未通过：'+String(e?.message||'请求失败'),'warn');}
+ finally{pending=false;controls();by('p992EmailCheck').disabled=false;}
+});
+by('p992PrepareGoogle').addEventListener('click',async()=>{
+ if(pending)return;
+ by('p992GoogleLogin').classList.add('hidden');by('p992GoogleLogin').removeAttribute('href');
+ if(!p992Baseline||!p992EmailPassed){msg('p992GoogleMsg','请先完成 16A、16B 两种密码登录的同 UID 对比。','warn');return;}
+ pending=true;controls();by('p992PrepareGoogle').disabled=true;
+ try{
+  const r=await p990Call('status');
+  if(!r.response.ok||r.data.google_provider_enabled!==true)throw Error('隔离 Google 登录服务未启用');
+  const current=await p992ReadCurrent();
+  if(current.uid!==p992Baseline.uid||current.count!==p992Baseline.count)throw Error('原账号发生变化，请重新开始');
+  const checked=await p990Call('inspect',accessToken);
+  if(!checked.response.ok||checked.data.google_identity_linked!==true)throw Error('Google 身份尚未关联到原 UID，不能尝试独立登录');
+  // No Authorization header, user JWT, password, or service_role in the URL.
+  const login=new URL(P992_OAUTH_URL);
+  if(login.protocol!=='https:'||login.hostname!=='louxgfaqwajihtadznbw.supabase.co'||login.pathname!=='/auth/v1/authorize')
+    throw Error('Google 授权目标异常，停止操作');
+  by('p992GoogleLogin').href=login.href;
+  by('p992GoogleLogin').classList.remove('hidden');
+  msg('p992GoogleMsg','✅ 准备完成：原用户名、邮箱同 UID 且已关联 Google。点击下方「打开 Google 独立登录」；请在 Google 完成授权后查看新标签页 16C 的回调结果。','good');
+ }catch(e){msg('p992GoogleMsg','尚不能启动 Google 独立登录：'+String(e?.message||'连接失败'),'warn');}
+ finally{pending=false;controls();by('p992PrepareGoogle').disabled=false;}
+});
+async function p992OAuthReturn(bearer){
+ // Callback runs while this single script may still initialize its later consts.
+ // Defer one microtask so P990_API is ready, without persisting tokens.
+ await Promise.resolve();
+ try{
+  if(typeof bearer!=='string'||bearer.length<60)throw Error('OAuth 无有效会话');
+  const [who,result]=await Promise.all([userForEmail(bearer),p990Call('inspect',bearer)]);
+  const d=result.data;
+  const valid=result.response.ok&&!!who?.id&&d.account_authenticated===true&&
+    d.google_identity_linked===true&&d.username_bound_same_uid===true&&
+    d.mapped_username_key===P992_EXPECT_USERNAME&&d.username_email_mapping_current===true&&
+    d.qa_data_access_ok===true&&Number.isInteger(d.qa_data_owner_row_count)&&d.qa_data_owner_row_count>0;
+  if(!valid){
+    msg('p992CallbackMsg','Google OAuth 返回的新会话未通过完整检查（身份、用户名或 RLS 不符合预期）。未标记通过，请不要删除／合并任何账号。','warn');return false;
+  }
+  msg('p992CallbackMsg','✅ P9.92 Google OAuth 新会话验收通过：Google 身份映射到 haochen05024 原 UID（'+p992Fingerprint(who.id)+'）；RLS 可读取本人 '+d.qa_data_owner_row_count+' 条 QA 记录。该新会话仅用于本次验证，不存储登录 token。','good');
+  return true;
+ }catch(_){
+  msg('p992CallbackMsg','Google 回调无法确认身份或 QA 数据。可能是网络、已失效会话或 TOTP 验证要求，未标记通过。','warn');return false;
+ }
+}
 
 controls();p983UpdateButtons();p987UpdateButtons();
 })();

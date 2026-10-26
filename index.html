@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="referrer" content="no-referrer"><meta name="robots" content="noindex,nofollow">
-<title>MMHVAULT · P9.92 GitHub Pages Auth QA</title>
+<title>MMHVAULT · P9.93 GitHub Pages Auth QA</title>
 <style>
 :root{color-scheme:dark;--gold:#e8bd64;--text:#eaf0fa;--muted:#a8bdcd;--blue:#08253a;--line:#3a5a74;--danger:#f6ab99;--ok:#89e6b9}
 *{box-sizing:border-box}html{font-family:Inter,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;background:#03101e;color:var(--text)}body{margin:0;min-height:100vh;background:radial-gradient(ellipse 75% 50% at 75% 0%,#174266 0,transparent 68%),linear-gradient(155deg,#04111f,#0a1728 65%,#071018);padding:clamp(16px,3vw,44px)}
@@ -31,7 +31,7 @@ main{max-width:1090px;margin:0 auto}.top{display:flex;gap:14px;align-items:cente
 </head>
 <body>
 <main>
-<header class="top"><div><div class="brand">MMHVAULT</div><span class="small">P9.92 · GitHub Pages QA · Isolated Supabase</span></div><span class="flag">STAGING ONLY · 不连接正式财务数据</span></header>
+<header class="top"><div><div class="brand">MMHVAULT</div><span class="small">P9.93 · GitHub Pages QA · Isolated Supabase</span></div><span class="flag">STAGING ONLY · 不连接正式财务数据</span></header>
 <div class="deploy-warning hidden" id="deployNotice" role="status">您目前不是从正式测试地址打开页面。请先将 <code>index.html</code> 上传到新仓库并启用 GitHub Pages，然后打开 <a href="https://myintmoehein0115024.github.io/MMHVAULT-Auth-QA/" rel="noopener noreferrer">https://myintmoehein0115024.github.io/MMHVAULT-Auth-QA/</a>。不要直接双击本地 HTML。</div>
 <section id="emailCallbackBanner" class="hidden" role="status" aria-live="polite" aria-atomic="true">
  <div class="banner-title" id="emailCallbackTitle">邮箱恢复状态</div>
@@ -266,6 +266,41 @@ main{max-width:1090px;margin:0 auto}.top{display:flex;gap:14px;align-items:cente
   <div class="notice">与 P9.91 的「关联 Google」不同：这次是<strong>真正的独立 Google 登录</strong>。请勿重复关联，也不要删除或合并账号。Google 登录回调遇到错误或 PKCE 验证要求时将明确显示未通过；不要截图地址栏中的临时 token、code。</div>
  </div>
  <p class="small">最终验收需：16A / 16B 两项 UID 一致，16C Google OAuth 新会话属于 <code>haochen05024</code> 且可读取原有 QA 数据。未授权前不能宣称三种登录全通过。</p>
+</section>
+
+<section class="panel full" id="p993Section">
+ <h2>17 · 登录会话与数据隔离回归（P9.93）</h2>
+ <p>针对隔离 Supabase 的真实会话进行<strong>只读核验</strong>、<strong>当前会话本地范围注销</strong>、<strong>旧令牌数据门禁</strong>与<strong>跨账号查询隔离</strong>测试。不会修改密码、恢复码、Google 身份或任何财务数据。</p>
+ <div class="notice guard-note"><strong>先读说明：</strong>这里的「清除浏览器内存」与服务器真正注销不同。17B 会在您主动点击后请求 Supabase <code>scope=local</code> 退出<strong>当前 QA 会话</strong>，不会主动撤销其他设备。服务器端退出后 JWT 可能在有效期内仍被其他接口接受；验收以受保护 QA 数据是否被 RLS 拒绝为准。测试中不要刷新页面。</div>
+ <div class="cols">
+  <div class="stack">
+   <h2 style="margin-bottom:0">17A · 检查当前会话与可选 TOTP</h2>
+   <p class="small">先使用第 4 区或第 10B 区登录隔离测试账号；如已启用 TOTP，请先在第 6 区完成验证。读取本人 UID、当前会话对个人 QA 表的访问，以及是否已有已验证 TOTP。不会保存任何 JWT。</p>
+   <button id="p993Inspect" type="button">核验当前会话、TOTP 与本人数据</button>
+   <div id="p993InspectMsg" class="msg" aria-live="polite">等待登录测试账号。还未进行服务器端退出。</div>
+  </div>
+  <div class="stack">
+   <h2 style="margin-bottom:0">17B · 服务器端退出当前会话</h2>
+   <p class="small">17A 通过后点击下方按钮，将向 Supabase 发送<strong>实际的 local scope 登出</strong>，然后使用刚刚的旧 JWT 在内存中做一次 RLS 只读检测，并立刻清除。<strong>此操作会退出当前测试账号。</strong></p>
+   <button id="p993Logout" type="button" class="secondary" disabled>安全退出当前 QA 会话并测试旧令牌</button>
+   <div id="p993LogoutMsg" class="msg" aria-live="polite">还未退出。若只想核验不退出，可以停留在 17A。</div>
+  </div>
+ </div>
+ <div class="cols" style="margin-top:17px">
+  <div class="stack">
+   <h2 style="margin-bottom:0">17C · 用另一个账号验证 RLS 隔离</h2>
+   <p class="small">完成 17B 后，在第 4 区登录另一个已有测试账号（例如 <code>qa_test_2026</code> 或 <code>tester_2026</code>），再点此处。将核实不同 UID、只读得到本人的记录，并尝试读取 17A 保存的一条原账号记录 ID，预期为 <strong>0 条</strong>。</p>
+   <button id="p993Cross" type="button" class="secondary" disabled>核验跨账号读取被 RLS 拒绝</button>
+   <div id="p993CrossMsg" class="msg" aria-live="polite">等待 17A → 17B，再登录第二个 QA 测试账号。TOTP 账号先完成第 6 区。</div>
+  </div>
+  <div class="stack">
+   <h2 style="margin-bottom:0">17D · 密码变更与 Google 会话</h2>
+   <p class="small">P9.83 已测试改密前后旧 JWT 的受保护数据访问；P9.92 已测试 Google OAuth 独立登录。这里保留安全验收边界：<strong>以上结果不能推导出所有未加会话门禁的生产表或 API 都会立刻撤销 JWT。</strong></p>
+   <button id="p993GoOld" type="button" class="secondary">查看第 12 区旧 JWT 测试</button>
+   <div id="p993ReferenceMsg" class="msg">当前已完成的 P9.83、P9.92 验收无需重新设置密码或 Google 账号。TOTP 是自愿启用的；一旦启用，受保护 QA 数据需 AAL2。</div>
+  </div>
+ </div>
+ <p class="small">判定标准：17A 能读取本人数据，17B 退出后旧令牌不能读受保护数据，17C 切换身份后无法读取 17A 的记录。即使以上通过，也不等于正式 MMHVAULT 全站所有接口完成回归。</p>
 </section>
 </main>
 <script>
@@ -1105,6 +1140,119 @@ async function p992OAuthReturn(bearer){
   msg('p992CallbackMsg','Google 回调无法确认身份或 QA 数据。可能是网络、已失效会话或 TOTP 验证要求，未标记通过。','warn');return false;
  }
 }
+
+
+// P9.93 – browser-only session security regression; user-initiated local signout.
+// No OAuth link/recovery data modifications; all sampled tokens exist in JS RAM only.
+let p993Baseline=null,p993LogoutPassed=false;
+const p993Current=()=>typeof accessToken==='string'&&accessToken.length>60;
+async function p993Rows(jwt,filterId=''){
+ const controller=new AbortController(),t=setTimeout(()=>controller.abort(),12000);
+ try{
+  const path='/rest/v1/mmh_p973_owner_isolation_qa?select=id,user_id&limit=50'+(filterId?'&id=eq.'+encodeURIComponent(filterId):'');
+  const r=await fetch(BASE+path,{headers:{apikey:PUBLIC_KEY,Authorization:'Bearer '+jwt,Accept:'application/json'},cache:'no-store',mode:'cors',signal:controller.signal});
+  if(!r.ok)return {status:r.status,rows:null};
+  const rows=await r.json();if(!Array.isArray(rows))throw Error('invalid_rows');
+  return {status:r.status,rows};
+ }finally{clearTimeout(t);}
+}
+async function p993User(jwt){
+ const controller=new AbortController(),t=setTimeout(()=>controller.abort(),12000);
+ try{
+  const r=await fetch(BASE+'/auth/v1/user',{headers:{apikey:PUBLIC_KEY,Authorization:'Bearer '+jwt},cache:'no-store',mode:'cors',signal:controller.signal});
+  if(!r.ok)return {status:r.status,user:null};
+  const user=await r.json();return {status:r.status,user};
+ }finally{clearTimeout(t);}
+}
+function p993Buttons(){
+ by('p993Logout').disabled=pending||!p993Baseline||!p993Current()||p993LogoutPassed;
+ by('p993Cross').disabled=pending||!p993Baseline||!p993LogoutPassed||!p993Current();
+}
+by('p993GoOld').addEventListener('click',()=>by('p983Section').scrollIntoView({behavior:'smooth',block:'start'}));
+by('p993Inspect').addEventListener('click',async()=>{
+ if(pending)return;
+ if(!p993Current()){msg('p993InspectMsg','先在第 4 区或 10B 区登录当前测试账号。','warn');return;}
+ pending=true;controls();by('p993Inspect').disabled=true;
+ try{
+  const jwt=accessToken;
+  const [a,d]=await Promise.all([p993User(jwt),p993Rows(jwt)]);
+  if(a.status!==200||!validUuid(a.user?.id))throw Error('Supabase Auth 未确认当前会话');
+  const factors=Array.isArray(a.user.factors)?a.user.factors:[];
+  const enrolled=factors.some(f=>f.factor_type==='totp'&&f.status==='verified');
+  if(d.status!==200||!d.rows)throw Error('受保护数据 HTTP '+d.status+'，不能视为通过');
+  if(d.rows.some(row=>row.user_id!==a.user.id))throw Error('❌ 发现跨 UID 记录，立即暂停验收');
+  if(d.rows.length===0){
+   msg('p993InspectMsg',enrolled?'此账号启用了 TOTP，当前会话看不到受保护 QA 数据。请先到第 6 区验证后重试。':'本账号当前没有可见 QA 记录，尚无法进行退出对比。','warn');
+   p993Baseline=null;p993LogoutPassed=false;return;
+  }
+  const first=d.rows[0];
+  const firstId=String(first.id??'');
+  if(!/^\d{1,18}$/.test(firstId))throw Error('首条 QA 记录 ID 格式异常');
+  p993Baseline={uid:a.user.id,count:d.rows.length,recordId:firstId,username:currentUsername,startedAt:Date.now()};
+  p993LogoutPassed=false;
+  msg('p993InspectMsg','✅ 17A 通过：当前会话只读取本人 '+d.rows.length+' 条 QA 记录；'+(enrolled?'本账号已启用 TOTP，会话已通过受保护数据门禁。':'本账号未启用 TOTP，AAL1 可访问本人数据。')+' UID 与示例 ID 仅暂存于当前标签页内存。','good');
+  msg('p993LogoutMsg','已准备服务器端退出；点击本按钮后当前 QA 会话将真正注销。');
+  msg('p993CrossMsg','等待完成 17B。');
+ }catch(e){p993Baseline=null;p993LogoutPassed=false;msg('p993InspectMsg','17A 尚未通过：'+String(e?.message||'网络错误'),'warn');}
+ finally{pending=false;controls();by('p993Inspect').disabled=false;p993Buttons();}
+});
+by('p993Logout').addEventListener('click',async()=>{
+ if(pending||!p993Baseline||!p993Current()||p993LogoutPassed)return;
+ if(Date.now()-p993Baseline.startedAt>12*60*1000){p993Baseline=null;msg('p993LogoutMsg','17A 记录超过 12 分钟，请重新登录检查。','warn');p993Buttons();return;}
+ pending=true;controls();p993Buttons();
+ let former=accessToken;let okLogout=false;
+ try{
+  const identity=await p993User(former);
+  if(identity.status!==200||identity.user?.id!==p993Baseline.uid)throw Error('当前身份已经变化，请重新执行 17A');
+  const c=new AbortController(),t=setTimeout(()=>c.abort(),12000);
+  let response;
+  try{response=await fetch(BASE+'/auth/v1/logout?scope=local',{method:'POST',mode:'cors',cache:'no-store',headers:{apikey:PUBLIC_KEY,Authorization:'Bearer '+former},signal:c.signal});}
+  finally{clearTimeout(t);}
+  if(!response.ok)throw Error('Supabase 退出请求 HTTP '+response.status+'，尚未确认注销');
+  okLogout=true;
+  // Clear the only browser login reference before attempting the old-JWT probe.
+  forget();p983ClearState();p992Baseline=null;p992EmailPassed=false;
+  by('p992GoogleLogin').classList.add('hidden');by('p992GoogleLogin').removeAttribute('href');
+  const result=await Promise.allSettled([p993Rows(former),p993User(former)]);
+  if(result[0].status!=='fulfilled'){
+   msg('p993LogoutMsg','服务器已接受 local 登出，浏览器会话已清除；但旧 JWT 读数请求超时，不能证明 RLS 已撤销。','warn');return;
+  }
+  const d=result[0].value;
+  const denied=(d.status===200&&Array.isArray(d.rows)&&d.rows.length===0)||d.status===401||d.status===403;
+  p993LogoutPassed=denied;
+  const auth=(result[1].status==='fulfilled')?result[1].value.status:'不可确认';
+  if(denied){
+   msg('p993LogoutMsg','✅ 17B 通过：Supabase 接受当前会话 local 登出；受保护 QA 数据已拒绝旧 JWT（'+(d.status===200?'HTTP 200 / 0 条':'HTTP '+d.status)+'）。Auth 用户接口状态 '+auth+'。JWT 是否在其他接口到期前有效不能由此推断。','good');
+   msg('p993CrossMsg','17B 已通过。现在在第 4 区登录另一个测试账号，然后点击 17C。');
+  }else{
+   msg('p993LogoutMsg','❌ 注意：服务器已接受退出，但旧 JWT 的受保护 QA 数据返回 '+(d.status===200?d.rows.length+' 条':'HTTP '+d.status)+'。本轮会话撤销验收不通过，请暂停上线并检查会话门禁。','error');
+  }
+ }catch(e){
+  msg('p993LogoutMsg','17B 未确认完成：'+String(e?.message||'网络错误')+'。请先在第 4 区重新登录检查，不要假定服务器会话已撤销。','warn');
+ }finally{
+  former='';pending=false;controls();p993Buttons();
+  if(!okLogout)msg('p993CrossMsg','17B 未完成服务器端登出，不能开始切换账号验收。','warn');
+ }
+});
+by('p993Cross').addEventListener('click',async()=>{
+ if(pending||!p993LogoutPassed||!p993Baseline||!p993Current()){
+  msg('p993CrossMsg','需要先完成 17A、17B，再用另一测试账号重新登录。','warn');return;
+ }
+ pending=true;controls();p993Buttons();
+ try{
+  const jwt=accessToken;
+  const [a,owned,foreign]=await Promise.all([p993User(jwt),p993Rows(jwt),p993Rows(jwt,p993Baseline.recordId)]);
+  if(a.status!==200||!validUuid(a.user?.id))throw Error('新账号 Auth 身份未验证');
+  if(a.user.id===p993Baseline.uid)throw Error('登录的仍是原账号，请改用另一个 QA 账号');
+  if(owned.status!==200||!owned.rows||owned.rows.length<1)throw Error('新账号没有可见 QA 数据；已启用 TOTP 时先完成第 6 区');
+  if(owned.rows.some(r=>r.user_id!==a.user.id))throw Error('❌ 跨 UID 数据泄露，暂停测试');
+  if(foreign.status!==200||!foreign.rows)throw Error('跨账号定向读取 HTTP '+foreign.status+'，状态不能确认');
+  if(foreign.rows.length!==0)throw Error('❌ 对方账号的记录仍可读取，立即停止上线');
+  msg('p993CrossMsg','✅ 17C 通过：不同 UID 的第二个账号能读取自己 '+owned.rows.length+' 条 QA 记录，对 17A 原账号记录的定向查询为 HTTP 200 / 0 条。没有修改任何 QA 数据。','good');
+ }catch(e){msg('p993CrossMsg','17C 尚未通过：'+String(e?.message||'网络错误'),'warn');}
+ finally{pending=false;controls();p993Buttons();}
+});
+p993Buttons();
 
 controls();p983UpdateButtons();p987UpdateButtons();
 })();

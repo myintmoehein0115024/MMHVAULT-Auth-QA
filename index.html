@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="referrer" content="no-referrer"><meta name="robots" content="noindex,nofollow">
-<title>MMHVAULT · P9.83 GitHub Pages Auth QA</title>
+<title>MMHVAULT · P9.87 GitHub Pages Auth QA</title>
 <style>
 :root{color-scheme:dark;--gold:#e8bd64;--text:#eaf0fa;--muted:#a8bdcd;--blue:#08253a;--line:#3a5a74;--danger:#f6ab99;--ok:#89e6b9}
 *{box-sizing:border-box}html{font-family:Inter,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;background:#03101e;color:var(--text)}body{margin:0;min-height:100vh;background:radial-gradient(ellipse 75% 50% at 75% 0%,#174266 0,transparent 68%),linear-gradient(155deg,#04111f,#0a1728 65%,#071018);padding:clamp(16px,3vw,44px)}
@@ -14,14 +14,14 @@ main{max-width:1090px;margin:0 auto}.top{display:flex;gap:14px;align-items:cente
 #emailCallbackBanner .banner-title{font-size:19px;font-weight:800;color:#f3cd85;margin-bottom:7px}
 #emailCallbackBanner p{margin:6px 0 13px;color:var(--text);line-height:1.7}
 #emailResetFinish,#emailRecoverForm{scroll-margin-top:22px}
-#p983Section{scroll-margin-top:24px}#p983Section .test-steps{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;margin:14px 0}#p983Section .test-step{padding:15px;border:1px solid #3c657e;border-radius:14px;background:#092337;min-width:0}#p983Section .test-step strong{display:block;color:#f0d48f;margin-bottom:8px}#p983Section .test-step p{margin:0 0 10px}#p983Section .test-step button{width:100%}#p983Section .privacy-note{border-color:#a98e57;background:#152a36} @media(max-width:820px){#p983Section .test-steps{grid-template-columns:1fr}}
+#p987Section{scroll-margin-top:24px}#p983Section{scroll-margin-top:24px}#p983Section .test-steps{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;margin:14px 0}#p983Section .test-step{padding:15px;border:1px solid #3c657e;border-radius:14px;background:#092337;min-width:0}#p983Section .test-step strong{display:block;color:#f0d48f;margin-bottom:8px}#p983Section .test-step p{margin:0 0 10px}#p983Section .test-step button{width:100%}#p983Section .privacy-note{border-color:#a98e57;background:#152a36} @media(max-width:820px){#p983Section .test-steps{grid-template-columns:1fr}}
 #emailResetFinish.recovery-active{border:1px solid #7ccfa7;padding:14px;border-radius:13px;background:#082f31}
 @media(max-width:540px){#emailCallbackBanner{padding:14px}#emailCallbackBanner .row>*{width:100%}}
 </style>
 </head>
 <body>
 <main>
-<header class="top"><div><div class="brand">MMHVAULT</div><span class="small">P9.83 · GitHub Pages QA · Isolated Supabase</span></div><span class="flag">STAGING ONLY · 不连接正式财务数据</span></header>
+<header class="top"><div><div class="brand">MMHVAULT</div><span class="small">P9.87 · GitHub Pages QA · Isolated Supabase</span></div><span class="flag">STAGING ONLY · 不连接正式财务数据</span></header>
 <div class="deploy-warning hidden" id="deployNotice" role="status">您目前不是从正式测试地址打开页面。请先将 <code>index.html</code> 上传到新仓库并启用 GitHub Pages，然后打开 <a href="https://myintmoehein0115024.github.io/MMHVAULT-Auth-QA/" rel="noopener noreferrer">https://myintmoehein0115024.github.io/MMHVAULT-Auth-QA/</a>。不要直接双击本地 HTML。</div>
 <section id="emailCallbackBanner" class="hidden" role="status" aria-live="polite" aria-atomic="true">
  <div class="banner-title" id="emailCallbackTitle">邮箱恢复状态</div>
@@ -162,6 +162,28 @@ main{max-width:1090px;margin:0 auto}.top{display:flex;gap:14px;align-items:cente
 </section>
 </div>
 <footer class="footer">这是 GitHub Pages 上的隔离验收工具，并非正式 MMHVAULT 金融网站。不要上传服务端 Secret、完整 JWT、真实密码或恢复码。请使用新建的隔离测试账号；本页面不提供绕过 CAPTCHA 的功能。</footer>
+
+<section class="panel full" id="p987Section">
+ <h2>13 · 原邮箱账号绑定用户名（P9.87）</h2>
+ <p>已有真实邮箱测试账号可新增<strong>用户名＋原密码登录</strong>。绑定后仍是<strong>同一个 Supabase Auth UID</strong>，原邮箱、密码、QA 数据及邮件找回入口不会改变。本步骤不会创建新账号，也不会更改正式 MMHVAULT。</p>
+ <div class="notice" style="margin-bottom:14px;border-color:#ad8b48">只适用于隔离环境的<strong>已验证邮箱＋密码账号</strong>。请先在第 10B 区登录，若已启用 TOTP 请先到第 6 区验证。用户名一经绑定本阶段暂不提供自助解绑或改名。原邮箱账号仍通过第 10C 区找回密码；不会产生用户名恢复码。不要把密码或会话令牌发到聊天里。</div>
+ <div class="row" style="margin-bottom:12px"><button type="button" class="secondary" id="p987StatusBtn">检查用户名绑定服务</button></div>
+ <div class="msg" id="p987StatusMsg" aria-live="polite">绑定服务尚未检查。</div>
+ <form id="p987BindForm" class="stack" autocomplete="off" style="margin-top:16px">
+  <h2>13A · 给当前邮箱账号增加用户名</h2>
+  <div><label for="p987Username">新的用户名（4–20 位，英文小写字母开头，可含数字和下划线）</label><input id="p987Username" maxlength="20" autocomplete="off" spellcheck="false" placeholder="my_qa_username" required></div>
+  <div><label for="p987Display">显示昵称（可选，不影响用户名）</label><input id="p987Display" maxlength="60" autocomplete="off" placeholder="与用户名相同即可"></div>
+  <div><label for="p987Password">当前邮箱账号密码（重新验证，不会替换）</label><input type="password" id="p987Password" maxlength="128" autocomplete="current-password" required></div>
+  <button type="submit" id="p987BindBtn" disabled>验证身份并绑定到原邮箱 UID</button>
+  <div class="msg" id="p987BindMsg" aria-live="polite">请先完成第 10B 区邮箱登录。此处不会创建新账号，也不会展示身份令牌。</div>
+ </form>
+ <div class="stack" style="margin-top:20px">
+  <h2>13B · 验证两种登录方式是否指向同一账号</h2>
+  <p class="small">绑定成功后，不关闭、不刷新本页，直接到第 4 区使用<strong>刚绑定的用户名＋原邮箱密码</strong>重新登录，再返回此处点击核对。原邮箱登录仍可通过第 10B 区继续使用。</p>
+  <div class="row"><button type="button" class="secondary" id="p987ToUsernameLogin">前往第 4 区用户名登录</button><button type="button" id="p987CompareUid" disabled>核对原 UID 与本人 QA 数据</button></div>
+  <div class="msg" id="p987VerifyMsg" aria-live="polite">绑定成功后，本页只在内存里暂存原账号 UID 用于比对。不会显示、复制或保存 JWT。</div>
+ </div>
+</section>
 </main>
 <script>
 (()=>{'use strict';
@@ -171,12 +193,13 @@ const ENDPOINT=BASE+'/functions/v1/mmhvault-username-auth';
 const PUBLIC_KEY='sb_publishable_ybvR0N64tgKBzdlJeMQi9A_hvnziPce';
 let flags={registration_enabled:false,login_enabled:false},token='',widget=null,accessToken='',pending=false,recoveryCodesTemp=[],factorId='',pendingTotp=null,totpQrUrl='',mfaDone=false;
 let currentUsername='',mfaEnabled=null;
+let p987OriginalUid='',p987BoundUsername='';
 // P9.83: old JWT stays in this tab's RAM only; never log or store it.
 let p983OldJwt='',p983CapturedAt=0,p983Username='',p983Uid='',p983Baseline=0,p983PasswordChanged=false,p983OldTestPassed=false,p983NewTestPassed=false,p983ExpiryTimer=null;
 let emailSignupReady=false,emailRecoverReady=false,emailIdentityActive=false,recoveryBearer='';
 const by=id=>document.getElementById(id);
 const msg=(id,text,state='')=>{const e=by(id);e.textContent=text;e.className='msg '+state;};
-function controls(){by('registerButton').disabled=pending||!flags.registration_enabled||!token;by('loginButton').disabled=pending||!flags.login_enabled;by('verifyUser').disabled=!accessToken||pending;by('mfaInspect').disabled=pending||!accessToken;by('mfaEnroll').disabled=pending||!accessToken||!!factorId;by('mfaVerify').disabled=pending||!accessToken||!factorId;by('deviceRequest').disabled=pending||!accessToken||!mfaDone;by('deviceStatus').disabled=pending||!accessToken;by('ownerTest').disabled=pending||!accessToken;by('changePasswordButton').disabled=pending||!accessToken||!flags.login_enabled||!currentUsername; by('emailCreateFixture').disabled=pending||!emailIdentityActive||!accessToken;by('emailVerifyFixture').disabled=pending||!emailIdentityActive||!accessToken;by('emailSignupButton').disabled=pending||!emailSignupReady||!token;by('emailLoginButton').disabled=pending;by('emailRecoverButton').disabled=pending||!emailRecoverReady||!token; if(by('p983Capture'))p983UpdateButtons();}
+function controls(){by('registerButton').disabled=pending||!flags.registration_enabled||!token;by('loginButton').disabled=pending||!flags.login_enabled;by('verifyUser').disabled=!accessToken||pending;by('mfaInspect').disabled=pending||!accessToken;by('mfaEnroll').disabled=pending||!accessToken||!!factorId;by('mfaVerify').disabled=pending||!accessToken||!factorId;by('deviceRequest').disabled=pending||!accessToken||!mfaDone;by('deviceStatus').disabled=pending||!accessToken;by('ownerTest').disabled=pending||!accessToken;by('changePasswordButton').disabled=pending||!accessToken||!flags.login_enabled||!currentUsername; by('emailCreateFixture').disabled=pending||!emailIdentityActive||!accessToken;by('emailVerifyFixture').disabled=pending||!emailIdentityActive||!accessToken;by('emailSignupButton').disabled=pending||!emailSignupReady||!token;by('emailLoginButton').disabled=pending;by('emailRecoverButton').disabled=pending||!emailRecoverReady||!token; if(by('p983Capture'))p983UpdateButtons(); if(by('p987BindBtn'))p987UpdateButtons();}
 function origin(){return location.origin;}
 by('origin').textContent=origin()==='null'?'file://（请打开已发布的 GitHub Pages）':origin();
 if(location.origin!==EXPECTED_ORIGIN)by('deployNotice').classList.remove('hidden');
@@ -676,7 +699,75 @@ by('p983CheckNew').addEventListener('click',async()=>{
  finally{pending=false;controls();p983UpdateButtons();}
 });
 
-controls();p983UpdateButtons();
+
+// P9.87: link verified email to username using an isolated service. No browser persistence.
+const P987_URL=BASE+'/functions/v1/mmhvault-bind-username-qa';
+function p987UpdateButtons(){
+ by('p987StatusBtn').disabled=pending;
+ by('p987BindBtn').disabled=pending||!accessToken||!emailIdentityActive;
+ by('p987CompareUid').disabled=pending||!accessToken||!p987OriginalUid||emailIdentityActive||currentUsername!==p987BoundUsername;
+}
+async function p987Api(body,bearer=''){
+ const controller=new AbortController(),timer=setTimeout(()=>controller.abort(),17000);
+ try{
+  const headers={'Content-Type':'application/json',apikey:PUBLIC_KEY};
+  if(bearer)headers.Authorization='Bearer '+bearer;
+  const response=await fetch(P987_URL,{method:'POST',mode:'cors',cache:'no-store',headers,body:JSON.stringify(body),signal:controller.signal});
+  let data={};try{data=await response.json();}catch(_){}
+  return {ok:response.ok,status:response.status,data};
+ }finally{clearTimeout(timer);}
+}
+by('p987StatusBtn').addEventListener('click',async()=>{
+ if(pending)return;pending=true;controls();msg('p987StatusMsg','正在只读检查独立绑定服务…');
+ try{const r=await p987Api({action:'status'});
+ if(r.ok&&r.data.environment==='isolated_qa'&&r.data.available===true&&r.data.existing_uid_only===true)
+ msg('p987StatusMsg','P9.87 绑定服务已就绪：只允许给当前已验证邮箱身份增加用户名，不会创建新 UID。','good');
+ else msg('p987StatusMsg','尚未就绪：'+String(r.data.error||'HTTP '+r.status),'warn');
+ }catch(_){msg('p987StatusMsg','服务连接失败。请确认网页已经上传和隔离 Supabase 可访问。','error');}
+ finally{pending=false;controls();}
+});
+by('p987BindForm').addEventListener('submit',async e=>{
+ e.preventDefault();
+ if(pending||!accessToken||!emailIdentityActive){msg('p987BindMsg','请先在第 10B 区登录已验证邮箱账号。','warn');return;}
+ const username=by('p987Username').value.trim().toLowerCase(),display_name=by('p987Display').value.trim()||username;
+ const pwd=by('p987Password').value;
+ if(!/^[a-z][a-z0-9_]{3,19}$/.test(username)||[...display_name].length>60||!pwd){msg('p987BindMsg','用户名必须为 4–20 位英文小写开头的字母、数字或下划线，并提供当前邮箱密码。','warn');return;}
+ pending=true;controls();msg('p987BindMsg','正在验证原邮箱登录、当前密码和会话安全状态…');
+ try{
+  const verified=await authReq('/user');
+  if(!validUuid(verified.id)||!verified.email_confirmed_at)throw Error('当前账号的邮箱身份尚未通过服务器验证');
+  const r=await p987Api({action:'bind',username,display_name,current_password:pwd},accessToken);
+  if(!r.ok||r.data.bound!==true){
+   const errors={binding_rejected_or_username_taken:'用户名可能已被使用，或当前账号已绑定用户名；没有创建新账号。',invalid_credentials:'当前邮箱密码不正确。',too_many_attempts:'请求次数过多，请稍后再尝试。',verified_email_session_required:'请重新登录已验证邮箱账号。',binding_temporarily_unavailable:'服务暂时不可用，结果未确认；请先核对后再尝试。'};
+   msg('p987BindMsg',errors[r.data.error]||('绑定未完成：'+String(r.data.error||'HTTP '+r.status)),'warn');return;
+  }
+  p987OriginalUid=verified.id;p987BoundUsername=username;
+  msg('p987BindMsg','✅ 绑定成功！用户名已关联原邮箱账号，没有新增 UID、修改原密码或移走本人 QA 数据。现在可以用用户名＋相同密码登录第 4 区。','good');
+  msg('p987VerifyMsg','13A 已成功；下一步请在第 4 区使用新用户名＋原邮箱密码登录，再验证同一 UID 与本人数据。','good');
+  by('loginUsername').value=username;
+ }catch(error){msg('p987BindMsg','绑定无法确认：'+String(error.message||'network_error')+'。请不要连续重复提交。','error');}
+ finally{by('p987Password').value='';pending=false;controls();}
+});
+by('p987ToUsernameLogin').addEventListener('click',()=>{
+ by('loginForm').scrollIntoView({behavior:'smooth',block:'start'});
+ by('loginUsername').focus({preventScroll:true});
+});
+by('p987CompareUid').addEventListener('click',async()=>{
+ if(pending||!accessToken||!p987OriginalUid||emailIdentityActive||currentUsername!==p987BoundUsername)return;
+ pending=true;controls();msg('p987VerifyMsg','核对当前用户名会话与绑定之前的原邮箱 UID…');
+ try{
+  const verified=await authReq('/user');
+  if(verified.id!==p987OriginalUid){msg('p987VerifyMsg','❌ 当前 UID 与原邮箱身份不相同。请停止测试并核对绑定状态。','error');return;}
+  const result=await fetch(BASE+'/rest/v1/mmh_p973_owner_isolation_qa?select=id',{
+   method:'GET',headers:{apikey:PUBLIC_KEY,Authorization:'Bearer '+accessToken},cache:'no-store'});
+  const rows=result.ok?await result.json():null;
+  if(!result.ok||!Array.isArray(rows)||!rows.length){msg('p987VerifyMsg','UID 相同，但无法核实本人 QA 数据：可能需要完成 TOTP，或测试表暂时不可用。','warn');return;}
+  msg('p987VerifyMsg','✅ P9.87 验收通过：新用户名会话与原邮箱账号是同一个 UID，且可读取本人 '+rows.length+' 条 QA 记录。邮箱登录与原邮箱找回仍可继续使用。','good');
+ }catch(_){msg('p987VerifyMsg','网络异常，无法完成比对；不代表验证已通过。','error');}
+ finally{pending=false;controls();}
+});
+
+controls();p983UpdateButtons();p987UpdateButtons();
 })();
 </script>
 </body></html>

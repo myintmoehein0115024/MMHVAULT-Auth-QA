@@ -3,20 +3,31 @@
 <head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="referrer" content="no-referrer"><meta name="robots" content="noindex,nofollow">
-<title>MMHVAULT · P9.76 GitHub Pages Auth QA</title>
+<title>MMHVAULT · P9.77 GitHub Pages Auth QA</title>
 <style>
 :root{color-scheme:dark;--gold:#e8bd64;--text:#eaf0fa;--muted:#a8bdcd;--blue:#08253a;--line:#3a5a74;--danger:#f6ab99;--ok:#89e6b9}
 *{box-sizing:border-box}html{font-family:Inter,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;background:#03101e;color:var(--text)}body{margin:0;min-height:100vh;background:radial-gradient(ellipse 75% 50% at 75% 0%,#174266 0,transparent 68%),linear-gradient(155deg,#04111f,#0a1728 65%,#071018);padding:clamp(16px,3vw,44px)}
 main{max-width:1090px;margin:0 auto}.top{display:flex;gap:14px;align-items:center;justify-content:space-between;flex-wrap:wrap;margin-bottom:24px}.brand{font:700 22px Georgia,serif;color:var(--gold);letter-spacing:.08em}.small{font-size:12px;color:var(--muted)}.flag{border:1px solid #9f8244;border-radius:30px;padding:6px 12px;font-size:12px;color:var(--gold);background:#e7bd6513}h1{font:650 clamp(24px,3vw,38px) Georgia,serif;margin:5px 0 9px}h2{font-size:18px;margin:0 0 14px}p{color:var(--muted);line-height:1.7;font-size:14px}a{color:var(--gold)}.intro{margin-bottom:22px}.cols{display:grid;grid-template-columns:1fr 1fr;gap:16px}.panel{border:1px solid #41698588;background:linear-gradient(145deg,#1539549e,#05192bac);border-radius:22px;padding:clamp(17px,2vw,27px);box-shadow:0 22px 65px #0006;min-width:0}.full{grid-column:1/-1}.stack{display:grid;gap:13px}label{font-size:13px;color:#c2d4e4;display:block;margin-bottom:5px}input{width:100%;border:1px solid #466781;background:#061a2b;color:var(--text);border-radius:12px;min-height:45px;padding:11px 13px;font-size:16px}input:focus{outline:2px solid #ddb564;outline-offset:1px}button{background:linear-gradient(120deg,#f0d68d,#e6b65e);color:#101b23;border:0;padding:12px 17px;min-height:43px;border-radius:12px;font-weight:750;font-size:14px;cursor:pointer}button.secondary{background:#153b55;color:#e6edf7;border:1px solid #426782}button:disabled{filter:grayscale(.5);cursor:not-allowed;opacity:.55}.row{display:flex;align-items:center;gap:10px;flex-wrap:wrap}.grow{flex:1}.notice{border:1px solid #4d6b80;background:#061827;color:#c9d9e6;padding:12px 14px;border-radius:13px;line-height:1.65;font-size:13px}.msg{min-height:42px;border-left:3px solid #6382a6;background:#0b2132;padding:11px 12px;border-radius:5px 11px 11px 5px;font-size:13px;line-height:1.5;overflow-wrap:anywhere}.msg.good{border-color:#69c9a2;color:var(--ok)}.msg.warn{border-color:#e6b65e;color:#ffdc95}.msg.error{border-color:#dd877b;color:var(--danger)}.state-pill{border-radius:100px;border:1px solid var(--line);padding:6px 10px;font-size:12px;white-space:nowrap}.status-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}.status-grid>div{background:#061829;border:1px solid #315a76;padding:12px;border-radius:12px;min-width:0}.status-grid strong{display:block;font-size:13px;overflow-wrap:anywhere}.status-grid span{font-size:12px;color:var(--muted)}.token{background:#061625;border:1px solid #315876;border-radius:12px;padding:12px;font:12px/1.8 ui-monospace,monospace;white-space:pre-wrap;overflow-wrap:anywhere;max-height:180px;overflow:auto}.hidden{display:none!important}.help{color:var(--muted);font-size:12px;line-height:1.6}.cf-slot{min-height:68px;display:flex;align-items:center;justify-content:start;overflow:hidden}.footer{font-size:12px;color:#8faabc;line-height:1.7;margin:25px 0 0}.off{opacity:.82}
 @media(max-width:760px){.cols{grid-template-columns:1fr}.full{grid-column:auto}.status-grid{grid-template-columns:1fr}.top{margin-bottom:20px}.panel{padding:18px}}@media(max-width:380px){.row>button{width:100%}.cf-slot{transform-origin:left top}}@media(prefers-reduced-motion:reduce){*{scroll-behavior:auto!important}}
 .totp-qr{width:min(240px,100%);background:#fff;border-radius:12px;padding:12px;display:block;margin:12px 0}.totp-secret{font:600 13px/1.7 ui-monospace,SFMono-Regular,Consolas,monospace;word-break:break-all;background:#071827;border:1px solid #34566e;border-radius:12px;padding:12px}.guard-note{color:#f7dba4}.deploy-warning{border:1px solid #c79d53;background:linear-gradient(120deg,#372916,#152a39);border-radius:14px;padding:14px 16px;margin-bottom:20px;color:#f7dba4;line-height:1.65}.deploy-warning a{font-weight:700;color:#ffe3a2;overflow-wrap:anywhere}
+#emailCallbackBanner{background:linear-gradient(130deg,#10283b,#13334a);border:1px solid #b88c45;border-radius:16px;padding:20px;margin-bottom:18px;box-shadow:0 8px 30px #0004}
+#emailCallbackBanner .banner-title{font-size:19px;font-weight:800;color:#f3cd85;margin-bottom:7px}
+#emailCallbackBanner p{margin:6px 0 13px;color:var(--text);line-height:1.7}
+#emailResetFinish,#emailRecoverForm{scroll-margin-top:22px}
+#emailResetFinish.recovery-active{border:1px solid #7ccfa7;padding:14px;border-radius:13px;background:#082f31}
+@media(max-width:540px){#emailCallbackBanner{padding:14px}#emailCallbackBanner .row>*{width:100%}}
 </style>
 </head>
 <body>
 <main>
-<header class="top"><div><div class="brand">MMHVAULT</div><span class="small">P9.75 · GitHub Pages QA · Isolated Supabase</span></div><span class="flag">STAGING ONLY · 不连接正式财务数据</span></header>
+<header class="top"><div><div class="brand">MMHVAULT</div><span class="small">P9.77 · GitHub Pages QA · Isolated Supabase</span></div><span class="flag">STAGING ONLY · 不连接正式财务数据</span></header>
 <div class="deploy-warning hidden" id="deployNotice" role="status">您目前不是从正式测试地址打开页面。请先将 <code>index.html</code> 上传到新仓库并启用 GitHub Pages，然后打开 <a href="https://myintmoehein0115024.github.io/MMHVAULT-Auth-QA/" rel="noopener noreferrer">https://myintmoehein0115024.github.io/MMHVAULT-Auth-QA/</a>。不要直接双击本地 HTML。</div>
-<section class="intro"><h1>用户名与密码登录 · 可选安全增强</h1><p>隔离测试项目的用户名登录无需绑定邮箱、TOTP 或事先批准设备。登录后，个人数据仍必须由 Supabase Auth 用户身份与 RLS 严格隔离。<strong>邮箱注册入口尚未开发</strong>，未来会使用同一套用户级数据隔离机制。本页不会持久保存密码或 JWT；请勿输入正式站点密码。</p></section>
+<section id="emailCallbackBanner" class="hidden" role="status" aria-live="polite" aria-atomic="true">
+ <div class="banner-title" id="emailCallbackTitle">邮箱恢复状态</div>
+ <p id="emailCallbackDetail">这里不会显示任何验证码或登录令牌。</p>
+ <div class="row"><button type="button" id="emailCallbackAction" class="secondary">前往邮箱找回区域</button></div>
+</section>
+<section class="intro"><h1>用户名与密码登录 · 可选安全增强</h1><p>隔离测试项目的用户名登录无需绑定邮箱、TOTP 或事先批准设备。登录后，个人数据仍必须由 Supabase Auth 用户身份与 RLS 严格隔离。<strong>邮箱注册、邮箱确认与账号恢复功能在第 10 区提供独立测试</strong>；普通用户名登录仍保持原样。本页不会持久保存密码或 JWT；请勿输入正式站点密码。</p></section>
 <div class="cols">
  <section class="panel full"><div class="row"><h2 class="grow">1 · 检查服务连接</h2><span id="environment-pill" class="state-pill">未检查</span></div><p>本检查只向隔离项目发送 <code>status</code> 请求，不上传用户名、密码、邮箱或验证码。</p><div class="row"><button id="checkStatus">检查注册和登录状态</button><span class="small">源地址：<code id="origin">—</code></span></div><div class="status-grid" style="margin-top:15px"><div><strong>服务连接</strong><span id="serviceState">未验证</span></div><div><strong>新账号注册</strong><span id="registrationState">未验证</span></div><div><strong>已有账号登录</strong><span id="loginState">未验证</span></div></div><div id="statusMessage" class="msg" style="margin-top:12px" aria-live="polite">请先检查连接状态。网络失败不代表服务已经关闭。</div></section>
  <section class="panel"><h2>2 · Cloudflare Turnstile</h2><p>将 Cloudflare 控制台中的<strong>公开 Sitekey</strong> 粘贴到此处；不要输入或上传 Secret key。</p><div class="stack"><div><label for="sitekey">Sitekey（公开）</label><input id="sitekey" autocomplete="off" spellcheck="false" placeholder="请输入真实测试 Widget 的公开 Sitekey"></div><button class="secondary" id="loadCaptcha">加载真实验证码组件</button><div id="captchaArea" class="cf-slot" aria-label="Turnstile challenge"></div><div id="captchaMessage" class="msg" aria-live="polite">等待加载验证码</div><div class="notice">要求：Cloudflare Turnstile Widget 允许域名 <code>myintmoehein0115024.github.io</code>，服务端 Secret 只存放在测试项目 Supabase Secrets 中，验证用途（action）必须为 <code>mmhvault_register</code>。官方自动通过测试密钥不能用于这里的真实验收。</div></div></section>
@@ -84,7 +95,7 @@ main{max-width:1090px;margin:0 auto}.top{display:flex;gap:14px;align-items:cente
     <div><label for="emailRecoverAddress">已经验证的账号邮箱</label><input type="email" id="emailRecoverAddress" maxlength="254" autocomplete="email" required></div>
     <button id="emailRecoverButton" type="submit" disabled>发送密码重置邮件</button>
     <div id="emailRecoverMessage" class="msg" aria-live="polite">仅适用于通过真实邮箱注册的账号，用户名合成邮箱账号不能使用此功能。</div>
-    <div class="notice">为防邮箱枚举，无论邮箱是否存在，网页都不会告诉其他人该地址有没有注册。邮件链接必须回到这个 GitHub Pages 测试站点。</div>
+    <div class="notice">为防邮箱枚举，无论邮箱是否存在，网页都不会告诉其他人该地址有没有注册。恢复链接只能使用一次；如果点击后提示令牌无效，请重新完成 Cloudflare 验证并申请新的邮件。不要反复点击旧邮件中的链接。</div>
    </form>
    <form id="emailResetFinish" class="stack hidden" autocomplete="off">
     <h2 style="margin-bottom:0">10D · 验证重置邮件后设置新密码</h2>
@@ -398,29 +409,65 @@ by('emailVerifyFixture').addEventListener('click',async()=>{
  }catch(_){msg('emailFixtureMessage','本次核查失败；未能确认邮箱账号的数据隔离。','error');}
  finally{pending=false;controls();}
 });
+// P9.77: keep recovery navigation visible after redirect (without persisting tokens).
+function recoveryNotice(title,detail,targetId,actionText){
+ const banner=by('emailCallbackBanner');
+ by('emailCallbackTitle').textContent=title;
+ by('emailCallbackDetail').textContent=detail;
+ const btn=by('emailCallbackAction');
+ btn.textContent=actionText;
+ btn.onclick=()=>{
+  const target=by(targetId);
+  target?.scrollIntoView({behavior:'smooth',block:'start'});
+  if(targetId==='emailRecoverForm')by('emailRecoverAddress')?.focus({preventScroll:true});
+  if(targetId==='emailResetFinish')by('emailResetNew')?.focus({preventScroll:true});
+ };
+ banner.classList.remove('hidden');
+ // Direct the user to the only meaningful step. Never log the callback hash.
+ requestAnimationFrame(()=>btn.click());
+}
 async function acceptEmailCallback(){
  if(location.origin!==EXPECTED_ORIGIN||location.pathname!=='/MMHVAULT-Auth-QA/')return;
  const fragment=location.hash.slice(1);
- if(!fragment)return;
+ const query=new URLSearchParams(location.search);
+ if(!fragment&&!query.has('error'))return;
  const p=new URLSearchParams(fragment);
- if(!p.has('access_token')&&!p.has('error'))return;
- // Immediately discard the sensitive URL fragment; never store it or send it to analytics.
- history.replaceState(null,'',location.pathname+location.search);
- if(p.has('error')){msg('emailLinkMessage','邮箱确认或恢复链接无效或已过期。请回到邮箱检查最新邮件。','error');return;}
- const bearer=p.get('access_token')||'',kind=p.get('type')||'';
- if(bearer.length<60||!['signup','recovery','email','magiclink'].includes(kind)){msg('emailLinkMessage','邮箱回调参数不符合预期；没有建立会话。','error');return;}
- try{const user=await userForEmail(bearer);
- if(kind==='recovery'){
-  recoveryBearer=bearer;by('emailResetFinish').classList.remove('hidden');
-  msg('emailRecoveryCallbackMessage','已验证真实邮箱恢复链接。请设置新的测试账号密码；密钥只在本页内存中临时使用。','good');
-  msg('emailLinkMessage','已验证恢复链接，请在 10D 区设置新密码。','good');
- }else{
-  forget();accessToken=bearer;emailIdentityActive=true;
-  msg('emailLinkMessage','真实邮箱确认成功，并已核对 Supabase Auth 用户。您可以在第 10E 区创建本人 QA 记录。','good');
-  msg('sessionMessage','邮箱验证返回了已核对的临时会话；如启用 TOTP，请先完成 AAL2。','good');
-  controls();
+ if(!p.has('access_token')&&!p.has('error')&&!query.has('error'))return;
+ // Remove secrets immediately after reading them, prior to network requests.
+ history.replaceState(null,'',location.pathname);
+ if(p.has('error')||query.has('error')){
+  msg('emailLinkMessage','一次性链接没有通过认证服务器验证。请重新申请一封找回邮件，不要重复使用旧链接。','error');
+  recoveryNotice('恢复链接已失效或被使用','本次链接不可继续重置密码。您无需重新注册邮箱：到第 10C 区重新获取一封重置邮件；新的链接请只点击一次。','emailRecoverForm','前往第 10C 区重新申请');
+  return;
  }
- }catch(_){msg('emailLinkMessage','无法验证邮箱回调。不要使用该链接尝试访问数据。','error');}
+ const bearer=p.get('access_token')||'',kind=p.get('type')||'';
+ if(bearer.length<60||!['signup','recovery','email','magiclink'].includes(kind)){
+  msg('emailLinkMessage','邮箱回调参数不符合预期；没有建立会话。','error');
+  recoveryNotice('邮箱链接无法识别','请重新从第 10C 区请求新邮件，或回到正常邮箱登录。','emailRecoverForm','查看邮箱找回入口');
+  return;
+ }
+ try{
+  const user=await userForEmail(bearer);
+  if(kind==='recovery'){
+   recoveryBearer=bearer;
+   emailIdentityActive=false;
+   by('emailResetFinish').classList.remove('hidden');
+   by('emailResetFinish').classList.add('recovery-active');
+   msg('emailRecoveryCallbackMessage','恢复身份已确认。请在这里输入两遍新密码；不要刷新网页，否则需要重新获取恢复邮件。','good');
+   msg('emailLinkMessage','恢复链接验证成功，请在第 10D 区设置新密码。','good');
+   recoveryNotice('恢复验证成功 · 现在设置新密码','您已经通过邮箱恢复验证。接下来直接填写第 10D 区的新密码和确认密码；无需再次登录或点击邮件链接。','emailResetFinish','前往第 10D 区设置新密码');
+  }else{
+   forget();accessToken=bearer;emailIdentityActive=true;
+   msg('emailLinkMessage','真实邮箱确认成功，并已核对 Supabase Auth 用户。您可以在第 10E 区创建本人 QA 记录。','good');
+   msg('sessionMessage','邮箱验证返回了已核对的临时会话；如启用 TOTP，请先完成 AAL2。','good');
+   controls();
+   recoveryNotice('邮箱验证已成功','当前邮箱已经完成身份核验，您可以登录或测试第 10E 区的数据隔离。','emailLoginForm','查看邮箱登录区');
+  }
+ }catch(_){
+  recoveryBearer='';
+  msg('emailLinkMessage','邮箱令牌已不可用，或认证服务器暂时未能确认。请重新申请邮件。','error');
+  recoveryNotice('本次邮箱链接无法验证','不要刷新或重复打开这封邮件链接。请到第 10C 区使用自己的邮箱重新发送一次重置邮件。','emailRecoverForm','重新申请恢复邮件');
+ }
 }
 window.addEventListener('pagehide',()=>{recoveryBearer='';});
 void acceptEmailCallback();

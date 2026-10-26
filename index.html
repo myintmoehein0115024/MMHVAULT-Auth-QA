@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="referrer" content="no-referrer"><meta name="robots" content="noindex,nofollow">
-<title>MMHVAULT · P9.81 GitHub Pages Auth QA</title>
+<title>MMHVAULT · P9.83 GitHub Pages Auth QA</title>
 <style>
 :root{color-scheme:dark;--gold:#e8bd64;--text:#eaf0fa;--muted:#a8bdcd;--blue:#08253a;--line:#3a5a74;--danger:#f6ab99;--ok:#89e6b9}
 *{box-sizing:border-box}html{font-family:Inter,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;background:#03101e;color:var(--text)}body{margin:0;min-height:100vh;background:radial-gradient(ellipse 75% 50% at 75% 0%,#174266 0,transparent 68%),linear-gradient(155deg,#04111f,#0a1728 65%,#071018);padding:clamp(16px,3vw,44px)}
@@ -14,13 +14,14 @@ main{max-width:1090px;margin:0 auto}.top{display:flex;gap:14px;align-items:cente
 #emailCallbackBanner .banner-title{font-size:19px;font-weight:800;color:#f3cd85;margin-bottom:7px}
 #emailCallbackBanner p{margin:6px 0 13px;color:var(--text);line-height:1.7}
 #emailResetFinish,#emailRecoverForm{scroll-margin-top:22px}
+#p983Section{scroll-margin-top:24px}#p983Section .test-steps{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;margin:14px 0}#p983Section .test-step{padding:15px;border:1px solid #3c657e;border-radius:14px;background:#092337;min-width:0}#p983Section .test-step strong{display:block;color:#f0d48f;margin-bottom:8px}#p983Section .test-step p{margin:0 0 10px}#p983Section .test-step button{width:100%}#p983Section .privacy-note{border-color:#a98e57;background:#152a36} @media(max-width:820px){#p983Section .test-steps{grid-template-columns:1fr}}
 #emailResetFinish.recovery-active{border:1px solid #7ccfa7;padding:14px;border-radius:13px;background:#082f31}
 @media(max-width:540px){#emailCallbackBanner{padding:14px}#emailCallbackBanner .row>*{width:100%}}
 </style>
 </head>
 <body>
 <main>
-<header class="top"><div><div class="brand">MMHVAULT</div><span class="small">P9.81 · GitHub Pages QA · Isolated Supabase</span></div><span class="flag">STAGING ONLY · 不连接正式财务数据</span></header>
+<header class="top"><div><div class="brand">MMHVAULT</div><span class="small">P9.83 · GitHub Pages QA · Isolated Supabase</span></div><span class="flag">STAGING ONLY · 不连接正式财务数据</span></header>
 <div class="deploy-warning hidden" id="deployNotice" role="status">您目前不是从正式测试地址打开页面。请先将 <code>index.html</code> 上传到新仓库并启用 GitHub Pages，然后打开 <a href="https://myintmoehein0115024.github.io/MMHVAULT-Auth-QA/" rel="noopener noreferrer">https://myintmoehein0115024.github.io/MMHVAULT-Auth-QA/</a>。不要直接双击本地 HTML。</div>
 <section id="emailCallbackBanner" class="hidden" role="status" aria-live="polite" aria-atomic="true">
  <div class="banner-title" id="emailCallbackTitle">邮箱恢复状态</div>
@@ -145,6 +146,20 @@ main{max-width:1090px;margin:0 auto}.top{display:flex;gap:14px;align-items:cente
   <pre class="hidden" id="p981CodesText" style="white-space:pre-wrap;overflow-wrap:anywhere;user-select:text;margin-top:10px"></pre>
  </div>
 </section>
+<section class="panel full" id="p983Section">
+ <h2>12 · 真实旧会话访问检测（P9.83）</h2>
+ <p>本测试在<strong>同一个网页</strong>暂存修改密码之前的测试 JWT，随后向隔离 Supabase 发送一次真实的资料读取请求。<strong>不会展示、复制或保存任何令牌</strong>，也不会触碰正式财务数据。只测试用户名账号的第 9 区修改密码流程。</p>
+ <div class="notice privacy-note">使用您可反复更改密码的隔离测试账号。请勿使用正式站密码。测试期间不要刷新/关闭此页面，不要把页面的任何令牌、密码或恢复码发给聊天。若启用了 TOTP，先在第 6 区完成动态码验证。</div>
+ <div class="test-steps">
+  <div class="test-step"><strong>12A · 修改前</strong><p>在第 4 区登录测试账号，并完成必要的 TOTP，然后点击准备按钮，先确认<strong>旧会话确实读得到本人数据</strong>。</p><button type="button" id="p983Capture">准备旧会话检测</button></div>
+  <div class="test-step"><strong>12B · 安全改密</strong><p>不刷新网页，前往现有第 9 区，用当前密码修改为另一个测试密码。修改成功后返回这里。</p><button type="button" id="p983GoChange" class="secondary">前往第 9 区修改密码</button></div>
+  <div class="test-step"><strong>12C · 修改后</strong><p>回到这里检查旧 JWT 对隔离 QA 数据的真实访问结果。只有完成 12A 和第 9 区改密后才可测试。</p><button type="button" id="p983CheckOld" disabled>检测旧会话访问</button></div>
+ </div>
+ <div id="p983Status" class="msg" aria-live="polite">还未开始。请先登录第 4 区测试账号，再点击 12A。</div>
+ <div class="row" style="margin-top:12px"><button type="button" id="p983GoLogin" class="secondary">前往第 4 区重新登录</button><button type="button" id="p983CheckNew" class="secondary" disabled>验证新登录会话可读取本人数据</button><button type="button" id="p983Clear" class="secondary">清除检测状态</button></div>
+ <div id="p983Result" class="msg" style="margin-top:12px" aria-live="polite">验收标准：修改前可读取本人记录；修改后旧 JWT 读取不到；新登录仍能读取本人记录。会分别说明“数据已被 RLS 拒绝”和“JWT 本身是否失效”，两者不混为一谈。</div>
+ <p class="help">这只能证明隔离 QA 数据 API 对此次捕获的真实旧 JWT 的结果，不能等同于正式 MMHVAULT 全站、全部 API 或多台设备完成撤销。测试令牌不会写入浏览器存储，并在测试完成、离开页面或超时后清除。</p>
+</section>
 </div>
 <footer class="footer">这是 GitHub Pages 上的隔离验收工具，并非正式 MMHVAULT 金融网站。不要上传服务端 Secret、完整 JWT、真实密码或恢复码。请使用新建的隔离测试账号；本页面不提供绕过 CAPTCHA 的功能。</footer>
 </main>
@@ -156,10 +171,12 @@ const ENDPOINT=BASE+'/functions/v1/mmhvault-username-auth';
 const PUBLIC_KEY='sb_publishable_ybvR0N64tgKBzdlJeMQi9A_hvnziPce';
 let flags={registration_enabled:false,login_enabled:false},token='',widget=null,accessToken='',pending=false,recoveryCodesTemp=[],factorId='',pendingTotp=null,totpQrUrl='',mfaDone=false;
 let currentUsername='',mfaEnabled=null;
+// P9.83: old JWT stays in this tab's RAM only; never log or store it.
+let p983OldJwt='',p983CapturedAt=0,p983Username='',p983Uid='',p983Baseline=0,p983PasswordChanged=false,p983OldTestPassed=false,p983NewTestPassed=false,p983ExpiryTimer=null;
 let emailSignupReady=false,emailRecoverReady=false,emailIdentityActive=false,recoveryBearer='';
 const by=id=>document.getElementById(id);
 const msg=(id,text,state='')=>{const e=by(id);e.textContent=text;e.className='msg '+state;};
-function controls(){by('registerButton').disabled=pending||!flags.registration_enabled||!token;by('loginButton').disabled=pending||!flags.login_enabled;by('verifyUser').disabled=!accessToken||pending;by('mfaInspect').disabled=pending||!accessToken;by('mfaEnroll').disabled=pending||!accessToken||!!factorId;by('mfaVerify').disabled=pending||!accessToken||!factorId;by('deviceRequest').disabled=pending||!accessToken||!mfaDone;by('deviceStatus').disabled=pending||!accessToken;by('ownerTest').disabled=pending||!accessToken;by('changePasswordButton').disabled=pending||!accessToken||!flags.login_enabled||!currentUsername; by('emailCreateFixture').disabled=pending||!emailIdentityActive||!accessToken;by('emailVerifyFixture').disabled=pending||!emailIdentityActive||!accessToken;by('emailSignupButton').disabled=pending||!emailSignupReady||!token;by('emailLoginButton').disabled=pending;by('emailRecoverButton').disabled=pending||!emailRecoverReady||!token;}
+function controls(){by('registerButton').disabled=pending||!flags.registration_enabled||!token;by('loginButton').disabled=pending||!flags.login_enabled;by('verifyUser').disabled=!accessToken||pending;by('mfaInspect').disabled=pending||!accessToken;by('mfaEnroll').disabled=pending||!accessToken||!!factorId;by('mfaVerify').disabled=pending||!accessToken||!factorId;by('deviceRequest').disabled=pending||!accessToken||!mfaDone;by('deviceStatus').disabled=pending||!accessToken;by('ownerTest').disabled=pending||!accessToken;by('changePasswordButton').disabled=pending||!accessToken||!flags.login_enabled||!currentUsername; by('emailCreateFixture').disabled=pending||!emailIdentityActive||!accessToken;by('emailVerifyFixture').disabled=pending||!emailIdentityActive||!accessToken;by('emailSignupButton').disabled=pending||!emailSignupReady||!token;by('emailLoginButton').disabled=pending;by('emailRecoverButton').disabled=pending||!emailRecoverReady||!token; if(by('p983Capture'))p983UpdateButtons();}
 function origin(){return location.origin;}
 by('origin').textContent=origin()==='null'?'file://（请打开已发布的 GitHub Pages）':origin();
 if(location.origin!==EXPECTED_ORIGIN)by('deployNotice').classList.remove('hidden');
@@ -167,8 +184,8 @@ async function call(body,timeout=12000){const abort=new AbortController();const 
 function hideTotp(){by('mfaPrivate').classList.add('hidden');by('mfaQr').removeAttribute('src');by('mfaQr').classList.add('hidden');by('mfaSecret').textContent='';by('mfaSecret').classList.add('hidden');by('mfaReveal').classList.remove('hidden');by('mfaConceal').classList.add('hidden');if(totpQrUrl){URL.revokeObjectURL(totpQrUrl);totpQrUrl='';}}
 function resetMfa(){hideTotp();factorId='';pendingTotp=null;mfaDone=false;mfaEnabled=null;by('mfaCode').value='';by('mfaSetup').classList.add('hidden');msg('mfaMessage','请先使用测试账号登录。');msg('deviceMessage','这是自愿的高级安全测试；登录并验证 TOTP 后可提交申请。');by('ownerFactorHint').textContent='请登录后检查此账号的 TOTP 状态。';controls();}
 function forget(){emailIdentityActive=false;accessToken='';currentUsername='';by('changeUsername').value='';by('oldPassword').value='';by('newPassword').value='';by('confirmNewPassword').value='';recoveryCodesTemp=[];by('recoveryCodes').textContent='';by('recoveryBox').classList.add('hidden');by('regPassword').value='';by('loginPassword').value='';p981Hide();resetMfa();msg('sessionMessage','本页内存中的令牌已清除。本操作不注销或撤销 Supabase 服务器会话。');msg('ownerMessage','请先登录，然后测试自己账号的数据隔离。');}
-by('forgetSession').addEventListener('click',forget);
-window.addEventListener('pagehide',()=>{accessToken='';token='';recoveryCodesTemp=[];by('recoveryCodes').textContent='';hideTotp();pendingTotp=null;factorId='';});
+by('forgetSession').addEventListener('click',()=>{forget();p983ClearState();});
+window.addEventListener('pagehide',()=>{p983OldJwt='';p983CapturedAt=0;if(p983ExpiryTimer)clearTimeout(p983ExpiryTimer);p983ExpiryTimer=null;accessToken='';token='';recoveryCodesTemp=[];by('recoveryCodes').textContent='';hideTotp();pendingTotp=null;factorId='';});
 by('checkStatus').addEventListener('click',async()=>{if(location.origin!==EXPECTED_ORIGIN){msg('statusMessage','请从正式的 GitHub Pages HTTPS 测试网址打开，而不是本地文件。','warn');return;}if(pending)return;pending=true;controls();msg('statusMessage','正在连接独立测试服务…');try{const r=await call({action:'status'});if(r.ok&&r.data.environment==='isolated_staging'&&r.data.service_ready===true&&typeof r.data.registration_enabled==='boolean'&&typeof r.data.login_enabled==='boolean'){
  flags={registration_enabled:r.data.registration_enabled,login_enabled:r.data.login_enabled};by('serviceState').textContent='已连接测试服务';by('registrationState').textContent=flags.registration_enabled?'已启用':'已关闭';by('loginState').textContent=flags.login_enabled?'已启用':'已关闭';by('environment-pill').textContent='隔离服务已确认';msg('statusMessage',flags.registration_enabled?'注册服务已启用：请只使用测试账号与真实验证码':'服务已连接。新账号注册目前关闭，不会提交真实注册。',flags.registration_enabled?'good':'warn');
 }else{flags={registration_enabled:false,login_enabled:false};by('environment-pill').textContent='接口异常';by('serviceState').textContent='响应不符合预期';by('registrationState').textContent='无法确认';by('loginState').textContent='无法确认';msg('statusMessage','状态接口响应异常（HTTP '+r.status+'），不能视为注册已关闭或已开启。','error');}}
@@ -336,6 +353,9 @@ by('changePasswordForm').addEventListener('submit',async e=>{
   const r=await callSecured({action:'change_password',username,current_password:oldPassword,new_password:newPassword});
   if(r.ok&&r.status===200&&r.data.changed===true){
     const revoked=r.data.global_refresh_revocation_confirmed===true;
+    const p983Matched=!!p983OldJwt&&p983Username===username&&p983OldJwt===accessToken&&Date.now()-p983CapturedAt<12*60*1000;
+    if(p983Matched){p983PasswordChanged=true;msg('p983Status','已检测到第 9 区成功修改测试密码。请回到第 12 区点击 12C 检测旧会话；测试期间不要刷新网页。','good');}
+    else if(p983OldJwt){p983ClearState('密码修改与准备检测的会话不匹配，已安全清除旧令牌。请重新开始。');}
     forget();
     msg('passwordChangeMessage',revoked?'测试密码修改成功；刷新会话全局撤销请求已确认。请使用新密码重新登录。':'测试密码修改成功，但会话撤销未能确认；请立即重新登录并检查其他会话。',revoked?'good':'warn');
   }else{
@@ -571,7 +591,92 @@ by('p981Recover').addEventListener('submit',async e=>{
  finally{by('p981Code').value='';by('p981New').value='';by('p981Confirm').value='';pending=false;controls();by('p981RecoverBtn').disabled=false;}
 });
 
-controls();
+
+// P9.83 exact same token before/after password change; no client persistence.
+function p983UpdateButtons(){
+ by('p983Capture').disabled=pending||!accessToken||emailIdentityActive;
+ by('p983CheckOld').disabled=pending||!p983OldJwt||!p983PasswordChanged;
+ by('p983CheckNew').disabled=pending||!p983OldTestPassed||!accessToken||emailIdentityActive||currentUsername!==p983Username||!p983Uid;
+}
+function p983ClearState(message='检测状态已清除；旧令牌不会保留。'){
+ if(p983ExpiryTimer)clearTimeout(p983ExpiryTimer);p983ExpiryTimer=null;
+ p983OldJwt='';p983CapturedAt=0;p983Username='';p983Uid='';p983Baseline=0;p983PasswordChanged=false;p983OldTestPassed=false;p983NewTestPassed=false;
+ msg('p983Status',message);msg('p983Result','如果还需测试，重新在第 4 区登录，再点击 12A。');p983UpdateButtons();
+}
+async function p983Read(jwt){
+ const c=new AbortController();const timer=setTimeout(()=>c.abort(),12000);
+ try{
+  const r=await fetch(BASE+'/rest/v1/mmh_p973_owner_isolation_qa?select=id&limit=10',{method:'GET',mode:'cors',cache:'no-store',headers:{'apikey':PUBLIC_KEY,'Authorization':'Bearer '+jwt,'Accept':'application/json'},signal:c.signal});
+  if(r.status===200){const data=await r.json();if(!Array.isArray(data))throw Error('unrecognized_response');return {status:200,count:data.length};}
+  return {status:r.status,count:null};
+ }finally{clearTimeout(timer);}
+}
+async function p983User(jwt){
+ const c=new AbortController(),timer=setTimeout(()=>c.abort(),12000);
+ try{
+  const r=await fetch(BASE+'/auth/v1/user',{method:'GET',mode:'cors',cache:'no-store',headers:{'apikey':PUBLIC_KEY,'Authorization':'Bearer '+jwt},signal:c.signal});
+  if(!r.ok)return {status:r.status,uid:''};
+  const d=await r.json();return {status:r.status,uid:validUuid(d.id)?d.id:''};
+ }finally{clearTimeout(timer);}
+}
+by('p983GoChange').addEventListener('click',()=>by('passwordSection').scrollIntoView({behavior:'smooth',block:'start'}));
+by('p983GoLogin').addEventListener('click',()=>by('loginForm').scrollIntoView({behavior:'smooth',block:'start'}));
+by('p983Clear').addEventListener('click',()=>p983ClearState());
+by('p983Capture').addEventListener('click',async()=>{
+ if(pending||!accessToken||!currentUsername||emailIdentityActive){msg('p983Status','先通过第 4 区登录用户名测试账号。','warn');return;}
+ p983ClearState('正在确认修改前的真实 Auth 用户与 RLS 读取…');
+ pending=true;controls();p983UpdateButtons();
+ const snapshot=accessToken,username=currentUsername;
+ try{
+  const [auth,before]=await Promise.all([p983User(snapshot),p983Read(snapshot)]);
+  if(auth.status!==200||!auth.uid||before.status!==200||before.count<1)throw Error('baseline_ineligible');
+  if(snapshot!==accessToken||username!==currentUsername)throw Error('session_changed');
+  p983OldJwt=snapshot;p983CapturedAt=Date.now();p983Username=username;p983Uid=auth.uid;p983Baseline=before.count;
+  p983ExpiryTimer=setTimeout(()=>{if(p983OldJwt)p983ClearState('测试已超过 12 分钟，旧令牌自动清除。请重新准备检测。');},12*60*1000);
+  msg('p983Status','12A 准备完成：旧会话能读取自己的 '+before.count+' 条 QA 记录。旧 JWT 已暂存本页内存，不显示。现在请到第 9 区改密。','good');
+  msg('p983Result','准备阶段通过；尚未更改密码。请勿将这一状态误认为撤销测试通过。');
+ }catch(_){p983ClearState('12A 准备失败：必须先确认当前会话真实可读取本人 QA 记录；已绑定 TOTP 的账号请先完成 AAL2。');}
+ finally{pending=false;controls();p983UpdateButtons();}
+});
+by('p983CheckOld').addEventListener('click',async()=>{
+ if(pending||!p983OldJwt||!p983PasswordChanged){msg('p983Result','请先完成 12A，并通过第 9 区成功修改密码。','warn');return;}
+ if(Date.now()-p983CapturedAt>12*60*1000){p983ClearState('测试超过 12 分钟，旧令牌已清除，请重新开始。');return;}
+ pending=true;controls();p983UpdateButtons();
+ const old=p983OldJwt;
+ try{
+  const [data,user]=await Promise.allSettled([p983Read(old),p983User(old)]);
+  if(data.status==='rejected'||user.status==='rejected'){
+   msg('p983Result','网络超时或请求出错，无法判断旧会话权限；请重试一次（仍在有效时间内）。','warn');return;
+  }
+  const d=data.value,u=user.value;
+  if(d.status===200&&d.count>0){
+   p983OldTestPassed=false;
+   msg('p983Result','❌ 未通过：修改密码后，旧 JWT 仍读取到 '+d.count+' 条受保护记录。请暂停上线并审查 RLS / 会话配置。','error');
+  }else if((d.status===200&&d.count===0)||d.status===401||d.status===403){
+   p983OldTestPassed=true;
+   const detail=u.status===200?'旧 JWT 在 Auth 用户接口仍可能有效，但受保护 QA 数据已被拒绝。':(u.status===401||u.status===403?'Auth 用户接口也拒绝旧令牌。':'Auth 用户接口状态 '+u.status+'，尚不能判断 JWT 是否完全失效。');
+   msg('p983Result','✅ 旧会话隔离 QA 资料读取已被拒绝（数据 API：'+(d.status===200?'HTTP 200，0 条':('HTTP '+d.status))+'）。'+detail+'请用新密码重新登录，再点击“验证新登录会话”。','good');
+  }else{
+   msg('p983Result','旧会话请求返回 HTTP '+d.status+'，不能视为成功或失败。请检查网络或服务设置。','warn');
+  }
+  p983OldJwt='';p983CapturedAt=0;if(p983ExpiryTimer)clearTimeout(p983ExpiryTimer);p983ExpiryTimer=null; // Never reuse or display the captured JWT.
+  msg('p983Status','旧令牌检测已经完成并从页面内存清除。');
+ }finally{pending=false;controls();p983UpdateButtons();}
+});
+by('p983CheckNew').addEventListener('click',async()=>{
+ if(pending||!p983OldTestPassed||!accessToken||!currentUsername||emailIdentityActive||currentUsername!==p983Username){msg('p983Result','请使用同一个用户名和修改后的新密码重新登录第 4 区。','warn');return;}
+ pending=true;controls();p983UpdateButtons();
+ try{
+  const [u,d]=await Promise.all([p983User(accessToken),p983Read(accessToken)]);
+  if(u.status===200&&u.uid===p983Uid&&d.status===200&&d.count===p983Baseline){
+   p983NewTestPassed=true;
+   msg('p983Result','✅ P9.83 真实浏览器验收通过：旧 JWT 无法读取受保护 QA 数据；同一用户名的新会话可读取本人 '+d.count+' 条记录。旧 JWT 已清除。本测试不代表所有 Supabase API 的 JWT 都会即时失效。','good');
+  }else{msg('p983Result','新会话数据验证尚未通过：请确认是原来的测试账号、已完成必要 TOTP，且 QA 样本记录未变化。','warn');}
+ }catch(_){msg('p983Result','新会话验证出现网络错误；不能判定。','error');}
+ finally{pending=false;controls();p983UpdateButtons();}
+});
+
+controls();p983UpdateButtons();
 })();
 </script>
 </body></html>

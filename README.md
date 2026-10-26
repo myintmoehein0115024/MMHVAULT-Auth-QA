@@ -1,28 +1,16 @@
-# MMHVAULT Auth QA · P9.87
-
-这是 **隔离测试站点** 的增量更新包，不用于生产 MMHVAULT。
+# MMHVAULT Auth QA · P9.90 安全检查页
 
 ## 上传
+仅覆盖独立 GitHub 仓库 `MMHVAULT-Auth-QA` 根目录中的 `index.html`。不删除、移动其他文件。此包提供的 README 可选覆盖根目录 README。
 
-解压 ZIP，进入 `MMHVAULT-Auth-QA/`；将 `index.html` 和 `README.md` 上传到 `MMHVAULT-Auth-QA` 仓库根目录，覆盖相同文件。**不要**上传到生产仓库 `MMHVAULT`。
+地址：https://myintmoehein0115024.github.io/MMHVAULT-Auth-QA/?v=P990
 
 ## 验收
+打开第 14 区，先点击「检查 Google QA 服务」，然后在第 4 区或 10B 区登录测试账号，返回点击「核验 Google 身份、用户名与 QA 数据」。
 
-1. 在第 10B 区登录已验证的隔离邮箱账号（原密码）；如主动绑定了 TOTP，先在第 6 区验证。
-2. 在第 13 区检查绑定服务，并在 13A 输入新用户名、可选昵称、原邮箱账号当前密码进行一次绑定。
-3. 成功后**不要刷新**，在第 4 区使用新用户名＋同一个邮箱账号密码登录。
-4. 返回 13B 点击核对原 UID 与本人 QA 数据。
-5. 可回到 10B，验证原邮箱＋原密码仍可登录；10C 邮箱找回仍可使用。
+没有 Google 身份时应如实提示「当前账号尚未关联 Google」，不是失败。不会自动发起 Google 授权或创建新用户。
 
-## 安全约束
+## 回滚
+如需回滚网页，仅恢复 P9.87 包中的 index.html。后台新增的独立只读 Edge Function 不影响原有登录，可单独停用。没有进行生产数据库变更。
 
-- 绑定不会创建 Supabase Auth 用户、改邮箱、改密码或迁移 UID；仅新增 username 映射。
-- 绑定是本阶段的一次性操作，暂不提供改名、解绑。
-- 邮箱绑定用户仍通过邮箱恢复密码，**不会发放 11A/11B 的用户名恢复码**；原生用户名账号恢复逻辑保持独立。
-- 仅绑定已有邮箱＋密码账号；纯 Google OAuth 且未设置密码的账号不参与本阶段。
-- 保存的 UID 仅在本页内存用于本次会话比对，密码不会存储在浏览器持久化空间。
-- 绝不向聊天发送密码、JWT、邮件恢复链接或恢复码。
-
-## 覆盖与回滚
-
-覆盖：`MMHVAULT-Auth-QA/index.html`、`MMHVAULT-Auth-QA/README.md`。新增：无生产文件。删除：无。前端回滚：恢复 P9.83 的原 `index.html`。数据库映射绑定后的回滚不应由用户自行手动删除，必须先确认绑定状态和登录影响。后端 `mmhvault-bind-username-qa` 独立于原登录接口。
+不要共享密码、JWT、Google OAuth 客户端密钥。

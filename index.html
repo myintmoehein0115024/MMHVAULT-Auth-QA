@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="referrer" content="no-referrer"><meta name="robots" content="noindex,nofollow">
-<title>MMHVAULT · P9.87 GitHub Pages Auth QA</title>
+<title>MMHVAULT · P9.90 GitHub Pages Auth QA</title>
 <style>
 :root{color-scheme:dark;--gold:#e8bd64;--text:#eaf0fa;--muted:#a8bdcd;--blue:#08253a;--line:#3a5a74;--danger:#f6ab99;--ok:#89e6b9}
 *{box-sizing:border-box}html{font-family:Inter,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;background:#03101e;color:var(--text)}body{margin:0;min-height:100vh;background:radial-gradient(ellipse 75% 50% at 75% 0%,#174266 0,transparent 68%),linear-gradient(155deg,#04111f,#0a1728 65%,#071018);padding:clamp(16px,3vw,44px)}
@@ -21,7 +21,7 @@ main{max-width:1090px;margin:0 auto}.top{display:flex;gap:14px;align-items:cente
 </head>
 <body>
 <main>
-<header class="top"><div><div class="brand">MMHVAULT</div><span class="small">P9.87 · GitHub Pages QA · Isolated Supabase</span></div><span class="flag">STAGING ONLY · 不连接正式财务数据</span></header>
+<header class="top"><div><div class="brand">MMHVAULT</div><span class="small">P9.90 · GitHub Pages QA · Isolated Supabase</span></div><span class="flag">STAGING ONLY · 不连接正式财务数据</span></header>
 <div class="deploy-warning hidden" id="deployNotice" role="status">您目前不是从正式测试地址打开页面。请先将 <code>index.html</code> 上传到新仓库并启用 GitHub Pages，然后打开 <a href="https://myintmoehein0115024.github.io/MMHVAULT-Auth-QA/" rel="noopener noreferrer">https://myintmoehein0115024.github.io/MMHVAULT-Auth-QA/</a>。不要直接双击本地 HTML。</div>
 <section id="emailCallbackBanner" class="hidden" role="status" aria-live="polite" aria-atomic="true">
  <div class="banner-title" id="emailCallbackTitle">邮箱恢复状态</div>
@@ -183,6 +183,27 @@ main{max-width:1090px;margin:0 auto}.top{display:flex;gap:14px;align-items:cente
   <div class="row"><button type="button" class="secondary" id="p987ToUsernameLogin">前往第 4 区用户名登录</button><button type="button" id="p987CompareUid" disabled>核对原 UID 与本人 QA 数据</button></div>
   <div class="msg" id="p987VerifyMsg" aria-live="polite">绑定成功后，本页只在内存里暂存原账号 UID 用于比对。不会显示、复制或保存 JWT。</div>
  </div>
+</section>
+
+<section class="panel full" id="p990Section">
+ <h2>14 · Google 身份与原 UID 兼容核验（P9.90）</h2>
+ <p>本阶段先做<strong>只读身份核验</strong>：检查当前已登录 QA 账号是否真正拥有 Google 身份、用户名是否绑定同一个 Supabase UID，以及当前会话能否通过 RLS 读取本人 QA 数据。不更换邮箱、不绑定或解绑 Google、不创建新账号。</p>
+ <div class="notice guard-note" style="margin-bottom:14px"><strong>重要：</strong>隔离 QA 数据库目前没有真实 Google 身份记录，不能假称 Google 登录已通过。启用 Google OAuth 需要在<strong>隔离 Supabase</strong>单独配置 Google Client ID／Secret 和重定向白名单。请勿直接复制生产环境凭据，也不要从本页擅自创建 Google 账号。</div>
+ <div class="cols" style="margin-bottom:14px">
+  <div class="stack">
+   <h2 style="margin-bottom:0">14A · 只读检查服务</h2>
+   <p class="small">确认 P9.90 后台检查服务可用。这个按钮不会启动 Google OAuth，也不会更改任何登录身份。</p>
+   <button id="p990StatusBtn" class="secondary" type="button">检查 Google QA 服务</button>
+   <div class="msg" id="p990StatusMsg" aria-live="polite">尚未检查。</div>
+  </div>
+  <div class="stack">
+   <h2 style="margin-bottom:0">14B · 核验当前会话</h2>
+   <p class="small">先在第 4 区或 10B 区登录测试账号。此检查只依赖当前真实会话，不接受用户自己输入的 UID。</p>
+   <button id="p990InspectBtn" type="button">核验 Google 身份、用户名与 QA 数据</button>
+   <div class="msg" id="p990InspectMsg" aria-live="polite">预期当前纯邮箱测试账号显示「尚未关联 Google」。这不是登录错误。</div>
+  </div>
+ </div>
+ <div class="notice"><strong>后续真实验收顺序：</strong>先在隔离环境单独配置 Google OAuth 和准确的重定向网址 → 使用已有测试账号主动关联 Google（需要用户本人通过 Google 授权）→ 再核对 UID 和 QA 记录。若出现不同 UID，应停止测试并调查，不能合并或删除用户来掩盖问题。<p class="small" style="margin-bottom:0">P9.90 的真实 Google OAuth 关联尚未执行。本页不收集、打印或存储 Google 密钥、JWT、登录密码。</p></div>
 </section>
 </main>
 <script>
@@ -765,6 +786,52 @@ by('p987CompareUid').addEventListener('click',async()=>{
   msg('p987VerifyMsg','✅ P9.87 验收通过：新用户名会话与原邮箱账号是同一个 UID，且可读取本人 '+rows.length+' 条 QA 记录。邮箱登录与原邮箱找回仍可继续使用。','good');
  }catch(_){msg('p987VerifyMsg','网络异常，无法完成比对；不代表验证已通过。','error');}
  finally{pending=false;controls();}
+});
+
+
+// P9.90: Only read server-authenticated user and row ownership metadata.
+const P990_API=BASE+'/functions/v1/mmhvault-google-identity-audit-qa';
+async function p990Call(action,auth=''){
+ const aborter=new AbortController(),timer=setTimeout(()=>aborter.abort(),15000);
+ try{
+  const h={'Content-Type':'application/json',apikey:PUBLIC_KEY};
+  if(auth)h.Authorization='Bearer '+auth;
+  const response=await fetch(P990_API,{method:'POST',mode:'cors',cache:'no-store',headers:h,body:JSON.stringify({action}),signal:aborter.signal});
+  let data={};try{data=await response.json();}catch(_){ /* keep generic error */ }
+  return {response,data};
+ }finally{clearTimeout(timer);}
+}
+by('p990StatusBtn').addEventListener('click',async()=>{
+ if(pending)return;pending=true;controls();by('p990StatusBtn').disabled=true;
+ msg('p990StatusMsg','正在检查隔离身份审计服务…');
+ try{
+  const {response,data}=await p990Call('status');
+  if(response.ok&&data.active===true&&data.mode==='read_only')
+   msg('p990StatusMsg','✅ P9.90 只读服务正常。'+(data.google_provider_enabled===true?'隔离项目 Google 登录配置已启用；还需真实关联验收。':data.google_provider_enabled===false?'隔离项目 Google 登录尚未启用，请先配置 Google Cloud OAuth。':'Google 配置状态暂时无法确认；未自动发起授权。'),'good');
+  else msg('p990StatusMsg','暂时无法确认服务状态：HTTP '+response.status,'warn');
+ }catch(_){msg('p990StatusMsg','连接失败，请检查网络；当前没有更改账号。','error');}
+ finally{pending=false;controls();by('p990StatusBtn').disabled=false;}
+});
+by('p990InspectBtn').addEventListener('click',async()=>{
+ if(pending)return;
+ if(!accessToken){msg('p990InspectMsg','请先在第 4 区（用户名）或 10B 区（邮箱）登录，再执行核验。','warn');return;}
+ pending=true;controls();by('p990InspectBtn').disabled=true;
+ msg('p990InspectMsg','正在以当前真实会话核验身份和 RLS…');
+ try{
+  const {response,data}=await p990Call('inspect',accessToken);
+  if(!response.ok||data.account_authenticated!==true){
+   msg('p990InspectMsg','身份核验失败：HTTP '+response.status+'。请重新登录，不要反复提交。','warn');return;
+  }
+  const hasGoogle=data.google_identity_linked===true;
+  const hasUsername=data.username_bound_same_uid===true;
+  const count=Number.isInteger(data.qa_data_owner_row_count)?data.qa_data_owner_row_count:'不可确认';
+  const parts=[hasGoogle?'已找到同 UID 的 Google 身份':'当前账号尚未关联 Google（此阶段属预期）',
+   hasUsername?'用户名映射仍指向同一个 UID':'该身份当前没有已绑定用户名',
+   data.qa_data_access_ok===true?'本人 QA 可见记录：'+count+' 条':'当前 RLS 数据访问尚未通过'];
+  const verified=hasGoogle&&hasUsername&&data.qa_data_access_ok===true&&Number.isInteger(count)&&count>0;
+  msg('p990InspectMsg',(verified?'✅ Google 身份、用户名与受保护数据同 UID 核对成功。':'只读核验完成（尚不能宣称 Google OAuth 全流程通过）：')+parts.join('；')+'。',verified?'good':'warn');
+ }catch(_){msg('p990InspectMsg','连接超时或网络异常，不能确认账号关联。','error');}
+ finally{pending=false;controls();by('p990InspectBtn').disabled=false;}
 });
 
 controls();p983UpdateButtons();p987UpdateButtons();

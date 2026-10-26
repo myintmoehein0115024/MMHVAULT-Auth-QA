@@ -1,36 +1,39 @@
-# MMHVAULT Auth QA · P9.70 (TEST ONLY)
+# MMHVAULT Auth QA — P9.81 用户名账号恢复码与会话保护
 
-**此包仅用于 `MMHVAULT-Auth-QA` 测试仓库，不得上传到正式 `MMHVAULT` 主站。**
+版本：P9.81 | 目标：隔离测试仓库 MMHVAULT-Auth-QA | 正式 MMHVAULT：不得上传
 
-## 更新
+## 本次变更
+- **覆盖文件：仓库根目录 `index.html`**（保留原 1–10 区，新增第 11 区）
+- **新增或覆盖：仓库根目录 `README.md`**（本文）
+- **新增（可选）：`P9.81-中文安全报告.md`**
+- **删除清单：无**
+- Supabase 已直接部署隔离项目：auth.users 密码变更触发器 `mmh_p981_password_session_floor`；新恢复码 claim、finalize、rotate 函数及锁定表；Edge Function `mmhvault-username-recovery-qa` v1。上传 GitHub 只需文件，不需要执行 SQL。
+- 原有 `mmhvault-username-auth` v16、`mmhvault-email-qa` v2 保留，不更换。
 
-- 用户名：长度 **4–20**，沿用原规则：以英文小写字母开头，后续使用英文小写字母、数字或下划线。新用户名最多 20 个字符；现有 `qa_test_2026` 不用修改。
-- 新注册密码：**6–20 个字符**。允许用户自选内容，不做自动截断。密码将通过 HTTPS 发送到隔离 Supabase，绝不写入 GitHub。
-- 已有账号登录继续接受旧的较长密码，不要求修改旧测试账号的密码。
-- 新账户恢复码在注册成功后**默认隐藏**，由用户主动显示，再妥善保存。不要把恢复码发送给聊天、放进截图或上传到 GitHub。
-- 修订版与测试项目 `louxgfaqwajihtadznbw` 的 Edge Function v15、数据库约束保持一致。
+## 上传方式（无需 Mac Terminal）
+1. 解压此 ZIP，进入内部的 `MMHVAULT-Auth-QA` 文件夹。
+2. 打开 https://github.com/myintmoehein0115024/MMHVAULT-Auth-QA 。
+3. 点击 Add file → Upload files，将 `index.html` 与 `README.md` 上传至仓库根目录，覆盖旧文件（不要把外层目录作为额外子目录上传）。
+4. 打开 https://myintmoehein0115024.github.io/MMHVAULT-Auth-QA/?v=P981 ，确认顶端显示 P9.81。
+5. 滚动到 11 区，先点击“检查恢复服务状态”。
 
-## 使用方法（无需 Mac Terminal）
+## 第一轮真实测试（先不要修改密码）
+1. 在第 4 区用之前的 `qa_test_2026` 测试账号登录。
+2. 进入第 11A 区输入该测试账号的当前密码，点击“验证身份并轮换 8 枚恢复码”。
+3. 只有服务器返回“已轮换成功”，才继续操作：手动点显示新恢复码，保存到自己的密码管理器；不要截图、不要发给 ChatGPT、不要保存到 GitHub。然后点击“已保存，隐藏并清除”。
+4. 将第 11A 区的非敏感成功/失败文字截图给助手。
 
-1. 登录 GitHub，在您的测试仓库 `MMHVAULT-Auth-QA` 进入 Code 页面。
-2. 进入 **Add file → Upload files**，上传 ZIP 内 `MMHVAULT-Auth-QA/` 文件夹里的 **index.html、README.md** 两个文件到仓库根目录。
-3. 遇到覆盖提示时，确认覆盖当前测试仓库的 `index.html` 和 `README.md`；**不要上传整个 ZIP**、不要新建 `MMHVAULT-Auth-QA/` 子目录。
-4. 提交到 `main`，刷新 https://myintmoehein0115024.github.io/MMHVAULT-Auth-QA/ ，检查顶部 P9.70 标识。
-5. 点击「检查注册和登录状态」，然后在测试环境验证 6 位新密码注册（使用不重复的新用户名和真实 Turnstile）。
+## 第二轮测试（只有您明确准备改测试密码时进行）
+1. 在第 2 区完成 Cloudflare Turnstile。
+2. 使用您自己刚保存的一枚恢复码，在 11B 填测试用户名和一个全新的 6–20 字符密码。
+3. 成功后新密码生效，原 8 枚恢复码全部被新 8 枚代替。您必须保存新码，然后用新密码重新登录。旧会话应被 QA 数据门禁拒绝。
+4. 有 TOTP 的账号仍需继续通过 TOTP，恢复码不能取消二次验证。
+5. 测试全程不要发任何密码、动态码、完整 JWT、恢复码或 Secret。
 
-## 必须注意
-
-- 该密码长度是**用户明确要求的隔离测试规则**。Supabase 官方建议密码至少 8 位，正式金融网站建议至少 12 位并支持密码管理器。6 位密码风险高，不能因为能注册就认定适合生产环境。
-- Supabase Auth 如果另行配置了更高的最短密码长度，服务端仍会拒绝不足要求的密码。无法只靠 GitHub Pages 网页修改 Auth 设置。
-- 首次更新不用删除账号，无需重新设置 Turnstile Secret，也不用修改正式站。
-- 前次泄露的八枚 `qa_test_2026` 恢复码已在测试数据库标记为已使用，不可再作为恢复凭证；恢复 API 仍关闭。
-- GitHub Pages 公开托管本网页，只包含可公开的 publishable key；**绝不要上传 Service Role Key、Turnstile Secret、真实密码或 JWT**。
-
-## 变更清单与回滚
-
-- **覆盖**：`index.html`、`README.md`（仅测试仓库根目录）
-- **新增**：无
-- **删除**：无
-- **前端回滚**：可在 GitHub 的 `index.html` File history 恢复 P9.68 版本，但该版本不兼容新注册规则，应配合服务端检查。
-- **后台范围**：仅隔离 Supabase 的 Edge Function v15 和用户名约束；恢复到旧服务端规则需在独立测试项目重新部署经验证的旧代码并恢复原 username CHECK；不能仅靠覆盖前端 ZIP 回滚。
-- **生产**：正式 MMHVAULT GitHub / Supabase 完全不属于本上传包。
+## 风险与回滚
+- 浏览器真实恢复码兑换尚未验收；目前为 QA 测试，不是正式上线安全认证。
+- 恢复码兑换或密码更新途中异常可能消耗一枚旧码。若服务器已经更改密码而轮换失败，请使用新密码登录，再用 11A 更新恢复码。
+- 新“会话时间门槛”仅保护接入 `mmh_p975_private.session_eligible_for_owner_data()` 的 QA 表。它不保证其他 Supabase API 立即拒绝已签发的 JWT。
+- 严禁在正式项目执行 SQL。要紧急禁用恢复接口，可在隔离项目中收回 `service_role` 对 `mmh_p981_*` 三个函数的 EXECUTE 权限（将使新接口拒绝恢复/轮换，但不影响旧用户名登录）；详细审查见附报告。
+- 若只回滚界面：将 GitHub 仓库根目录 `index.html` 恢复为 P9.77 版本；后台新函数不会因此删除。
+- 若需回滚数据库触发器，应先审查影响，优先从隔离项目移除 `auth.users` 上的 `mmh_p981_password_session_floor` 触发器。不要删除 P9.80 原有会话门禁或历史账号记录。

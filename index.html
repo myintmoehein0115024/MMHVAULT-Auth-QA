@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="referrer" content="no-referrer"><meta name="robots" content="noindex,nofollow">
-<title>MMHVAULT · P9.77 GitHub Pages Auth QA</title>
+<title>MMHVAULT · P9.81 GitHub Pages Auth QA</title>
 <style>
 :root{color-scheme:dark;--gold:#e8bd64;--text:#eaf0fa;--muted:#a8bdcd;--blue:#08253a;--line:#3a5a74;--danger:#f6ab99;--ok:#89e6b9}
 *{box-sizing:border-box}html{font-family:Inter,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;background:#03101e;color:var(--text)}body{margin:0;min-height:100vh;background:radial-gradient(ellipse 75% 50% at 75% 0%,#174266 0,transparent 68%),linear-gradient(155deg,#04111f,#0a1728 65%,#071018);padding:clamp(16px,3vw,44px)}
@@ -20,7 +20,7 @@ main{max-width:1090px;margin:0 auto}.top{display:flex;gap:14px;align-items:cente
 </head>
 <body>
 <main>
-<header class="top"><div><div class="brand">MMHVAULT</div><span class="small">P9.77 · GitHub Pages QA · Isolated Supabase</span></div><span class="flag">STAGING ONLY · 不连接正式财务数据</span></header>
+<header class="top"><div><div class="brand">MMHVAULT</div><span class="small">P9.81 · GitHub Pages QA · Isolated Supabase</span></div><span class="flag">STAGING ONLY · 不连接正式财务数据</span></header>
 <div class="deploy-warning hidden" id="deployNotice" role="status">您目前不是从正式测试地址打开页面。请先将 <code>index.html</code> 上传到新仓库并启用 GitHub Pages，然后打开 <a href="https://myintmoehein0115024.github.io/MMHVAULT-Auth-QA/" rel="noopener noreferrer">https://myintmoehein0115024.github.io/MMHVAULT-Auth-QA/</a>。不要直接双击本地 HTML。</div>
 <section id="emailCallbackBanner" class="hidden" role="status" aria-live="polite" aria-atomic="true">
  <div class="banner-title" id="emailCallbackTitle">邮箱恢复状态</div>
@@ -113,6 +113,38 @@ main{max-width:1090px;margin:0 auto}.top{display:flex;gap:14px;align-items:cente
   </div>
  </div>
 </section>
+
+<section class="panel full" id="p981Recovery">
+ <h2>11 · 用户名账号恢复码与安全轮换（P9.81）</h2>
+ <p>用户名＋密码继续是默认登录方式。本区允许<strong>已登录用户安全轮换恢复码</strong>，以及<strong>忘记密码时使用预先保存的一枚恢复码</strong>重设新密码。不要求绑定邮箱，也不需要 Google 登录。</p>
+ <div class="notice guard-note" style="margin-bottom:14px">使用恢复码将更换账号密码，并使旧会话失去访问隔离 QA 数据的权限。已启用 TOTP 的账号恢复密码后仍需要原有 TOTP 才能访问受保护数据；恢复码不会绕过 TOTP。密码重置暂未证明所有其他 Supabase API 的旧 JWT 都立即失效。</div>
+ <div class="row" style="margin-bottom:12px"><button id="p981Status" class="secondary" type="button">检查恢复服务状态</button></div>
+ <div id="p981StatusMsg" class="msg" aria-live="polite">恢复码服务尚未检查。</div>
+ <div class="cols" style="margin-top:14px">
+  <form class="stack" id="p981Rotate" autocomplete="off">
+   <h2 style="margin-bottom:0">11A · 已登录用户更新恢复码</h2>
+   <p class="small">先在第 4 区登录用户名账号。已开启 TOTP 的账号先完成第 6 区动态码验证。</p>
+   <div><label for="p981RotatePwd">当前登录密码</label><input type="password" id="p981RotatePwd" autocomplete="current-password" maxlength="128" required></div>
+   <button id="p981RotateBtn" type="submit">验证身份并轮换 8 枚恢复码</button>
+   <div class="msg" id="p981RotateMsg" aria-live="polite">所有以前的恢复码在成功轮换后立即失效。</div>
+  </form>
+  <form class="stack" id="p981Recover" autocomplete="off">
+   <h2 style="margin-bottom:0">11B · 忘记密码：使用保存的恢复码</h2>
+   <div><label for="p981User">用户名（4–20 位）</label><input id="p981User" maxlength="20" autocomplete="username" required placeholder="tester_2026"></div>
+   <div><label for="p981Code">一枚以前安全保存的恢复码</label><input id="p981Code" type="password" maxlength="44" autocomplete="off" required placeholder="MMH-…"></div>
+   <div><label for="p981New">新密码（6–20 位，隔离测试）</label><input id="p981New" type="password" minlength="6" maxlength="20" autocomplete="new-password" required></div>
+   <div><label for="p981Confirm">确认新密码</label><input id="p981Confirm" type="password" minlength="6" maxlength="20" autocomplete="new-password" required></div>
+   <button id="p981RecoverBtn" type="submit">使用恢复码重置密码</button>
+   <div class="msg" id="p981RecoverMsg" aria-live="polite">先在第 2 区完成 Cloudflare 验证；验证码仅供本次请求使用。没有恢复码的账号请使用已登录状态从 11A 重新生成。</div>
+  </form>
+ </div>
+ <div id="p981CodesArea" class="notice hidden" style="margin-top:18px">
+  <h2 style="margin-top:0">新恢复码已生成（仅在本次显示）</h2>
+  <p class="small">8 枚旧码已作废。新码只返回一次。请存入密码管理器，不要截图发给聊天，也不要保存在 GitHub。刷新网页将丢失这次显示机会。</p>
+  <div class="row"><button id="p981ShowCodes" class="secondary" type="button">我已准备保存，显示新恢复码</button><button id="p981HideCodes" class="secondary" type="button">已保存，隐藏并清除</button></div>
+  <pre class="hidden" id="p981CodesText" style="white-space:pre-wrap;overflow-wrap:anywhere;user-select:text;margin-top:10px"></pre>
+ </div>
+</section>
 </div>
 <footer class="footer">这是 GitHub Pages 上的隔离验收工具，并非正式 MMHVAULT 金融网站。不要上传服务端 Secret、完整 JWT、真实密码或恢复码。请使用新建的隔离测试账号；本页面不提供绕过 CAPTCHA 的功能。</footer>
 </main>
@@ -134,7 +166,7 @@ if(location.origin!==EXPECTED_ORIGIN)by('deployNotice').classList.remove('hidden
 async function call(body,timeout=12000){const abort=new AbortController();const timer=setTimeout(()=>abort.abort(),timeout);try{const r=await fetch(ENDPOINT,{method:'POST',mode:'cors',cache:'no-store',headers:{'Content-Type':'application/json','apikey':PUBLIC_KEY},body:JSON.stringify(body),signal:abort.signal});let data={};try{data=await r.json();}catch(_){}return {ok:r.ok,status:r.status,data};}finally{clearTimeout(timer);}}
 function hideTotp(){by('mfaPrivate').classList.add('hidden');by('mfaQr').removeAttribute('src');by('mfaQr').classList.add('hidden');by('mfaSecret').textContent='';by('mfaSecret').classList.add('hidden');by('mfaReveal').classList.remove('hidden');by('mfaConceal').classList.add('hidden');if(totpQrUrl){URL.revokeObjectURL(totpQrUrl);totpQrUrl='';}}
 function resetMfa(){hideTotp();factorId='';pendingTotp=null;mfaDone=false;mfaEnabled=null;by('mfaCode').value='';by('mfaSetup').classList.add('hidden');msg('mfaMessage','请先使用测试账号登录。');msg('deviceMessage','这是自愿的高级安全测试；登录并验证 TOTP 后可提交申请。');by('ownerFactorHint').textContent='请登录后检查此账号的 TOTP 状态。';controls();}
-function forget(){emailIdentityActive=false;accessToken='';currentUsername='';by('changeUsername').value='';by('oldPassword').value='';by('newPassword').value='';by('confirmNewPassword').value='';recoveryCodesTemp=[];by('recoveryCodes').textContent='';by('recoveryBox').classList.add('hidden');by('regPassword').value='';by('loginPassword').value='';resetMfa();msg('sessionMessage','本页内存中的令牌已清除。本操作不注销或撤销 Supabase 服务器会话。');msg('ownerMessage','请先登录，然后测试自己账号的数据隔离。');}
+function forget(){emailIdentityActive=false;accessToken='';currentUsername='';by('changeUsername').value='';by('oldPassword').value='';by('newPassword').value='';by('confirmNewPassword').value='';recoveryCodesTemp=[];by('recoveryCodes').textContent='';by('recoveryBox').classList.add('hidden');by('regPassword').value='';by('loginPassword').value='';p981Hide();resetMfa();msg('sessionMessage','本页内存中的令牌已清除。本操作不注销或撤销 Supabase 服务器会话。');msg('ownerMessage','请先登录，然后测试自己账号的数据隔离。');}
 by('forgetSession').addEventListener('click',forget);
 window.addEventListener('pagehide',()=>{accessToken='';token='';recoveryCodesTemp=[];by('recoveryCodes').textContent='';hideTotp();pendingTotp=null;factorId='';});
 by('checkStatus').addEventListener('click',async()=>{if(location.origin!==EXPECTED_ORIGIN){msg('statusMessage','请从正式的 GitHub Pages HTTPS 测试网址打开，而不是本地文件。','warn');return;}if(pending)return;pending=true;controls();msg('statusMessage','正在连接独立测试服务…');try{const r=await call({action:'status'});if(r.ok&&r.data.environment==='isolated_staging'&&r.data.service_ready===true&&typeof r.data.registration_enabled==='boolean'&&typeof r.data.login_enabled==='boolean'){
@@ -471,6 +503,73 @@ async function acceptEmailCallback(){
 }
 window.addEventListener('pagehide',()=>{recoveryBearer='';});
 void acceptEmailCallback();
+
+
+// P9.81 Isolated username recovery and code rotation (server-side authorization).
+const RECOVERY_API=BASE+'/functions/v1/mmhvault-username-recovery-qa';
+let p981Codes=[];
+async function p981Request(body,authenticated=false){
+ const controller=new AbortController(),timer=setTimeout(()=>controller.abort(),22000);
+ try {
+  const hdr={'Content-Type':'application/json','apikey':PUBLIC_KEY};
+  if(authenticated&&accessToken)hdr['Authorization']='Bearer '+accessToken;
+  const r=await fetch(RECOVERY_API,{method:'POST',mode:'cors',cache:'no-store',headers:hdr,body:JSON.stringify(body),signal:controller.signal});
+  let data={};try{data=await r.json()}catch(_){}
+  return {ok:r.ok,status:r.status,data};
+ } finally {clearTimeout(timer)}
+}
+function p981Hide(){p981Codes=[];by('p981CodesText').textContent='';by('p981CodesText').classList.add('hidden');by('p981CodesArea').classList.add('hidden');}
+function p981Deliver(codes){p981Hide();p981Codes=codes.slice();by('p981CodesArea').classList.remove('hidden');by('p981CodesArea').scrollIntoView({behavior:'smooth',block:'start'});}
+by('p981HideCodes').addEventListener('click',p981Hide);
+by('p981ShowCodes').addEventListener('click',()=>{
+ if(p981Codes.length!==8)return;
+ by('p981CodesText').textContent=p981Codes.map((s,i)=>String(i+1)+'. '+s).join('\n');
+ by('p981CodesText').classList.remove('hidden');
+});
+window.addEventListener('pagehide',p981Hide);
+by('p981Status').addEventListener('click',async()=>{
+ if(pending)return;pending=true;controls();by('p981Status').disabled=true;
+ try{const r=await p981Request({action:'status'});
+ msg('p981StatusMsg',r.ok&&r.data.recovery_available===true?'隔离恢复码服务可连接。真实找回仍需有效的旧恢复码及 Cloudflare 验证。':'恢复服务尚未准备：'+String(r.data.error||r.status),r.ok?'good':'warn');
+ }catch(_){msg('p981StatusMsg','恢复服务连接失败；不要提交恢复码。','error')}
+ finally{pending=false;controls();by('p981Status').disabled=false;}
+});
+by('p981Rotate').addEventListener('submit',async e=>{
+ e.preventDefault();if(pending||!accessToken||!currentUsername||emailIdentityActive){msg('p981RotateMsg','请先用第 4 区登录用户名账号，邮箱账号不能使用此功能。','warn');return;}
+ const pwd=by('p981RotatePwd').value;
+ if(!pwd){msg('p981RotateMsg','请输入当前密码。','warn');return;}
+ pending=true;controls();by('p981RotateBtn').disabled=true;p981Hide();
+ try{
+ const r=await p981Request({action:'rotate',username:currentUsername,current_password:pwd},true);
+ if(r.ok&&r.data.rotated===true&&Array.isArray(r.data.recovery_codes)&&r.data.recovery_codes.length===8){
+  p981Deliver(r.data.recovery_codes);
+  msg('p981RotateMsg','已安全轮换恢复码；原有全部恢复码已经作废。请保存新码后点击隐藏。','good');
+ }else msg('p981RotateMsg',r.data.error==='mfa_required'?'已绑定 TOTP；请先完成第 6 区动态码验证。':'轮换失败：'+String(r.data.error||r.status),'warn');
+ }catch(_){msg('p981RotateMsg','网络异常，无法确认是否已经轮换；请检查再操作。','error')}
+ finally{by('p981RotatePwd').value='';pending=false;controls();by('p981RotateBtn').disabled=false;}
+});
+by('p981Recover').addEventListener('submit',async e=>{
+ e.preventDefault();if(pending)return;
+ const username=by('p981User').value.trim().toLowerCase();
+ const code=by('p981Code').value.trim().toUpperCase();
+ const newPassword=by('p981New').value, confirmation=by('p981Confirm').value;
+ if(!/^[a-z][a-z0-9_]{3,19}$/.test(username)||!/^MMH-[A-F0-9]{40}$/.test(code)||newPassword.length<6||newPassword.length>20||newPassword!==confirmation){
+ msg('p981RecoverMsg','请检查用户名、恢复码格式及新密码；新密码必须 6–20 位且两次一致。','warn');return;}
+ if(!token){msg('p981RecoverMsg','请先在第 2 区完成真实 Cloudflare 验证。','warn');return;}
+ pending=true;controls();by('p981RecoverBtn').disabled=true;p981Hide();
+ const captcha_token=token;token='';resetCaptcha();
+ try{
+ const r=await p981Request({action:'recover',username,recovery_code:code,new_password:newPassword,captcha_token});
+ if(r.ok&&r.data.password_changed===true&&Array.isArray(r.data.new_recovery_codes)&&r.data.new_recovery_codes.length===8){
+  forget();p981Deliver(r.data.new_recovery_codes);
+  msg('p981RecoverMsg','测试密码已重设，并轮换所有恢复码。旧 QA 会话已受到会话门禁限制。请保存新恢复码，随后用新密码重新登录。','good');
+ }else{
+  const key=String(r.data.error||r.status);
+  msg('p981RecoverMsg',key==='invalid_recovery_credentials'?'用户名或恢复码无效，或恢复码已经使用。':key==='password_changed_codes_rotation_failed'?'密码可能已更新，但恢复码轮换失败。请尝试用新密码登录并使用 11A 更新恢复码。':'恢复请求未完成：'+key,'warn');
+ }
+ }catch(_){msg('p981RecoverMsg','恢复请求未能确认；先检查账号状态，不要反复使用同一枚恢复码。','error')}
+ finally{by('p981Code').value='';by('p981New').value='';by('p981Confirm').value='';pending=false;controls();by('p981RecoverBtn').disabled=false;}
+});
 
 controls();
 })();

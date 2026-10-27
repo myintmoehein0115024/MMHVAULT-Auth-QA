@@ -1,7 +1,7 @@
 <!doctype html>
 <html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="referrer" content="no-referrer"><meta http-equiv="X-Content-Type-Options" content="nosniff">
 <meta http-equiv="Content-Security-Policy" content="default-src 'none'; connect-src https://ldivswlhtgmznzwhzsoi.supabase.co; script-src 'unsafe-inline'; style-src 'unsafe-inline'; img-src data:; base-uri 'none'; form-action 'none'; object-src 'none'">
-<title>MMHVAULT · P9.95H Staging 首次密码专项测试</title><style>
+<title>MMHVAULT · P9.95H.1 Staging OAuth Fix</title><style>
 :root{color-scheme:dark;--bg:#040f1b;--glass:#0a2338db;--edge:#355570;--dim:#b6c8d6;--gold:#f3ce75;--mint:#85e3ba;--warn:#ffc37b;--red:#ff9a9a}
 *{box-sizing:border-box}html{background:var(--bg)}body{margin:0;min-height:100vh;font:15px/1.65 -apple-system,BlinkMacSystemFont,"Segoe UI",Arial,"PingFang SC","Microsoft YaHei",sans-serif;color:#edf5fb;background:radial-gradient(ellipse at 82% 7%,#18456a 0%,transparent 48%),radial-gradient(ellipse at 6% 93%,#182734 0%,transparent 42%),linear-gradient(130deg,#04101c,#061827 72%)}
 body:before{content:"";pointer-events:none;position:fixed;inset:0;opacity:.08;background-image:linear-gradient(#91b5cc44 1px,transparent 1px),linear-gradient(90deg,#91b5cc44 1px,transparent 1px);background-size:48px 48px}
@@ -13,7 +13,7 @@ body:before{content:"";pointer-events:none;position:fixed;inset:0;opacity:.08;ba
 
 label{display:block;margin:16px 0 6px;font-size:13px;font-weight:700;color:#c5d9e7}input[type=password]{font:inherit;color:#fff;background:#051828;border:1px solid #476b84;border-radius:12px;width:100%;min-height:48px;padding:11px 13px;outline-offset:3px}input:focus{border-color:var(--gold)}.disabled-block{opacity:.72}.confirm{display:flex;gap:10px;align-items:flex-start;font-size:14px;margin:15px 0}.confirm input{margin-top:6px;accent-color:var(--gold)}.note{border-radius:12px;border:1px solid #687c87;background:#0a2133;padding:11px 13px;margin-top:13px;color:#d4e4ef}.two{display:grid;grid-template-columns:1fr 1fr;gap:12px}@media(max-width:650px){.two{grid-template-columns:1fr}}
 </style></head>
-<body><main class="wrap"><header><div class="brand">MMHVAULT</div><span class="ver">P9.95H · STAGING ONLY</span></header>
+<body><main class="wrap"><header><div class="brand">MMHVAULT</div><span class="ver">P9.95H.1 · STAGING ONLY</span></header>
 <section class="hero"><div class="eyebrow">GOOGLE-ONLY · FIRST PASSWORD ACCEPTANCE</div><h1>保留原 UID，安全增加密码。</h1><p class="lead">仅针对独立 Staging 项目的一个已核实 Google-only 测试身份。先完成新的 Google 授权，再由本人手动设置测试密码；最后验证邮箱密码登录仍对应同一 Auth UID。</p></section>
 <div class="guard"><strong>安全说明：</strong>此页只允许部署到 <code>MMHVAULT-Auth-QA/p995h.html</code>，只连接新 Staging 项目。<strong>请不要输入正式 MMHVAULT 的密码。</strong>不会删除、迁移、合并账户，也不接触任何真实财务数据。新密码仅发送给 Staging Supabase Auth，不上传至 GitHub，也不保存到浏览器存储。</div>
 <section class="grid">
@@ -39,7 +39,7 @@ const EXPECTED_UID='1bc5708a-cc72-4a33-a6f8-2096bdf4c690';
 const API=`https://${PROJECT}.supabase.co`;
 const KEY='sb_publishable_LxIB8564OZD48HQ8Mfsc0A_apkgERZo'; // PUBLIC browser key, never service_role
 const PATH='/MMHVAULT-Auth-QA/p995h.html',HOST='myintmoehein0115024.github.io';
-const URL=`https://${HOST}${PATH}`, FLOW='mmhvault-p995h-pkce-v1';
+const REDIRECT_URL=`https://${HOST}${PATH}`, FLOW='mmhvault-p995h-pkce-v1';
 const FRESH_MS=3*60*1000;
 const allowed=location.protocol==='https:'&&location.hostname===HOST&&location.pathname===PATH;
 const $=(id)=>document.getElementById(id);
@@ -56,7 +56,7 @@ $('oauthBtn').disabled=!allowed||!environmentOk||busy;
 $('pwd3').disabled=!setSucceeded||busy;$('verifyPasswordBtn').disabled=!setSucceeded||busy;
 }
 function wipeFlow(){try{sessionStorage.removeItem(FLOW);}catch(_){}}
-function clearURL(){if(location.hash||location.search)history.replaceState(null,'',URL);}
+function clearURL(){if(location.hash||location.search)history.replaceState(null,'',REDIRECT_URL);}
 function encode(b){return btoa(String.fromCharCode(...b)).replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,'');}
 async function sha(s){const h=await crypto.subtle.digest('SHA-256',new TextEncoder().encode(s));return encode(new Uint8Array(h));}
 async function req(url,opts={}){const c=new AbortController();const tt=setTimeout(()=>c.abort(),14000);
@@ -70,7 +70,7 @@ status('envStatus',google?(noSignup?'Staging 已连接；Google OAuth 开启，�
 async function startOAuth(){if(!environmentOk||!allowed||!crypto?.subtle)return;busy=true;updateControls();
 try{wipeFlow();accessToken=null;resetView();const verifier=encode(crypto.getRandomValues(new Uint8Array(48)));
 sessionStorage.setItem(FLOW,JSON.stringify({verifier,created:Date.now(),project:PROJECT,path:PATH}));
-const url=new URL(`${API}/auth/v1/authorize`);url.searchParams.set('provider','google');url.searchParams.set('redirect_to',URL);url.searchParams.set('code_challenge',await sha(verifier));url.searchParams.set('code_challenge_method','s256');url.searchParams.set('prompt','select_account');
+const url=new URL(`${API}/auth/v1/authorize`);url.searchParams.set('provider','google');url.searchParams.set('redirect_to',REDIRECT_URL);url.searchParams.set('code_challenge',await sha(verifier));url.searchParams.set('code_challenge_method','s256');url.searchParams.set('prompt','select_account');
 status('oauthStatus','正在跳转 Google。请选中之前的同一个测试账号…');location.assign(url.href);
 }catch(e){wipeFlow();status('oauthStatus',`无法开始重新认证：${safeError(e.message)}`,'err');}finally{busy=false;updateControls();}}
 async function userFromBearer(token){const user=await req(`${API}/auth/v1/user`,{headers:{Authorization:`Bearer ${token}`}});return user?.user?.id?user.user:user;}

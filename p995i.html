@@ -1,0 +1,109 @@
+<!doctype html>
+<html lang="zh-CN"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="referrer" content="no-referrer"><meta http-equiv="X-Content-Type-Options" content="nosniff">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; connect-src https://ldivswlhtgmznzwhzsoi.supabase.co; script-src 'unsafe-inline'; style-src 'unsafe-inline'; img-src data:; base-uri 'none'; form-action 'none'; object-src 'none'">
+<title>MMHVAULT · P9.95I Username Binding QA</title>
+<style>
+:root{color-scheme:dark;--bg:#04111d;--glass:#0b263bde;--edge:#31526c;--dim:#b7cbd8;--gold:#f6d380;--mint:#85e6bc;--amber:#ffd18d;--red:#ff9d9d}*{box-sizing:border-box}
+html{background:var(--bg)}body{margin:0;min-height:100vh;font:15px/1.65 -apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif;color:#f1f6f9;background:radial-gradient(ellipse at 86% 8%,#19486a 0%,transparent 48%),linear-gradient(130deg,#03101b,#081d2d 76%)}
+body:before{content:"";position:fixed;inset:0;pointer-events:none;opacity:.09;background-image:linear-gradient(#9abaca44 1px,transparent 1px),linear-gradient(90deg,#9abaca44 1px,transparent 1px);background-size:46px 46px}
+.wrap{max-width:1120px;margin:auto;padding:24px clamp(14px,4vw,34px) 70px;position:relative}
+header{display:flex;gap:12px;align-items:center;justify-content:space-between;padding:5px 0 17px;border-bottom:1px solid #64849b55}.brand{font:700 28px Georgia,serif;color:var(--gold);letter-spacing:3px}.tag{color:var(--gold);font-size:12px;border:1px solid #9b7647;border-radius:90px;padding:5px 11px}
+h1{font-size:clamp(30px,4.8vw,50px);line-height:1.24;margin:11px 0 14px;color:#ffdf9b}h2{font-size:20px;margin:0 0 9px;color:#ffe2a5}.hero{padding:36px 0 13px}.eyebrow{font-weight:750;color:var(--gold);font-size:11px;letter-spacing:2.6px}p{margin:8px 0;color:var(--dim)}.hero p{max-width:940px}
+.guard{margin:17px 0 23px;padding:14px 17px;border:1px solid #9b7839a8;border-radius:16px;background:#3c351b44;color:#ffe0a4}
+.grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:18px}.panel{background:linear-gradient(130deg,#15344dbb,#081a2de8);border:1px solid var(--edge);border-radius:20px;padding:23px;min-width:0;box-shadow:0 12px 28px #0002}.panel.full{grid-column:1/-1}.panel p{font-size:14px}
+button{border:1px solid #527a97;background:#173e59;color:#f7f9fb;border-radius:12px;font:700 14px inherit;min-height:47px;padding:11px 16px;cursor:pointer;font-weight:750;font-size:14px}button.gold{background:linear-gradient(130deg,#ffe49a,#e6b85f);border:0;color:#0e2233}button:disabled{opacity:.53;cursor:not-allowed}button:not(:disabled):hover{filter:brightness(1.09)}.wide{width:100%;margin-top:14px}
+.status{border-left:3px solid #89a9ba;border-radius:8px;background:#0b253b;margin-top:14px;padding:11px 13px;white-space:pre-wrap;overflow-wrap:anywhere;font-size:14px}.status.ok{color:var(--mint);border-left-color:var(--mint)}.status.warn{color:var(--amber);border-left-color:var(--amber)}.status.err{color:var(--red);border-left-color:var(--red)}
+label{display:block;font-size:13px;font-weight:720;color:#cae0ee;margin:15px 0 6px}input{display:block;width:100%;min-height:48px;padding:12px 13px;border:1px solid #456882;border-radius:12px;font:inherit;background:#041929;color:#f5f8fa}input:focus{outline:2px solid #d2ac68;outline-offset:1px}input:disabled{opacity:.65}
+.stats{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;margin-top:16px}.stat{border:1px solid #41637c;background:#071d2e;border-radius:12px;padding:13px;min-height:91px}.stat strong{color:var(--gold);font-size:19px;display:block;overflow-wrap:anywhere}.stat span{font-size:12px;color:#aec5d3}
+.hint{font-size:12px!important;color:#adc2d0}.sub{font-size:12px;color:#afc3d0}.confirm{display:flex;gap:9px;align-items:start;font-size:13px;margin-top:16px;color:#e2ecf2}.confirm input{min-height:auto;margin-top:5px;width:auto;accent-color:#edc778}
+footer{border-top:1px solid #66839b66;margin-top:30px;padding-top:14px;font-size:12px;color:#a5bbc9}
+@media(max-width:710px){.grid{grid-template-columns:1fr}.panel{padding:20px 17px}.panel.full{grid-column:1}.hero{padding:23px 0 10px}.stats{gap:7px}.stat{padding:9px}.stat strong{font-size:15px}}@media(max-width:360px){.stats{grid-template-columns:1fr}.stat{min-height:65px}}
+</style></head>
+<body><main class="wrap"><header><span class="brand">MMHVAULT</span><span class="tag">P9.95I · STAGING ONLY</span></header>
+<section class="hero"><div class="eyebrow">USERNAME BINDING · SAME AUTH UID</div><h1>原 Google 账号，安全绑定用户名。</h1><p>本阶段只为已通过 P9.95H 的 Staging 账号绑定一个唯一用户名。采用当前密码二次核验、数据库唯一约束，不创建新账号、不更换邮箱，也不修改原 UID。</p></section>
+<div class="guard"><b>安全边界：</b>只允许从 <code>MMHVAULT-Auth-QA/p995i.html</code> 操作，只连接新的 Staging 数据库。不要输入正式 MMHVAULT 密码。本页<strong>只负责绑定用户名，尚未开放用户名＋密码登录入口</strong>；后者必须另行完成防暴力破解与限流验收。</div>
+<section class="grid">
+<article class="panel"><h2>01 · 检查 Staging 安全环境</h2><p>确保连接新项目、Google 已启用、新用户注册关闭。检查不会创建用户。</p><button id="checkBtn" class="gold wide">检查隔离 Staging</button><div id="envStatus" class="status">等待检查</div></article>
+<article class="panel"><h2>02 · 邮箱密码登录原账号</h2><p>使用刚在 P9.95H 设置的 Staging 测试密码，验证身份。此网页不会保存您的密码或登录令牌。</p>
+<label for="email">原测试 Gmail</label><input id="email" type="email" inputmode="email" autocomplete="off" spellcheck="false" maxlength="254" placeholder="测试 Gmail" disabled>
+<label for="loginPwd">Staging 当前测试密码</label><input id="loginPwd" type="password" autocomplete="off" maxlength="256" disabled>
+<button id="loginBtn" class="gold wide" disabled>邮箱＋密码登录测试账号</button><div id="loginStatus" class="status">请先通过第 01 区检查</div></article>
+<article class="panel"><h2>03 · 原 UID 与当前绑定状态</h2><p>用户名映射只可由当前账号读取；浏览器不具备数据库直接读取权限。</p>
+<div class="stats"><div class="stat"><strong id="uid">—</strong><span>原 Auth UID</span></div><div class="stat"><strong id="identity">—</strong><span>Google 身份</span></div><div class="stat"><strong id="usernameValue">—</strong><span>已绑定用户名</span></div></div>
+<button id="statusBtn" class="wide" disabled>服务器核验当前绑定</button><div id="statusResult" class="status">请先登录</div></article>
+<article class="panel"><h2>04 · 绑定唯一用户名</h2><p>用户名长度 4–20 位，以英文字母开头，只能使用小写字母、数字和下划线。绑定后不能在此测试页修改。</p>
+<label for="newUsername">想绑定的新用户名</label><input id="newUsername" type="text" maxlength="20" autocomplete="off" autocapitalize="none" spellcheck="false" placeholder="例如：my_staging_id" disabled>
+<label for="proofPwd">再次输入 Staging 当前密码（身份复核）</label><input id="proofPwd" type="password" maxlength="256" autocomplete="off" disabled>
+<label class="confirm"><input id="agree" type="checkbox" disabled><span>我确认只为 Staging 原账号绑定用户名，不创建新账户或修改密码。</span></label>
+<button id="bindBtn" class="gold wide" disabled>验证密码并绑定用户名（仅一次）</button><div id="bindStatus" class="status">等待第 02 区登录并核对 UID</div></article>
+<article class="panel full"><h2>05 · 验收与后续</h2><div id="summary" class="status">等待本次真实用户名绑定。</div><p class="hint">成功后核对：UID 未变化、Google 身份保留、账号数量不增加、映射表只出现 1 条记录。本阶段没有启用用户名登录；后续专门测试用户名登录和限流。不要向聊天发送密码、令牌或验证码。</p><button id="clearBtn">清除本页会话与测试输入</button></article>
+</section><footer>MMHVAULT P9.95I · only new Staging <code>ldivswlhtgmznzwhzsoi</code>. 与生产 MMHVAULT、已暂停旧 Auth QA 完全隔离。数据库的服务密钥仅保存在服务器端 Edge Function。</footer></main>
+<script>
+(()=>{
+'use strict';
+const PROJECT='ldivswlhtgmznzwhzsoi', TARGET_UID='1bc5708a-cc72-4a33-a6f8-2096bdf4c690';
+const API_BASE=`https://${PROJECT}.supabase.co`, PUBLISHABLE_KEY='sb_publishable_LxIB8564OZD48HQ8Mfsc0A_apkgERZo';
+const HOST='myintmoehein0115024.github.io',PATH='/MMHVAULT-Auth-QA/p995i.html';
+const pageAllowed=location.protocol==='https:'&&location.hostname===HOST&&location.pathname===PATH;
+const $=id=>document.getElementById(id);
+const small=s=>s&&s.length>12?`${s.slice(0,8)}...${s.slice(-4)}`:'—';
+let envReady=false, token=null, userEmail=null, currentUid=null, boundUsername=null, busy=false;
+const usernameValid=s=>/^[a-z][a-z0-9_]{3,19}$/.test(s);
+function notice(id,message,kind=''){$(id).className=`status ${kind}`;$(id).textContent=message;}
+function clearPasswords(){['loginPwd','proofPwd'].forEach(id=>$(id).value='');}
+function sync(){const active=envReady&&pageAllowed&&!busy; $('loginBtn').disabled=!active;
+['email','loginPwd'].forEach(id=>$(id).disabled=!active);
+const signed=active&&Boolean(token)&&currentUid===TARGET_UID;
+$('statusBtn').disabled=!signed;
+['newUsername','proofPwd','agree'].forEach(id=>$(id).disabled=!signed||!!boundUsername);
+$('bindBtn').disabled=!signed||!!boundUsername;
+$('checkBtn').disabled=busy;}
+function shortError(err){return String(err||'unknown').replace(/[^a-zA-Z0-9_-]/g,'').slice(0,80);}
+async function apiRequest(url,opts={}){const ac=new AbortController(),timeout=setTimeout(()=>ac.abort(),14000);
+try {const res=await fetch(url,{method:opts.method||'GET',headers:{apikey:PUBLISHABLE_KEY,Accept:'application/json',...(opts.headers||{})},body:opts.body,signal:ac.signal,cache:'no-store',credentials:'omit'});
+const data=await res.json().catch(()=>({}));return{res,data};}finally{clearTimeout(timeout);}}
+async function check(){if(!pageAllowed){notice('envStatus','此页面只能在指定 GitHub Pages HTTPS 路径执行。','err');return;}
+busy=true;sync();notice('envStatus','正在核对隔离环境…');
+try{const {res,data}=await apiRequest(`${API_BASE}/auth/v1/settings`);envReady=res.ok&&data.external?.google===true&&data.disable_signup===true;
+notice('envStatus',envReady?'新 Staging 已连接；Google 已启用；新增用户注册已关闭。':'安全检查未通过：请确认 Google 开启且新增用户注册关闭。',envReady?'ok':'warn');}
+catch(e){envReady=false;notice('envStatus',`环境检查异常：${shortError(e.message)}`,'err');}
+finally{busy=false;sync();}}
+async function getUser(newToken){const {res,data}=await apiRequest(`${API_BASE}/auth/v1/user`,{headers:{Authorization:`Bearer ${newToken}`}});if(!res.ok||!data.id)throw Error('auth_user_unavailable');return data;}
+async function server(action,body={}){const {res,data}=await apiRequest(`${API_BASE}/functions/v1/mmh-staging-username-bind`,{method:'POST',headers:{Authorization:`Bearer ${token}`,'Content-Type':'application/json'},body:JSON.stringify({action,...body})});return{res,data};}
+async function login(){if(!envReady||busy)return;const email=$('email').value.trim(),password=$('loginPwd').value;
+if(!email||!password){notice('loginStatus','请输入 Staging Gmail 和当前测试密码。','warn');return;}
+busy=true;sync();notice('loginStatus','正在通过新 Staging 进行实际邮箱密码登录…');
+try {const {res,data}=await apiRequest(`${API_BASE}/auth/v1/token?grant_type=password`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({email,password})});
+if(!res.ok||!data.access_token)throw Error('login_not_accepted');
+const user=await getUser(data.access_token);if(user.id!==TARGET_UID)throw Error('uid_mismatch');
+if(!Array.isArray(user.identities)||!user.identities.some(i=>i.provider==='google'))throw Error('google_identity_missing');
+token=data.access_token;userEmail=user.email;currentUid=user.id;
+$('uid').textContent=small(currentUid);$('identity').textContent='Google';
+notice('loginStatus',`已登录 Staging 原账号；UID ${small(currentUid)}，Google 身份保留。`,'ok');
+await refreshStatus();notice('summary','账号登录和 UID 核对通过；如尚未绑定，请在第 04 区选择用户名。','ok');
+}catch(e){token=null;currentUid=null;boundUsername=null;notice('loginStatus',`未完成登录：${shortError(e.message)}。请检查账号和密码，不要重复连续尝试。`,'err');}
+finally{clearPasswords();busy=false;sync();}}
+async function refreshStatus(){if(!token)return;const{res,data}=await server('status');if(!res.ok){notice('statusResult',`无法读取绑定状态：${shortError(data.code||res.status)}`,'err');return;}
+boundUsername=data.username||null;$('usernameValue').textContent=boundUsername||'未绑定';
+notice('statusResult',boundUsername?`当前 UID 已绑定用户名：${boundUsername}。不可从本页重新绑定。`:'同一 UID 尚未绑定用户名，可进入第 04 区绑定。',boundUsername?'ok':'warn');sync();}
+async function bind(){if(!token||!currentUid||busy||boundUsername)return;
+const username=$('newUsername').value.trim().toLowerCase(),proof=$('proofPwd').value;
+if(!usernameValid(username)){notice('bindStatus','用户名格式不符：4–20 位，以字母开头，只能使用小写英文、数字及下划线。','warn');return;}
+if(!proof||!$('agree').checked){notice('bindStatus','请重新填写 Staging 当前密码，并勾选确认。','warn');return;}
+busy=true;sync();notice('bindStatus','正在由 Edge Function 验证当前密码并绑定原 UID…');
+try{const{res,data}=await server('bind',{username,current_password:proof});
+if(!res.ok){const codes={username_unavailable:'此用户名不可用，请换一个。',username_already_bound:'该账号已经绑定用户名，不能重复绑定。',current_password_invalid:'密码复核失败，请核对 Staging 测试密码。',invalid_username:'用户名格式不正确。',login_required:'登录令牌失效，请重新登录。'};throw Error(codes[data.code]||data.code||`HTTP_${res.status}`);}
+if(data.uid_short!==small(TARGET_UID)||data.username!==username)throw Error('uid_readback_mismatch');
+notice('bindStatus',`绑定成功：用户名 ${username} 已关联原 UID ${data.uid_short}，未创建新账号。`,'ok');
+await refreshStatus();notice('summary','P9.95I 真实绑定已通过网页回执；还要由服务器只读复核账号数、唯一索引和原 Google 身份。用户名＋密码登录仍尚未开放。','ok');
+}catch(e){notice('bindStatus',`绑定未完成：${String(e.message).slice(0,110)}。请截图错误提示，不要发送密码。`,'err');}
+finally{$('proofPwd').value='';busy=false;sync();}}
+function clear(){token=null;currentUid=null;userEmail=null;boundUsername=null;clearPasswords();$('email').value='';$('newUsername').value='';$('agree').checked=false;
+$('uid').textContent='—';$('identity').textContent='—';$('usernameValue').textContent='—';notice('loginStatus','本页令牌已清除（不等于服务端全局注销）。');notice('statusResult','等待新登录。');notice('bindStatus','等待本人重新核验。');notice('summary','页面状态已清除。');sync();}
+$('checkBtn').addEventListener('click',check);$('loginBtn').addEventListener('click',login);$('statusBtn').addEventListener('click',refreshStatus);$('bindBtn').addEventListener('click',bind);$('clearBtn').addEventListener('click',clear);
+if(!pageAllowed)notice('envStatus','安全锁：只能部署在 MMHVAULT-Auth-QA/p995i.html。','err');
+sync();check();
+})();
+</script></body></html>

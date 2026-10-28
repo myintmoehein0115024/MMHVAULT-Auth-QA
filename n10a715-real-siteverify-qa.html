@@ -161,10 +161,10 @@ footer{font-size:12px;color:#a5b6c9;margin-top:22px}
      }
      show('server-state','PASS · 真实 Cloudflare Secret / hostname / action 验证成功。\n正在检查重复使用是否被拒绝…',true);
      const replay=await check(expected,t);
-     if(replay.status===403&&replay.code==='siteverify_rejected'){
-       show('server-state','PASS · 真实服务器 Siteverify 成功。\nPASS · hostname 和 action 已校验。\nPASS · 同一令牌重复使用被拒绝。\n\n可截图发送此摘要。没有显示或保存任何令牌。',true);
+     if(replay.status===403&&replay.code==='token_replayed'){
+       show('server-state','PASS · 真实服务器 Siteverify 成功。\nPASS · hostname 和 action 已校验。\nPASS · Staging 数据库原子单次令牌保护已拒绝重复使用。\n\n可截图发送此摘要。没有显示或保存任何令牌。',true);
      }else{
-       show('server-state','PASS · 第一次 Siteverify 已成功。\nPENDING · 重放结果未达到预期（HTTP '+replay.status+' · '+replay.code+'），需要排查。',false);
+       show('server-state','PASS · 第一次 Siteverify 已成功。\nPENDING · Staging 原子防重放结果未达到预期（HTTP '+replay.status+' · '+replay.code+'），需要排查。',false);
      }
    }catch(e){show('server-state','网络或授权验证未完成，请保留当前关闭状态并检查。',false)}
    finally{working=false;clearToken();if(widgetId!==null&&window.turnstile?.reset)try{window.turnstile.reset(widgetId)}catch{}}

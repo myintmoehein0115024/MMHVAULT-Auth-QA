@@ -1,0 +1,89 @@
+<!doctype html><html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"><meta name="referrer" content="no-referrer"><meta name="robots" content="noindex,nofollow,noarchive"><meta name="theme-color" content="#071827"><meta http-equiv="Content-Security-Policy" content="default-src &#x27;none&#x27;; connect-src https://ldivswlhtgmznzwhzsoi.supabase.co; script-src &#x27;sha256-RSLAzz+nWKoELwTeLI3WhVpKVVRDSUJooPj7cjyctjg=&#x27;; style-src &#x27;sha256-mKyBULrvAHFnc5vD3y8ienWIuwXCwKlrx7qVrwinpxk=&#x27;; img-src data:; base-uri &#x27;none&#x27;; object-src &#x27;none&#x27;; form-action &#x27;none&#x27;; frame-src &#x27;none&#x27;; upgrade-insecure-requests"><title>MMHVAULT · P9.95N-N7 Google OAuth QA</title><style>
+:root{color-scheme:dark;--bg:#06121f;--card:#142539cf;--ink:#edf4ff;--muted:#b7cadd;--gold:#f4c879;--border:#9bb2c22a;--green:#76e5be;--red:#ffc0b7}
+*{box-sizing:border-box}body{margin:0;min-height:100vh;background:radial-gradient(ellipse at 8% 0,#1e4560 0,transparent 48%),linear-gradient(120deg,#091b2b,#06101c);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;color:var(--ink);line-height:1.56}
+main{max-width:1000px;margin:54px auto;padding:0 18px 55px}.panel{border:1px solid var(--border);background:var(--card);backdrop-filter:blur(18px);border-radius:26px;box-shadow:0 20px 65px #0007;padding:clamp(22px,4.5vw,45px)}.kicker{color:var(--gold);font-weight:800;letter-spacing:.16em;font-size:13px}.pill{display:inline-block;border:1px solid #f4c87955;color:var(--gold);padding:5px 10px;border-radius:30px;font-size:12px;margin-top:13px}h1{font-size:clamp(25px,4vw,36px);letter-spacing:-.03em;margin:16px 0 9px}h2{font-size:19px;margin:0 0 14px}p{margin:8px 0 14px;color:var(--muted)}.warn{border:1px solid #f4c87965;background:#f4c8790f;border-radius:13px;padding:13px 16px;font-size:13px;margin:25px 0}.grid{display:grid;grid-template-columns:1fr 1fr;gap:17px;margin-top:18px}.box{border:1px solid var(--border);background:#07182980;border-radius:18px;padding:21px;min-width:0}.span{grid-column:1/-1}button{border:0;background:linear-gradient(115deg,#ffe5a7,#e8b457);color:#18283c;font-size:15px;font-weight:750;min-height:47px;border-radius:12px;padding:12px 17px;cursor:pointer;margin:6px 8px 4px 0}button.secondary{background:#ffffff0a;border:1px solid #b7c9d9a0;color:var(--ink)}button:disabled{opacity:.42;cursor:not-allowed}.result{background:#071827;border:1px solid #5e829b63;border-radius:13px;padding:12px 15px;white-space:pre-wrap;overflow-wrap:anywhere;color:var(--muted);min-height:54px;font-size:14px}.result.good{color:var(--green)}.result.bad{color:var(--red)}.stats{display:grid;grid-template-columns:1fr 1fr;gap:13px}.stats article{background:#08182a;border:1px solid var(--border);padding:17px;border-radius:14px}.stats span{display:block;color:var(--muted);font-size:12px}.stats strong{display:block;color:var(--ink);font-size:17px;margin-top:4px}ol{padding-left:21px;color:var(--muted);margin-top:8px}li{margin:9px 0}code{color:var(--gold);overflow-wrap:anywhere}.fine{font-size:12px}a{color:#f8d89b}.row{margin-top:13px}strong{color:var(--ink)}@media(max-width:700px){main{margin:19px auto;padding:0 12px 25px}.grid,.stats{grid-template-columns:1fr}.panel{border-radius:20px;padding:20px}.box{padding:15px}button{width:100%;margin:8px 0 3px}}
+</style></head><body>
+<main><div class="panel"><div class="kicker">MMHVAULT · SECURITY QA</div><span class="pill">P9.95N-N7 · GOOGLE OAUTH · STAGING ONLY</span><h1>Google 登录与会话安全测试</h1><p>验证 Google OAuth 是否返回原有账户 A 的 UID，能否读取自己已有的 QA 数据，并验证会话续期与退出状态。此页面不连接正式 MMHVAULT 财务服务。</p>
+<div class="warn"><strong>重要安全提醒</strong><p>仅使用原账户 A 对应的 Google 账号。不要使用其他 Google 账号：Supabase OAuth 可能自动创建新 Auth 用户。本页面会拒绝不匹配的 UID，但无法保证阻止新账号在登录时被创建。此页不需要也不会要求输入 Google 密码。</p><p>测试只适用于原有测试域名，使用 PKCE。临时 PKCE 验证码仅在重定向期间存入此标签页的 sessionStorage；获得的 Access/Refresh Token 仅保存在网页内存，退出时清空。</p></div>
+<div class="grid"><section class="box"><h2>① 使用 Google 登录账户 A</h2><ol><li>请使用与原账户 A 关联的 Google 账号。</li><li>点击按钮前往 Google 官方登录界面。</li><li>完成 Google 验证后，应返回本页面并显示 UID 检查结果。</li></ol><button id="start" type="button">使用 Google 登录（仅 Staging A）</button><p class="fine">如果跳转到别的地址，请停止测试，检查 Supabase Authentication → URL Configuration 中允许的回调地址。</p></section>
+<section class="box"><h2>② 当前身份与数据隔离</h2><div class="stats"><article><span>账户 A UID（部分隐藏）</span><strong id="uid">—</strong></article><article><span>QA RLS 检查</span><strong id="owner">—</strong></article></div><div id="step" class="result row">尚未开始 Google 登录。</div></section>
+<section class="box"><h2>③ 会话续期与退出</h2><p>Google 身份与 QA 数据检查通过之后，可验证 Refresh Token 轮换，再注销并检查旧 JWT。</p><button id="refresh" type="button" class="secondary" disabled>测试一次会话续期</button><button id="logout" type="button" class="secondary" disabled>退出并检查旧 JWT</button><p class="fine">JWT 退出行为可能因访问控制策略不同而不同；本测试仅针对特定 QA RLS 表。</p></section>
+<section class="box"><h2>④ 验收结果</h2><div id="result" class="result" aria-live="polite">等待测试。成功后会显示原 UID 与 QA RLS 的核验结果。</div><p class="fine">仅供 N7 个人测试；不会创建用户名绑定，也不会操作正式财务数据。</p></section></div>
+<p class="fine">本页面仅限 <code>MMHVAULT-Auth-QA</code>。如果 Google 提示 redirect URL 不被允许，请在 Staging 中添加这一个完整路径，不要将其加入正式环境。</p></div></main><script>
+'use strict';
+const BASE='https://ldivswlhtgmznzwhzsoi.supabase.co';
+const KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxkaXZzd2xodGdtem56d2h6c29pIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTMwODgxOTksImV4cCI6MjEwODY2NDE5OX0.y_XAkQZOSbOatWswYMbGTWyZBmrMIWooTBsw9xQVyPM';
+const REDIRECT='https://myintmoehein0115024.github.io/MMHVAULT-Auth-QA/p995n-google-oauth-qa.html';
+const EXPECTED_UID='1bc5708a-cc72-4a33-a6f8-2096bdf4c690';
+const VERIFIER_KEY='mmh_n7_pkce_verifier';
+const START_KEY='mmh_n7_pkce_started';
+const $=x=>document.getElementById(x);
+const short=x=>typeof x==='string'?x.slice(0,6)+'…'+x.slice(-4):'—';
+let session=null,working=false,callbackPending=false;
+function setResult(msg,type=''){$('result').textContent=msg;$('result').className='result '+type;}
+function setStep(msg,type=''){$('step').textContent=msg;$('step').className='result '+type;}
+function setStat(id,v){$(id).textContent=v;}
+function update(){const active=!!session; $('start').disabled=working||active||callbackPending;$('refresh').disabled=working||!active;$('logout').disabled=working||!active;}
+function clearPkce(){try{sessionStorage.removeItem(VERIFIER_KEY);sessionStorage.removeItem(START_KEY)}catch{}}
+function clearSession(){session=null;setStat('uid','—');setStat('owner','—');update()}
+function checkOrigin(){if(location.origin!=='https://myintmoehein0115024.github.io'||location.pathname!=='/MMHVAULT-Auth-QA/p995n-google-oauth-qa.html')throw Error('请只使用 MMHVAULT-Auth-QA 正式测试地址。');}
+function makeVerifier(){const arr=new Uint8Array(48);crypto.getRandomValues(arr);return Array.from(arr,v=>v.toString(16).padStart(2,'0')).join('');}
+async function challenge(verifier){const dig=await crypto.subtle.digest('SHA-256',new TextEncoder().encode(verifier));const bits=Array.from(new Uint8Array(dig),v=>String.fromCharCode(v)).join('');return btoa(bits).replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,'');}
+async function request(path,body=null,access=null,method='POST'){
+ const head={'apikey':KEY,'Accept':'application/json'};if(body!==null)head['Content-Type']='application/json';if(access)head['Authorization']='Bearer '+access;
+ const ctrl=new AbortController();const timer=setTimeout(()=>ctrl.abort(),16000);
+ try{const r=await fetch(BASE+path,{method,headers:head,body:body===null?undefined:JSON.stringify(body),cache:'no-store',mode:'cors',credentials:'omit',referrerPolicy:'no-referrer',signal:ctrl.signal});let data=null;try{data=await r.json()}catch{}return {ok:r.ok,status:r.status,data};}
+ finally{clearTimeout(timer)}
+}
+async function getUser(access){const r=await request('/auth/v1/user',null,access,'GET');if(!r.ok||typeof r.data?.id!=='string')throw Error('Supabase /auth/v1/user 核验失败（HTTP '+r.status+'）');return r.data;}
+async function checkOwner(access,uid){const r=await request('/rest/v1/mmh_p995k_session_protected_qa?select=user_id,fixture_name',null,access,'GET');if(!r.ok||!Array.isArray(r.data))return false;return r.data.length===1&&r.data[0].user_id===uid&&r.data[0].fixture_name==='P995K_OWNER_ONLY';}
+async function revoke(access){try{return (await request('/auth/v1/logout?scope=local',null,access,'POST')).ok}catch{return false}}
+async function beginGoogle(){if(working||session)return;working=true;update();try{
+ checkOrigin();if(!crypto?.subtle||!crypto?.getRandomValues)throw Error('浏览器缺少安全随机数或 SHA-256 支持。');
+ const verifier=makeVerifier();const digest=await challenge(verifier);
+ sessionStorage.setItem(VERIFIER_KEY,verifier);sessionStorage.setItem(START_KEY,String(Date.now()));
+ const url=new URL(BASE+'/auth/v1/authorize');url.searchParams.set('provider','google');url.searchParams.set('redirect_to',REDIRECT);url.searchParams.set('code_challenge',digest);url.searchParams.set('code_challenge_method','s256');
+ setStep('即将前往 Google 登录，请只选择与账户 A 对应的 Google 账号。','');
+ location.assign(url.toString());
+ }catch(e){clearPkce();setResult('Google 登录未启动：'+String(e.message||e),'bad');working=false;update()}}
+async function handleCallback(){const qs=new URLSearchParams(location.search);const code=qs.get('code'),error=qs.get('error');if(!code&&!error)return;
+ callbackPending=true;working=true;update();
+ // Remove authorization code and error parameters immediately, before any asynchronous request.
+ history.replaceState(null,'',REDIRECT);
+ let issuedAccess=null;
+ try{
+ checkOrigin();if(error)throw Error('Google/Supabase 返回 '+error+'，请核对 Provider 和 Redirect URL 设置。');
+ if(!code||code.length>2000)throw Error('授权码缺失或格式异常。');
+ const verifier=sessionStorage.getItem(VERIFIER_KEY),started=Number(sessionStorage.getItem(START_KEY));clearPkce();
+ if(!verifier||!Number.isFinite(started)||Date.now()-started>300000||Date.now()<started-30000)throw Error('授权验证状态已过期或丢失。请在同一个浏览器标签页重新开始。');
+ setStep('Google 已返回授权码。正在通过 PKCE 安全换取 Staging 会话…','');
+ const x=await request('/auth/v1/token?grant_type=pkce',{auth_code:code,code_verifier:verifier});
+ if(!x.ok||typeof x.data?.access_token!=='string'||typeof x.data?.refresh_token!=='string')throw Error('PKCE 换取会话失败（HTTP '+x.status+'；'+String(x.data?.code||x.data?.error_code||'unknown')+'）。');
+ issuedAccess=x.data.access_token;const user=await getUser(issuedAccess);
+ if(user.id!==EXPECTED_UID){const revoked=await revoke(issuedAccess);throw Error('身份不一致：Google 返回了非账户 A 的 UID '+short(user.id)+'。已请求退出：'+(revoked?'成功':'未能确认')+'。请不要继续操作，避免生成重复账号。');}
+ const owner=await checkOwner(issuedAccess,user.id);if(!owner){await revoke(issuedAccess);throw Error('账号 UID 正确，但 QA RLS 所有者读取未通过；已请求退出。');}
+ session={access:x.data.access_token,refresh:x.data.refresh_token,uid:user.id};
+ setStat('uid',short(user.id));setStat('owner','PASS · 仅自己 1 条');
+ setStep('Google OAuth PKCE 完成：原有账户 A UID 保持不变，QA 数据归属检查通过。','good');
+ setResult('Google 登录 PASS｜账户 A UID '+short(user.id)+'｜RLS PASS。\n令牌仅存在当前网页内存中；请继续测试会话续期，随后点击退出。','good');
+ }catch(e){if(issuedAccess&&!session)await revoke(issuedAccess);setResult(String(e.message||e),'bad');setStep('Google OAuth 尚未通过 N7 验收。','bad');}
+ finally{callbackPending=false;working=false;update()}
+}
+async function testRefresh(){if(!session||working)return;working=true;update();let old=session;try{
+ const x=await request('/auth/v1/token?grant_type=refresh_token',{refresh_token:old.refresh});
+ if(!x.ok||!x.data?.access_token||!x.data?.refresh_token)throw Error('Refresh Token 续期失败（HTTP '+x.status+'）。');
+ const u=await getUser(x.data.access_token);const owned=u.id===EXPECTED_UID && await checkOwner(x.data.access_token,u.id);
+ if(!owned){await revoke(x.data.access_token);session=null;throw Error('续期后 UID 或 QA 数据检查未通过。');}
+ session={access:x.data.access_token,refresh:x.data.refresh_token,uid:u.id};
+ setResult('Refresh Token 续期 PASS｜UID '+short(u.id)+' 不变｜QA RLS PASS。\n请点击「退出并验证旧 JWT」。','good');
+ }catch(e){setResult(String(e.message||e),'bad')}finally{working=false;update()}}
+async function signOut(){if(!session||working)return;working=true;update();const old=session.access;
+ try{const revokeOK=await revoke(old);session=null;const check=await request('/rest/v1/mmh_p995k_session_protected_qa?select=user_id,fixture_name',null,old,'GET');
+ const blocked=(check.ok&&Array.isArray(check.data)&&check.data.length===0)||check.status===401||check.status===403;
+ setResult('退出请求：'+(revokeOK?'PASS':'未确认')+'\n旧 JWT 所有者读取：'+(blocked?'PASS · 已拒绝访问':'FAIL · 仍可读取或验证异常（HTTP '+check.status+'）')+'。',revokeOK&&blocked?'good':'bad');
+ setStep('完成退出验证。请关闭本测试标签页。',revokeOK&&blocked?'good':'bad');clearSession();
+ }catch(e){session=null;clearSession();setResult('退出检测异常：'+String(e.message||e),'bad')}finally{working=false;update()}}
+$('start').addEventListener('click',beginGoogle);$('refresh').addEventListener('click',testRefresh);$('logout').addEventListener('click',signOut);
+window.addEventListener('pagehide',()=>{session=null;clearSession()});
+update();handleCallback();
+</script></body></html>

@@ -20,7 +20,19 @@ function fixture(opts={}){
   async signOut(options){calls.push('signOutLocal');assert.equal(options.scope,'local');active=false;return opts.signoutError?{error:{message:'offline'}}:{error:null}},
   async setSession(pair){calls.push('setSession');assert.equal(pair.access_token,privateJwt);active=true;return {data:{user:{id:UID}}}}
  };
- const client={auth,from(name){assert.equal(name,'mmh_n10a6_auth_owner_probe');calls.push('fromOwner');return {select(column){assert.equal(column,'user_id');return {async limit(limit){assert.equal(limit,2);return opts.ownerError?{error:{message:'owner table unavailable'}}:{data:opts.rows||[{user_id:UID}]}}}}}};
+ const client={
+  auth,
+  from(name){
+   assert.equal(name,'mmh_n10a6_auth_owner_probe');calls.push('fromOwner');
+   return {select(column){
+    assert.equal(column,'user_id');
+    return {async limit(limit){
+      assert.equal(limit,2);
+      return opts.ownerError?{error:{message:'owner table unavailable'}}:{data:opts.rows||[{user_id:UID}]};
+    }};
+   }};
+  }
+ };
  const transport=async (url,options)=>{
   calls.push('request');assert.equal(url,cfg.endpoint);assert.equal(options.credentials,'omit');
   assert.equal(options.headers.apikey,KEY);

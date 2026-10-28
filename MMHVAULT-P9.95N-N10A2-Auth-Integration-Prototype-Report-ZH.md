@@ -47,3 +47,31 @@ https://myintmoehein0115024.github.io/MMHVAULT-Auth-QA/p995n-n10a2-auth-integrat
 此版本为**独立测试原型**，不是正式站点更新。测试页面不提供注册、财务 Dashboard 或生产认证集成；用户名尚未在本页完成真正的第三种方式的端到端登录。先验收邮箱与 Google 两种实际会话，再于隔离 QA 环境审查新用户名集成方案；禁止绕过已关闭的安全开关。
 
 相关前置报告：`MMHVAULT-P9.95N-N10A1-Production-Security-Definer-ReadOnly-Audit-ZH.md`。生产 Security Advisor 的两项 WARN 仍待处理或评估，不因本次测试静态通过而自动消除。
+
+
+## 真实浏览器验收补充（2026-10-28）
+
+经用户在 Mac Chrome 无痕窗口对部署后的 Auth QA 页面逐项实测，截图显示：
+
+| 验收项 | 邮箱账户 B | Google 账户 A |
+|---|---|---|
+| 真实登录 / OAuth 回调 | PASS | PASS |
+| UID 归属 | `72a8d120…cffc` 与原账号一致 | `1bc5708a…c690` 与原账号一致 |
+| 专用 QA RLS 所有者读取 | PASS · 仅自己 1 条 | PASS · 仅自己 1 条 |
+| Refresh Token 续期后 UID/RLS | PASS | PASS |
+| 显式退出 | PASS | PASS |
+| 旧 JWT 无法读取专用 QA 表 | PASS | PASS |
+| UID、METHOD、RLS 状态清空 | PASS | PASS |
+
+Google 模式的 Staging Redirect URL 已由用户添加，OAuth PKCE 成功完成原 UID 校验；邮箱模式使用 N8 后的新 Staging 密码成功。无明文密码、授权码或访问令牌收集到报告中。
+
+**证据范围：**以上为页面实测反馈及截图证实的结果，未在审查中扫描浏览器网络/所有服务端 session；旧 JWT 读取被拒仅针对专用 QA 表，不能宣称整个生产系统的已签发 Access Token 立即失效。既有浏览器密码自动填充可能在输入框显示圆点，但脚本已在登录提交后清空表单值，后续还应跨浏览器检查自动填充。
+
+**阶段结论：**N10-A2 的邮箱和 Google **双模式身份与会话回归通过**。用户名标签尚未完成本页安全关闭状态的用户实测，且本页不执行真实用户名登录；完整三方式生产集成仍未放行。移动端、性能与正式财务表 RLS 未验收。N6/N9 继续保持代码级关闭；与正式生产环境完全隔离。
+
+## N10-A3 建议继续顺序
+
+1. 在 N10-A2 页面点击「用户名」→「检查 N9 关闭保护状态」，记录闭锁测试 PASS（绝不重新开启旧接口）。
+2. 审查 N6/N9 的服务端最小权限、失败限流、Turnstile Siteverify 以及同 UID 会话创建方式，形成安全复用方案；仅在全新隔离接口进行第三方式端到端测试。
+3. 复核 GitHub Pages OAuth、邮箱与用户名组合在 iOS Safari/Android Chrome 的交互。
+4. 回归生产业务表的完整所有者隔离后，才考虑生产集成及回滚方案。

@@ -131,3 +131,22 @@
 截图仍出现提醒「首次使用需要把本页完整 URL 添加到 Staging Redirect URLs」，这属于页面固定说明；实际 OAuth 成功已经验证该回调地址可用，不属于本次验证失败。后续可按验证状态改善提醒文案。
 
 **验收边界：**当前结论限定为隔离 Staging 身份及专用 QA 表，不代表正式财务数据、移动设备、所有 JWT 使用场景通过安全审计。完成 Google 退出和旧 JWT 检查后，再将 N10-A3.5 标记完整 PASS。N10-A3 新用户名端点当前仍保持关闭，真实用户名登录尚未验收。
+
+
+## N10-A3.5 Google 完整会话回归验收（2026-10-28）
+
+用户在 Mac Chrome 无痕窗口完成 N10-A3.3 统一测试页的 Google 账户 A 登录、Refresh Token 续期、退出及旧 JWT 对专用 QA 表拒绝测试，并连续提供截图。
+
+| 测试项目 | 浏览器截图结果 |
+|---|---|
+| OAuth PKCE 登录账户 A | PASS |
+| 原 UID 1bc5708a…c690 | 未改变 |
+| 本人专用 QA RLS 数据 1 条 | PASS |
+| Refresh Token 续期及身份/RLS 保持 | PASS |
+| 显式退出 | PASS |
+| 旧 JWT 再读专用 QA 表 | PASS · 被拒绝 |
+| UID、QA RLS、METHOD 面板清空 | PASS |
+
+此测试仅表明已测试的专用 QA 数据表对旧 JWT 的拒绝，不可推广到所有生产 API 的 JWT 即时失效。
+
+**状态**：N10-A3.4 邮箱会话全回归和 N10-A3.5 Google 会话全回归均通过。N10-A3.6 真实用户名登录尚未执行，新的 Staging 函数仍需保持关闭，正式 MMHVAULT 未修改。

@@ -1,0 +1,38 @@
+name: N10-A7.13 deployed client-only Turnstile QA page checks
+on:
+  push:
+    branches: [main]
+    paths: ['.github/workflows/n10-a713-client-page-smoke.yml']
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  safe-page:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Verify live GitHub Pages challenge UI without credentials
+        shell: python
+        run: |
+          import urllib.request,time,sys
+          url='https://myintmoehein0115024.github.io/MMHVAULT-Auth-QA/n10a713-turnstile-client-qa.html'
+          found=False
+          for attempt in range(15):
+            try:
+              with urllib.request.urlopen(urllib.request.Request(url,headers={'User-Agent':'MMHVAULT-N10A713-QA'}),timeout=12) as resp:
+                html=resp.read(100000).decode('utf-8')
+                valid=resp.status==200 and '0x4AAAAAAFlXEfEHAP1TUxjr' in html and 'n10a713TurnstileLoaded' in html
+                valid=valid and 'https://challenges.cloudflare.com/turnstile/v0/api.js' in html
+                valid=valid and "ephemeralToken=token" in html and "window.addEventListener('pagehide',wipe" in html
+                valid=valid and 'prerequisites_present' not in html
+                valid=valid and 'sb_secret_' not in html and 'SERVICE_ROLE_KEY' not in html
+                if valid:found=True;break
+            except Exception:
+              pass
+            time.sleep(4)
+          if not found:
+            raise SystemExit('FAIL: live Turnstile QA page not deployed or failed checks')
+          print('N10A713_CLIENT_PAGE_HTTPS 200 PASS')
+          print('N10A713_PUBLIC_SITEKEY_AND_SCRIPT PASS')
+          print('N10A713_NO_CREDENTIALS_OR_SECRET PASS')
+          print('N10A713_CLIENT_ONLY_NO_SITEVERIFY_CLAIM PASS')

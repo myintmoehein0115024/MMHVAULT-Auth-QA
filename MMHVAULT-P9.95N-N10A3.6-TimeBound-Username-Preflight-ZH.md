@@ -117,3 +117,10 @@
 **仍需用户完成：**在 Staging Edge Functions Secrets 将 `MMH_N10A3_ENABLED` 从 `true` 改回 `false`。这与代码级关闭形成双保险。无需再次输入或展示任何密码、JWT、Secret 值。完成后可用无密码 preflight 核实浏览器关闭行为。
 
 **生产状态：**正式 MMHVAULT 未修改，N10-A3.7 仅为隔离 Staging 端到端验收 PASS，生产上线仍需独立审查，绝不自动部署。
+
+## N10-A3.7 Secret 双重关闭与最终只读复核（2026-10-28）
+
+用户确认在 Staging Edge Functions Secrets 中将 `MMH_N10A3_ENABLED` 恢复为 `false`。连接器不提供 Secret 原文读取，故不声称独立读取到了 Secret 的实际值。
+重新读取隔离 Staging 已部署新函数：`mmh-staging-n10a3-username-login` 当前 v6，`CODE_GATE_OPEN=false`，测试开始与结束时间都为 1970 无效时间，与 GitHub 安全关闭源码完全一致。旧 N6 v13 / N9 v6 仍代码关闭。
+只读 SQL 复查：Auth Users 2、用户名绑定 2、QA Owner 2。正式网站、生产数据库及正式认证设置没有修改。
+**结论：N10-A3.7 Staging 用户名登录/续期/退出/旧 JWT 对专用 QA 表拒绝测试 PASS；代码级安全关闭，用户确认独立 Secret 已关闭。生产上线仍 BLOCKED，转 N10-A4 只读审查。**

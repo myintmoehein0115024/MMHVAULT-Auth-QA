@@ -111,7 +111,9 @@ async function runControlledAcceptance({cfg,api,captcha,credentials,options={}})
   record('final_local_logout_pass');
   return result(true,'staging_username_acceptance_pass',steps);
  }catch(error){
-  const code=String(error?.message||'test_unavailable');
+  const rawCode=String(error?.message||'test_unavailable');
+  // SDK and acceptance layer use different logout error codes; normalize safely.
+  const code=rawCode==='local_signout_failed'?'local_logout_failed':rawCode;
   const known=new Set(['uid_mismatch','rls_owner_mismatch','unverified_owner',
    'captcha_bind_unavailable','captcha_login_unavailable','server_window_closed',
    'bind_not_accepted','local_logout_failed','rate_limited_stop',

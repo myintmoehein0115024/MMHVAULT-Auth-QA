@@ -155,16 +155,22 @@ footer{font-size:12px;color:#a5b6c9;margin-top:22px}
          first.status===403&&first.code==='siteverify_rejected');
        return;
      }
+     if(first.status===429&&first.code==='qa_rate_limited'){
+       show('server-state','PENDING · Staging 测试账号已达到每小时最多 6 次的提交上限（HTTP 429 · qa_rate_limited）。\n请停止点击，等待限流窗口恢复后再使用新验证码测试。\n这不是 Cloudflare Secret 验证失败，也不能判定本次防重放验收结果。',false);
+       return;
+     }
      if(first.status!==200||first.code!=='siteverify_pass'){
-       show('server-state','未通过：云端首次 Siteverify 返回 HTTP '+first.status+' · '+first.code+'。请检查 QA 用户权限与 Cloudflare Secret 配对。',false);
+       show('server-state','PENDING · 首次服务端验收未成功（HTTP '+first.status+' · '+first.code+'）。请先核实具体错误码，不要将所有错误归因于 Cloudflare Secret。',false);
        return;
      }
      show('server-state','PASS · 真实 Cloudflare Secret / hostname / action 验证成功。\n正在检查重复使用是否被拒绝…',true);
      const replay=await check(expected,t);
      if(replay.status===403&&replay.code==='token_replayed'){
        show('server-state','PASS · 真实服务器 Siteverify 成功。\nPASS · hostname 和 action 已校验。\nPASS · Staging 数据库原子单次令牌保护已拒绝重复使用。\n\n可截图发送此摘要。没有显示或保存任何令牌。',true);
+     }else if(replay.status===429&&replay.code==='qa_rate_limited'){
+       show('server-state','PASS · 第一次真实 Siteverify 已成功。\nPENDING · 第二次请求先被每小时 6 次的账号限流阻止（HTTP 429 · qa_rate_limited）。\n尚未执行到令牌防重放检查，不能视为防重放失败或通过。请停止提交，等待限流窗口恢复。',false);
      }else{
-       show('server-state','PASS · 第一次 Siteverify 已成功。\nPENDING · Staging 原子防重放结果未达到预期（HTTP '+replay.status+' · '+replay.code+'），需要排查。',false);
+       show('server-state','PASS · 第一次 Siteverify 已成功。\nPENDING · 原子防重放结果未达到预期（HTTP '+replay.status+' · '+replay.code+'），需要排查。',false);
      }
    }catch(e){show('server-state','网络或授权验证未完成，请保留当前关闭状态并检查。',false)}
    finally{working=false;clearToken();if(widgetId!==null&&window.turnstile?.reset)try{window.turnstile.reset(widgetId)}catch{}}

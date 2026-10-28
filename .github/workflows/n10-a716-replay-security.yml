@@ -1,0 +1,22 @@
+name: N10-A7.16 Atomic Turnstile replay safety gate
+on:
+  push:
+    branches: [n10-a7-3-staging-readonly-review]
+    paths:
+      - 'tests/N10-A7.16-atomic-replay.test.cjs'
+      - '.github/workflows/n10-a716-replay-security.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  gate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 4
+    steps:
+      - uses: actions/checkout@v4
+      - name: Validate Node test and isolated Edge source syntax
+        run: |
+          node --check tests/N10-A7.16-atomic-replay.test.cjs
+          node --check edge/N10-A7.16-staging-siteverify-replay-hardened.ts
+      - name: Atomic single-use replay security tests (no live credentials)
+        run: node --test tests/N10-A7.16-atomic-replay.test.cjs

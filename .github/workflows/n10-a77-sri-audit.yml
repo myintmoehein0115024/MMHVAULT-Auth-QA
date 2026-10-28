@@ -1,0 +1,24 @@
+name: N10-A7.7 Supabase JS pinned CDN integrity checksum
+on:
+  push:
+    branches: [main]
+    paths: ['.github/workflows/n10-a77-sri-audit.yml']
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  integrity:
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    steps:
+      - name: Compute exact pinned SDK SHA-384 Subresource Integrity
+        shell: python
+        run: |
+          import hashlib, base64, urllib.request
+          url='https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.57.4/dist/umd/supabase.min.js'
+          with urllib.request.urlopen(urllib.request.Request(url,headers={'User-Agent':'MMHVAULT-Auth-QA-N10A77'}),timeout=20) as resp:
+            blob=resp.read(2_000_000)
+          assert len(blob)>30000 and b'supabase' in blob.lower()
+          digest=base64.b64encode(hashlib.sha384(blob).digest()).decode('ascii')
+          print('PINNED_SDK_BYTES',len(blob))
+          print('PINNED_SDK_SRI','sha384-'+digest)

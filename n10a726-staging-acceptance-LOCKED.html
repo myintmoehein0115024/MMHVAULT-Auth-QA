@@ -1,0 +1,71 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; base-uri 'none'; object-src 'none'; script-src 'self'; style-src 'self'; img-src 'self' data:; font-src 'none'; connect-src https://ldivswlhtgmznzwhzsoi.supabase.co; form-action 'none'; navigate-to 'self'; upgrade-insecure-requests">
+<meta name="referrer" content="no-referrer">
+<meta name="robots" content="noindex,nofollow,noarchive">
+<title>MMHVAULT · Staging Acceptance · LOCKED</title>
+<link rel="stylesheet" href="./n10a726/staging-locked.css">
+<script defer src="./n10a726/staging-locked.js"></script>
+</head>
+<body>
+<div class="ambient ambient-one" aria-hidden="true"></div><div class="ambient ambient-two" aria-hidden="true"></div>
+<div class="shell">
+<header class="topbar">
+  <div class="brand"><span class="brand-mark" aria-hidden="true">M</span><span>MMHVAULT <small>AUTH QA</small></span></div>
+  <div class="locale" role="group" aria-label="Language"><button type="button" id="zh" class="active" aria-pressed="true">中文</button><button type="button" id="en" aria-pressed="false">EN</button></div>
+</header>
+<main>
+<section class="hero">
+  <span class="eyebrow" data-i18n="eyebrow">N10-A7.26 · 独立测试环境</span>
+  <h1 data-i18n="title">身份安全验收</h1>
+  <p class="subtitle" data-i18n="subtitle">为真实用户名登录与绑定准备的隔离测试控制台。</p>
+</section>
+<section class="glass lock-banner" aria-label="security status">
+  <div class="lock-badge" aria-hidden="true">🔒</div>
+  <div class="banner-copy"><strong id="lock-label" data-i18n="locked">浏览器真实认证：硬锁关闭</strong><span data-i18n="lockDetail">不会初始化认证 SDK、读取凭据或自动发起登录。公开测试页面不接受真实密码。</span></div>
+  <span class="status-pill danger">LOCKED</span>
+</section>
+<section class="grid-layout">
+<div class="left-stack">
+<article class="glass panel">
+  <div class="panel-top"><div><span class="overline">ENVIRONMENT</span><h2 data-i18n="envTitle">Staging 隔离核验</h2></div><span class="status-pill neutral">STAGING ONLY</span></div>
+  <dl class="specs"><div><dt data-i18n="project">项目</dt><dd>ldivswlhtgmznzwhzsoi</dd></div><div><dt data-i18n="service">服务</dt><dd>mmh-n10a6-username</dd></div><div><dt data-i18n="production">生产系统</dt><dd data-i18n="untouched">不连接 / 不修改</dd></div><div><dt data-i18n="registration">新用户注册</dt><dd data-i18n="registrationClosed">禁止（需要服务端复核）</dd></div></dl>
+  <div class="separator"></div>
+  <div class="panel-top"><div><h3 data-i18n="windowTitle">服务器测试窗口</h3><p class="muted" data-i18n="windowExplain">只有手动点击才会向固定 Staging Edge 发送不含身份信息的 preflight 请求。</p></div></div>
+  <div class="status-bar"><span class="status-dot" id="window-dot" aria-hidden="true"></span><strong id="window-status" role="status" aria-live="polite" data-i18n="notChecked">尚未查询 / 未验证</strong></div>
+  <div class="button-line"><button type="button" id="preflight" class="btn secondary" data-i18n="checkWindow">只读查询窗口状态</button></div>
+  <p class="hint" id="window-note" aria-live="polite" data-i18n="noBackground">页面打开时零认证请求；预检不使用密码、JWT 或验证码。</p>
+</article>
+<article class="glass panel">
+  <div class="panel-top"><div><span class="overline">CONTROLLED ACCEPTANCE</span><h2 data-i18n="flowTitle">验收路径</h2></div><span class="status-pill neutral">G10 · G11</span></div>
+  <div class="flow-switch" role="tablist" aria-label="Acceptance mode"><button role="tab" type="button" id="mode-login" aria-selected="true" class="selected" data-i18n="usernameTab">G10 · 用户名登录</button><button role="tab" type="button" id="mode-bind" aria-selected="false" data-i18n="bindTab">G11 · 绑定用户名</button></div>
+  <div class="flow-detail"><h3 id="flow-heading" data-i18n="loginHeading">验证已绑定账号</h3><p id="flow-description" data-i18n="loginDetail">受控窗口内：邮箱身份基准 → 本地退出 → 用户名登录 → 同一 UID / RLS → 清理会话。</p></div>
+  <div class="frozen-control"><label for="locked-identity" data-i18n="identityLabel">测试账号（尚未授权输入）</label><input id="locked-identity" type="text" disabled placeholder="LOCKED" autocomplete="off" aria-describedby="disabled-notice"><label for="locked-password" data-i18n="passwordLabel">测试密码（禁止输入）</label><input id="locked-password" type="password" disabled placeholder="••••••••" autocomplete="off"><button type="button" disabled class="btn primary" id="real-run" data-i18n="realDisabled">真实验收未授权</button><p class="hint" id="disabled-notice" data-i18n="disabledDetail">真实入口不能从页面解锁；需要独立审核与明确授权后，另行发布受控版本。</p></div>
+</article>
+</div>
+<div class="right-stack">
+<article class="glass panel">
+<div class="panel-top"><div><span class="overline">EVIDENCE</span><h2 data-i18n="resultTitle">身份与权限检查</h2></div></div>
+<div class="result-item"><span data-i18n="emailAuth">邮箱原账号认证</span><strong id="result-email">NOT RUN</strong></div>
+<div class="result-item"><span data-i18n="bindResult">用户名绑定</span><strong id="result-bind">NOT RUN</strong></div>
+<div class="result-item"><span data-i18n="usernameAuth">用户名登录</span><strong id="result-login">NOT RUN</strong></div>
+<div class="result-item"><span data-i18n="uidCheck">Auth UID 一致性</span><strong id="result-uid">NOT RUN</strong></div>
+<div class="result-item"><span data-i18n="rlsCheck">RLS Owner Probe</span><strong id="result-rls">NOT RUN</strong></div>
+<div class="result-item"><span data-i18n="logoutCheck">末次本地退出</span><strong id="result-logout">NOT RUN</strong></div>
+<p class="hint result-note" data-i18n="noFakePass">模拟结果不会被记录为真实云端 PASS。此页面不输出任何用户 ID、令牌或密码。</p>
+</article>
+<article class="glass panel demo">
+  <div class="panel-top"><div><span class="overline">OFFLINE SIMULATION</span><h2 data-i18n="simTitle">安全反馈预览</h2></div><span class="status-pill neutral">MOCK</span></div>
+  <label for="scenario" data-i18n="scenarioLabel">合成错误场景（不使用真实账号）</label>
+  <select id="scenario"><option value="closed" data-i18n="optClosed">窗口关闭 / 503</option><option value="invalid" data-i18n="optInvalid">认证失败 / 401</option><option value="conflict" data-i18n="optConflict">用户名冲突 / 409</option><option value="rate" data-i18n="optRate">访问限制 / 429</option><option value="uid" data-i18n="optUid">UID 不一致</option><option value="rls" data-i18n="optRls">RLS 拒绝</option><option value="logout" data-i18n="optLogout">会话清理失败</option></select>
+  <button type="button" id="simulate" class="btn secondary" data-i18n="simulate">运行离线模拟</button>
+  <div id="sim-result" class="sim-result" role="status" aria-live="polite" data-i18n="simIdle">尚未运行模拟。</div>
+</article>
+</div>
+</section>
+<footer><span>MMHVAULT · N10-A7.26</span><span data-i18n="foot">仅限独立 Staging · 真实测试待批准 · 正式系统保持不变</span></footer>
+</main></div>
+</body></html>

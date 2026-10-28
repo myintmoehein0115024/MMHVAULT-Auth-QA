@@ -113,3 +113,21 @@
 `https://myintmoehein0115024.github.io/MMHVAULT-Auth-QA/p995n-n10a3-three-login-qa.html`
 
 先验证 Google A 原 UID `1bc5708a…c690`、专用 QA RLS、会话续期与退出；用户名真实登录仍保持 BLOCKED，不要开启旧 N6/N9 或正式生产功能。
+
+## N10-A3.5 Google 登录与会话续期实测（2026-10-28）
+
+用户将新测试页完整回调 URL 添加到 **Staging** Redirect URLs 后，在 Mac Chrome 无痕窗口对 `p995n-n10a3-three-login-qa.html` 进行了 Google 账户 A 的真实 OAuth PKCE 登录，及随后 Refresh Token 会话续期测试。两张连续截图确认：
+
+| 验收项 | 浏览器结果 |
+|---|---|
+| Google OAuth PKCE 登录 | PASS |
+| 账户 A 的原 UID `1bc5708a…c690` | 与原测试身份一致 |
+| 专用 QA RLS 所有者隔离 | PASS · 仅自己 1 条 |
+| METHOD | Google PKCE |
+| Refresh Token 续期 | PASS |
+| 续期后 UID/RLS | 保持不变 |
+| Google 退出和旧 JWT 专用 QA 表拒绝 | 尚待点击验证 |
+
+截图仍出现提醒「首次使用需要把本页完整 URL 添加到 Staging Redirect URLs」，这属于页面固定说明；实际 OAuth 成功已经验证该回调地址可用，不属于本次验证失败。后续可按验证状态改善提醒文案。
+
+**验收边界：**当前结论限定为隔离 Staging 身份及专用 QA 表，不代表正式财务数据、移动设备、所有 JWT 使用场景通过安全审计。完成 Google 退出和旧 JWT 检查后，再将 N10-A3.5 标记完整 PASS。N10-A3 新用户名端点当前仍保持关闭，真实用户名登录尚未验收。

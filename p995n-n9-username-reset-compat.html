@@ -13,7 +13,7 @@ main{max-width:820px;margin:40px auto;padding:0 18px 60px}.panel{border-radius:2
 </head><body><main><article class="panel"><div class="kicker">MMHVAULT · SECURITY QA</div><div class="pill">P9.95N-N9 · STAGING ONLY</div><h1>密码更新后，用户名还能登录吗？</h1>
 <p>本测试专门检查账户 B 在 N8 邮件恢复、更新密码后，是否仍能用原用户名进入相同 Supabase UID，同时保持 QA 数据隔离。</p>
 <div class="notice"><strong>安全限制：</strong>只针对测试账户 B；不会更改密码、不会重新绑定用户名、不会操作财务数据。测试服务端不向浏览器返回访问令牌或刷新令牌。N6 旧接口仍关闭。测试前必须临时开启 Staging 的 N9 开关，完成后立即关闭。</div>
-<section class="card"><h2>① 检查 N9 Staging 就绪状态</h2><p>默认显示关闭是正确的安全状态。</p><button id="check" type="button">检查 N9 Staging 就绪状态</button></section>
+<section class="card"><h2>① 检查 N9 Staging 就绪状态</h2><p>默认显示关闭是正确的安全状态。</p><button id="check" type="button">检查 N9 Staging 就绪状态</button><div id="checkResult" class="result" aria-live="polite">正在加载 N9 测试脚本。如果一直显示这句话，请尝试刷新或检查浏览器阻止脚本的设置。</div></section>
 <section class="card"><h2>② 用账户 B 的新密码验证用户名</h2><label>已绑定用户名</label><input type="text" readonly value="myintmoehein0115024" aria-label="已绑定用户名">
 <label for="pass">账户 B 在 N8 修改后的 Staging 新密码</label><input id="pass" type="password" autocomplete="off" maxlength="256" placeholder="只在这里输入测试密码">
 <div id="turn" aria-label="Cloudflare 验证码"></div><button id="login" type="button" disabled>验证新密码、原 UID 与 QA RLS</button></section>

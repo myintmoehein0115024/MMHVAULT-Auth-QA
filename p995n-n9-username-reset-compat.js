@@ -10,6 +10,7 @@ const NAME='myintmoehein0115024';
 let enabled=false,configured=false,busy=false,widget=null,token='';
 const e=id=>document.getElementById(id);
 function note(message,tone='normal'){e('result').textContent=message;e('result').dataset.tone=tone;}
+function preflightNote(message,tone='normal'){const target=e('checkResult');target.textContent=message;target.dataset.tone=tone;note(message,tone);}
 function state(){
  e('check').disabled=busy;
  e('login').disabled=busy||!enabled||!token||e('pass').value.length<6;
@@ -30,14 +31,14 @@ async function call(data){
 }
 async function preflight(){
  if(busy)return;
- busy=true;state();note('正在查询 Staging 测试接口状态……');
+ busy=true;state();preflightNote('正在查询 Staging 测试接口状态……');
  try{
   const x=await call({action:'preflight'});
   configured=x.ok&&x.data.configured===true;enabled=x.ok&&x.data.enabled===true;
-  if(configured&&enabled)note('安全配置已具备｜N9 临时测试开关：已开启。请完成 Cloudflare 验证，然后只输入账户 B 的新 Staging 密码。','good');
-  else if(configured)note('安全配置已具备｜N9 临时测试开关：仍关闭（正常）。此时不会执行用户名登录。','normal');
-  else note('未能确认安全配置，请暂停测试（HTTP '+x.status+'）。','bad');
- }catch(err){enabled=false;note('连接失败：'+String(err.message||err),'bad');}
+  if(configured&&enabled)preflightNote('安全配置已具备｜N9 临时测试开关：已开启。请完成 Cloudflare 验证，然后只输入账户 B 的新 Staging 密码。','good');
+  else if(configured)preflightNote('安全配置已具备｜N9 临时测试开关：仍关闭（正常）。此时不会执行用户名登录。','normal');
+  else preflightNote('未能确认安全配置，请暂停测试（HTTP '+x.status+'）。','bad');
+ }catch(err){enabled=false;preflightNote('连接失败：'+String(err.message||err),'bad');}
  finally{busy=false;state();}
 }
 async function login(){
@@ -75,6 +76,7 @@ try{
  e('check').addEventListener('click',preflight);
  e('login').addEventListener('click',login);
  e('pass').addEventListener('input',state);
+ e('checkResult').textContent='网页脚本已加载。点击上方金色按钮即可检查 Staging 服务器状态。';
  window.addEventListener('pagehide',()=>{token='';e('pass').value='';});
  state();
  if(window.turnstile)initialize();

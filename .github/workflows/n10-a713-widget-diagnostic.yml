@@ -1,0 +1,50 @@
+name: N10-A7.13 Turnstile UI diagnostic no tokens
+on:
+  push:
+    branches: [main]
+    paths: ['.github/workflows/n10-a713-widget-diagnostic.yml']
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  widget-diagnostic:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Install Playwright Core
+        run: npm install --no-save --ignore-scripts --no-audit --no-fund playwright-core@1.56.1
+      - name: Capture widget DOM and console without interacting or solving CAPTCHA
+        run: |
+          cat > .n10a713-diag.cjs <<'JS'
+          const {chromium}=require('playwright-core');
+          (async()=>{
+            const browser=await chromium.launch({executablePath:'/usr/bin/google-chrome',headless:true,args:['--no-sandbox']});
+            const p=await browser.newPage({viewport:{width:390,height:844}});
+            let errors=[],warn=[];
+            p.on('pageerror',e=>errors.push(e.message.slice(0,240)));
+            p.on('console',m=>{if(m.type()==='error')warn.push(m.text().slice(0,240))});
+            p.on('requestfailed',r=>{if(r.url().includes('challenges.cloudflare.com'))warn.push('CF_REQUEST_FAILED '+r.url().split('?')[0]+' '+r.failure()?.errorText)});
+            try{
+              await p.goto('https://myintmoehein0115024.github.io/MMHVAULT-Auth-QA/n10a713-turnstile-client-qa.html',{waitUntil:'domcontentloaded',timeout:30000});
+              await p.waitForTimeout(7000);
+              const state=await p.evaluate(()=>({
+                widgetStatus:document.getElementById('widget-status')?.textContent,
+                html:document.getElementById('turnstile')?.innerHTML?.slice(0,800),
+                iframes:document.querySelectorAll('iframe').length,
+                turnstileObject:typeof window.turnstile,
+                scriptTags:Array.from(document.querySelectorAll('script[src]')).map(x=>x.src.split('?')[0])
+              }));
+              console.log('WIDGET_DOM_DIAGNOSTIC '+JSON.stringify(state));
+              console.log('WIDGET_PAGE_ERRORS '+JSON.stringify(errors));
+              console.log('WIDGET_CONSOLE_ERRORS '+JSON.stringify(warn).slice(0,2600));
+              await p.screenshot({path:'turnstile-client-only-headless.png',fullPage:true});
+            }finally{await browser.close()}
+          })().catch(e=>{console.error(e);process.exit(1)});
+          JS
+          node .n10a713-diag.cjs
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: n10a713-turnstile-headless-diagnostic
+          path: turnstile-client-only-headless.png
+          retention-days: 4

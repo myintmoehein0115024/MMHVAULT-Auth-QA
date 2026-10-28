@@ -1,0 +1,18 @@
+name: N10-A7.6 Staging public Auth config and OAuth handshake
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/n10-a76-auth-config-check.yml'
+      - '.github/scripts/n10a76_public_auth_probe.py'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 4
+    steps:
+      - uses: actions/checkout@v4
+      - name: Public Staging settings and OAuth start handshake (no credentials)
+        run: python3 .github/scripts/n10a76_public_auth_probe.py

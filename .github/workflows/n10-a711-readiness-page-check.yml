@@ -1,0 +1,55 @@
+name: N10-A7.11 live safe readiness page smoke
+on:
+  push:
+    branches: [main]
+    paths: ['.github/workflows/n10-a711-readiness-page-check.yml']
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 6
+    steps:
+      - name: Install pinned browser driver
+        run: npm install --no-save --ignore-scripts --no-audit --no-fund playwright-core@1.56.1
+      - name: Check actual Staging readiness UI without login or credentials
+        run: |
+          cat > /tmp/n10a711-readiness-check.cjs <<'JS'
+          const {chromium}=require(process.cwd()+'/node_modules/playwright-core');
+          const url='https://myintmoehein0115024.github.io/MMHVAULT-Auth-QA/n10a711-staging-readiness.html';
+          (async()=>{
+            const browser=await chromium.launch({executablePath:'/usr/bin/google-chrome',headless:true,args:['--no-sandbox']});
+            const page=await browser.newPage({viewport:{width:390,height:844}});
+            const errors=[];
+            page.on('pageerror',e=>errors.push(e.message));
+            try{
+              let ready=false;
+              for(let i=0;i<14;i++){
+                const r=await page.goto(url,{waitUntil:'domcontentloaded'});
+                const html=await page.content();
+                if(r.status()===200 && html.includes('N10-A7.11') && html.includes('prerequisites_present')){
+                  if(html.includes('sb_secret_')||html.includes('SUPABASE_SERVICE_ROLE_KEY')||html.includes('fetch("https://vrypucmyrztxgiqhjspd'))throw Error('Unsafe page content');
+                  ready=true;break;
+                }
+                await page.waitForTimeout(4000);
+              }
+              if(!ready)throw Error('Live GitHub Pages readiness checker not deployed');
+              await page.locator('#go').click();
+              await page.waitForFunction(()=>{
+                const x=document.querySelector('#result')?.textContent||'';
+                return x.includes('Staging 专用配置条件仍未齐全')||x.includes('两项专用配置所需条件已存在')||x.includes('警告：Staging 登录状态意外开启');
+              },null,{timeout:15000});
+              const result=await page.locator('#result').textContent();
+              if(!result.includes('登录仍关闭')||errors.length)throw Error('Fail-closed readiness UI check: '+JSON.stringify(errors));
+              const overflow=await page.evaluate(()=>document.documentElement.scrollWidth-document.documentElement.clientWidth);
+              if(overflow>1)throw Error('Unexpected mobile horizontal overflow: '+overflow);
+              console.log('N10A711_READINESS_PAGE_HTTPS 200 PASS');
+              console.log('N10A711_READINESS_UI_BROWSER PASS');
+              console.log('N10A711_ONLY_STAGING_ENDPOINT PASS');
+              console.log('N10A711_NO_SECRET_FIELDS PASS');
+              console.log('N10A711_MOBILE_OVERFLOW',overflow,'PASS');
+            } finally {await browser.close()}
+          })().catch(e=>{console.error('N10A711_READINESS_TEST_FAIL',String(e));process.exit(1)});
+          JS
+          node /tmp/n10a711-readiness-check.cjs

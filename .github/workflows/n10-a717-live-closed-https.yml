@@ -1,0 +1,53 @@
+name: N10-A7.17 live Staging closed main and shared replay source
+on:
+  push:
+    branches: [n10-a7-3-staging-readonly-review]
+    paths: ['.github/workflows/n10-a717-live-closed-https.yml']
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  closed-https:
+    runs-on: ubuntu-latest
+    timeout-minutes: 4
+    steps:
+      - uses: actions/checkout@v4
+      - name: Verify immutable closed source and shared HMAC namespace
+        shell: python
+        run: |
+          import pathlib
+          main=pathlib.Path('edge/N10-A7.17-closed-main-captcha-replay-v11.js').read_text(encoding='utf-8')
+          qa=pathlib.Path('edge/N10-A7.16-staging-siteverify-replay-hardened.ts').read_text(encoding='utf-8')
+          assert "const CODE_GATE_OPEN = false" in main
+          assert main.count("'1970-01-01T00:00:00.000Z'")==2
+          assert "n10a15-token-single-use:" in main and "n10a15-token-single-use:" in qa
+          assert "p_limit:1,p_window_seconds:600" in main and "p_limit:1,p_window_seconds:600" in qa
+          assert "if(!await claimSingleUseCaptcha(data.captcha_token))" in main
+          assert "mmh_n10a6_claim_username" not in qa
+          assert "sb_secret_" not in main and "sb_secret_" not in qa
+          print('N10A717_STATIC_SHARED_REPLAY PASS')
+      - name: Live Staging HTTPS checks without test password or CAPTCHA token
+        shell: python
+        run: |
+          import urllib.request,urllib.error,json,sys
+          target='https://ldivswlhtgmznzwhzsoi.supabase.co/functions/v1/mmh-n10a6-username'
+          cases=[
+            ('preflight',b'{"action":"preflight"}',200,'preflight_ok'),
+            ('login-closed',b'{"action":"login","username":"dummy_test","password":"not-real"}',503,'n10a6_disabled'),
+            ('bind-closed',b'{"action":"bind","username":"dummy_test","password":"not-real"}',503,'n10a6_disabled'),
+            ('invalid-json',b'{"action":"preflight"',400,'bad_json'),
+            ('oversized-json',json.dumps({'action':'preflight','padding':'x'*5000}).encode(),413,'payload_too_large')
+          ]
+          count=0
+          for name,data,want,code in cases:
+            req=urllib.request.Request(target,method='POST',data=data,headers={'Origin':'https://myintmoehein0115024.github.io','Content-Type':'application/json'})
+            try:
+              with urllib.request.urlopen(req,timeout=16) as r:status=r.status;payload=r.read(2400)
+            except urllib.error.HTTPError as e:status=e.code;payload=e.read(2400)
+            j=json.loads(payload)
+            ok=status==want and j.get('code')==code and 'access_token' not in j and 'refresh_token' not in j
+            if name=='preflight':ok=ok and j.get('enabled') is False and j.get('registration_enabled') is False and j.get('prerequisites_present') is True
+            count+=ok
+            print('N10A717_LIVE',name,status,j.get('code'),'PASS' if ok else 'FAIL')
+          print('N10A717_LIVE_HTTPS',count,'/',len(cases))
+          if count!=len(cases):sys.exit(1)

@@ -1,0 +1,42 @@
+name: N10-A7.9 closed gate and nonsecret readiness smoke
+on:
+  push:
+    branches: [main]
+    paths: ['.github/workflows/n10-a79-readiness.yml']
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  smoke:
+    runs-on: ubuntu-latest
+    timeout-minutes: 4
+    steps:
+      - name: Check Staging v2 closed gate and aggregate prerequisite presence
+        shell: python
+        run: |
+          import urllib.request,urllib.error,json,sys
+          target='https://ldivswlhtgmznzwhzsoi.supabase.co/functions/v1/mmh-n10a6-username'
+          headers={'Origin':'https://myintmoehein0115024.github.io','Content-Type':'application/json','Accept':'application/json'}
+          cases=[
+            ({'action':'preflight'},200,'preflight_ok'),
+            ({'action':'login','username':'qa_dummy_notreal','password':'dummy-not-real'},503,'n10a6_disabled'),
+            ({'action':'bind','username':'qa_dummy_notreal','password':'dummy-not-real'},503,'n10a6_disabled'),
+          ]
+          passed=0
+          for body,expected_status,expected_code in cases:
+            q=urllib.request.Request(target,data=json.dumps(body).encode(),headers=headers,method='POST')
+            try:
+              with urllib.request.urlopen(q,timeout=20) as r: status=r.status;data=r.read(3000)
+            except urllib.error.HTTPError as e:
+              status=e.code;data=e.read(3000)
+            doc=json.loads(data)
+            good=status==expected_status and doc.get('code')==expected_code and 'access_token' not in doc and 'refresh_token' not in doc
+            if body['action']=='preflight':
+              good=good and doc.get('enabled') is False and doc.get('registration_enabled') is False and doc.get('version')=='N10-A7.9'
+              ready=doc.get('prerequisites_present')
+              good=good and isinstance(ready,bool)
+              print('STAGING_PREREQUISITES_PRESENT', str(ready).lower(), '(aggregate boolean only; does not validate secret correctness)')
+            print('CHECK',body['action'],'HTTP',status,'CODE',doc.get('code'),'PASS' if good else 'FAIL')
+            passed+=int(good)
+          print('N10A79_CLOSED_SMOKE_RESULT',passed,'/',len(cases))
+          if passed!=len(cases):sys.exit(1)

@@ -1,0 +1,90 @@
+<!doctype html><html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="robots" content="noindex,nofollow,noarchive"><meta name="referrer" content="no-referrer"><meta name="theme-color" content="#06111e"><meta http-equiv="Content-Security-Policy" content="default-src &#x27;none&#x27;; connect-src https://ldivswlhtgmznzwhzsoi.supabase.co https://challenges.cloudflare.com; frame-src https://challenges.cloudflare.com; script-src &#x27;sha256-zNxDTuCuBPOytAawbuYGnzNeibU/kj+MSWs3ZZkuL3o=&#x27; https://challenges.cloudflare.com; style-src &#x27;sha256-Hq+lVLdqy+Rg57qJsub6KVOxt01Uf3lBefJ7N97XJ6Q=&#x27;; img-src data: https://challenges.cloudflare.com; form-action &#x27;none&#x27;; base-uri &#x27;none&#x27;; object-src &#x27;none&#x27;"><title>MMHVAULT · P9.95N-N6 用户名安全验收</title><style>:root{color-scheme:dark;--text:#ecf2f9;--sub:#b7c9d9;--gold:#f5ce80;--outline:#708ca04d}*{box-sizing:border-box}
+body{margin:0;min-height:100vh;background:radial-gradient(ellipse at 12% 5%,#193551,transparent 48%),radial-gradient(ellipse at 92% 95%,#152b43,transparent 56%),#06111e;color:var(--text);font:14px/1.65 -apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif}
+main{max-width:900px;margin:30px auto;padding:12px}.shell{padding:clamp(20px,3vw,32px);border:1px solid var(--outline);border-radius:24px;background:linear-gradient(150deg,#203448ee,#101d2ded);box-shadow:0 25px 60px #0005;backdrop-filter:blur(20px)}
+header{display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap}.eyebrow{font-size:12px;font-weight:800;letter-spacing:.17em;color:var(--gold)}.pill{border:1px solid #ab8a5399;border-radius:99px;padding:3px 11px;font-size:11px;color:var(--gold)}h1{font-size:clamp(26px,4.5vw,36px);margin:12px 0 8px;line-height:1.25}h2{font-size:18px;margin:26px 0 12px}p{color:var(--sub);margin:7px 0 12px}.small,footer{font-size:12px;color:#9eb4c6}.warn{background:#8e72301a;border:1px solid #b3914c77;border-radius:12px;padding:12px;margin:15px 0}.grid{display:grid;grid-template-columns:1fr 1fr;gap:16px}.card{padding:16px;border:1px solid var(--outline);border-radius:16px;background:#06172790;min-width:0}.formrow{display:flex;gap:10px;flex-wrap:wrap;align-items:center}.grow{flex:1;min-width:165px}label{font-size:12px;color:#cbd7e3;display:block;margin:11px 0 5px}input,select{width:100%;height:45px;background:#081b2b;color:var(--text);border:1px solid #5c7a91;border-radius:10px;padding:10px 12px;font:inherit}button{background:linear-gradient(110deg,#f9dea1,#ddb568);border:0;border-radius:10px;padding:12px 15px;font:700 13px/1.5 inherit;color:#112439;cursor:pointer}button.ghost{border:1px solid #66869f;background:#172b41;color:#dfeafa}button:disabled{opacity:.47;cursor:not-allowed}.actions{display:flex;gap:9px;flex-wrap:wrap;margin-top:13px}.result{border:1px solid #5d778b85;border-radius:12px;background:#061626a8;padding:12px;white-space:pre-wrap;overflow-wrap:anywhere;min-height:44px;color:#d7e4ed}.good{color:#82edc7}.bad{color:#ffb3a9}.pending{color:#f6d893}.turn{padding:10px;min-height:96px;border:1px solid var(--outline);border-radius:13px;background:#071523;display:flex;align-items:center;justify-content:center;overflow:auto;margin:12px 0}footer{margin:22px 3px 4px}code{font:12px ui-monospace,monospace;overflow-wrap:anywhere;color:#f5da9e}@media(max-width:690px){main{padding:8px;margin:0}.shell{border-radius:16px;padding:18px}.grid{grid-template-columns:1fr}.actions button{flex:1 1 130px}}</style></head><body><main><div class="shell"><header><span class="eyebrow">MMHVAULT · SECURITY QA</span><span class="pill">P9.95N-N6 · STAGING ONLY</span></header>
+<h1>用户名绑定与登录安全验收</h1><p>继续 N5 的双账号隔离测试。本页验证：登录同一 Auth UID、用户名绑定、用户名密码登录和 QA 数据一致性。不连接正式 MMHVAULT 财务服务。</p>
+<p class="warn">安全说明：只使用 Staging 测试邮箱、密码。密码输入会在提交后清空，Access Token 仅保存在页面临时内存；不使用 localStorage、sessionStorage 或 Cookie。关闭页面即丢失临时状态。<strong>本工具不能替代生产环境验收。</strong></p>
+<h2>① 安全配置检查（无密码）</h2><div class="actions"><button id="preflight" type="button">检查 N6 Staging 就绪状态</button></div><div class="result" id="preflightResult" aria-live="polite">尚未检查。若功能开关关闭，这里会提示“仍关闭”，不会执行用户名登录。</div>
+<h2>② 使用既有 Staging 邮箱登录</h2><div class="grid"><section class="card"><label for="slot">测试账号编号</label><select id="slot"><option value="A">账户 A · 原有测试账号</option><option value="B">账户 B · 新增测试账号</option></select>
+<label for="email">Staging 邮箱</label><input id="email" type="email" autocomplete="off" spellcheck="false" maxlength="320" placeholder="仅测试邮箱">
+<label for="emailPass">Staging 密码（不保存）</label><input id="emailPass" type="password" autocomplete="new-password" maxlength="256" placeholder="仅测试密码">
+<div class="actions"><button type="button" id="emailLogin">邮箱登录并检查 QA RLS</button><button type="button" class="ghost" id="logout" disabled>退出并检查旧 JWT</button></div>
+</section><section class="card"><h2>③ 查看或绑定用户名</h2><div class="actions"><button id="status" type="button" class="ghost" disabled>查看此 UID 的用户名</button></div>
+<label for="bindName">新用户名（4–20 位英文字符/数字/下划线）</label><input id="bindName" maxlength="20" autocapitalize="none" autocomplete="off" placeholder="例如 vaultuser02">
+<label for="bindPass">此 Staging 账号当前密码</label><input type="password" id="bindPass" maxlength="256" autocomplete="new-password" placeholder="用于证明账号归属，提交后清空">
+<div class="turn" id="turn-bind" aria-label="绑定用户名的 Cloudflare 验证码"></div><div class="actions"><button type="button" id="bind" disabled>绑定用户名（限 Staging）</button></div></section></div>
+<h2>④ 使用用户名密码登录</h2><div class="grid"><section class="card"><label for="username">已绑定的用户名</label><input id="username" maxlength="20" autocomplete="off" autocapitalize="none" placeholder="已绑定的用户名">
+<label for="usernamePass">Staging 密码</label><input id="usernamePass" type="password" autocomplete="new-password" maxlength="256" placeholder="仅 Staging 密码">
+<div class="turn" id="turn-login" aria-label="用户名登录的 Cloudflare 验证码"></div><div class="actions"><button type="button" id="usernameLogin" disabled>用户名登录并核验原 UID</button></div></section>
+<section class="card"><h2>⑤ 结果与身份对比</h2><p class="small">流程建议：先 A 邮箱登录并检查已有用户名，退出；再 B 邮箱登录绑定一个新用户名，退出；最后分别用用户名登录核对 UID。</p><div class="result" id="flowResult" role="status" aria-live="polite">等待操作。完成每项测试后，页面只显示简短 UID，不显示完整令牌。</div><h2>两账号 UID</h2><div class="result" id="identity" aria-live="polite">待 A、B 分别登录。</div></section></div>
+<footer>仅限 <code>MMHVAULT-Auth-Staging</code>。新用户<strong>不使用邮箱直接注册用户名</strong>是另一项独立需求，本页暂不支持。不要在正式仓库部署，不要开启生产登录；如果服务器显示“仍关闭”，不要自行设置启用开关，先反馈检查结果。</footer></div></main><script>'use strict';
+const BASE='https://ldivswlhtgmznzwhzsoi.supabase.co';
+const ENDPOINT=BASE+'/functions/v1/mmh-staging-p995n-multiuser';
+const KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxkaXZzd2xodGdtem56d2h6c29pIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTMwODgxOTksImV4cCI6MjEwODY2NDE5OX0.y_XAkQZOSbOatWswYMbGTWyZBmrMIWooTBsw9xQVyPM';
+const SITEKEY='0x4AAAAAAFlXEfEHAP1TUxjr';
+const ORIGIN='https://myintmoehein0115024.github.io';
+const $=id=>document.getElementById(id);
+const SHORT=id=>typeof id==='string'?id.slice(0,6)+'…'+id.slice(-4):'—';
+let current=null,ready=false,working=false,widgets={},tokens={bind:'',login:''};
+let pair={A:null,B:null};
+function print(id,value,kind=''){const e=$(id);e.textContent=value;e.className='result '+kind;}
+function update(){const a=pair.A,b=pair.B; print('identity',a&&b?(a!==b?'PASS：A、B 的 UID 不相同。':'FAIL：两个步骤登录了同一个 UID。'):'等待 A、B 使用不同的测试账号登录。',a&&b?(a!==b?'good':'bad'):'');
+ const signed=!!current;for(const id of ['emailLogin','usernameLogin'])$(id).disabled=working||signed;
+ $('bind').disabled=working||!signed||!ready||!tokens.bind;
+ $('logout').disabled=working||!signed;
+ $('status').disabled=working||!signed||!ready;
+ $('emailLogin').disabled=working||signed;$('usernameLogin').disabled=working||signed||!ready||!tokens.login;
+ $('preflight').disabled=working;
+}
+async function api(path,body=null,token=null,method='POST'){
+ const headers={'apikey':KEY,'Accept':'application/json'};
+ if(body!==null)headers['Content-Type']='application/json';
+ if(token)headers['Authorization']='Bearer '+token;
+ const c=new AbortController(),t=setTimeout(()=>c.abort(),14000);
+ try{const r=await fetch(path,{method,headers,body:body===null?undefined:JSON.stringify(body),mode:'cors',credentials:'omit',referrerPolicy:'no-referrer',cache:'no-store',signal:c.signal});
+ let v={};try{v=await r.json()??{}}catch{}return {ok:r.ok,status:r.status,v};
+ }finally{clearTimeout(t)}
+}
+async function guard(){if(location.origin!==ORIGIN||location.protocol!=='https:')throw Error('只能在 MMHVAULT Auth QA GitHub Pages HTTPS 域名中测试。')}
+async function readiness(){if(working)return;working=true;update();try{await guard();const r=await api(ENDPOINT,{action:'preflight'});
+ if(r.ok&&r.v.code==='preflight_ok'){
+ ready=r.v.configured===true&&r.v.enabled===true;
+ print('preflightResult','Staging 服务已连接。安全配置：'+(r.v.configured?'已具备':'未满足')+'；N6 登录开关：'+(r.v.enabled?'已开启':'仍关闭')+'。\n'+(ready?'可开始账户测试。':'暂时只做准备检查，不能进行用户名绑定或用户名登录。'),r.v.configured?'good':'pending');
+ }else print('preflightResult','未完成：HTTP '+r.status+' · '+String(r.v.code||'unknown'),'bad');
+ }catch(e){print('preflightResult','检查失败：'+String(e.message||e),'bad')}finally{working=false;update()}}
+function syncCaptcha(){if(!window.turnstile)return;for(const [kind,action] of Object.entries({bind:'mmh_username_bind',login:'mmh_username_login'})){
+ if(widgets[kind]!==undefined)continue;
+ try{widgets[kind]=turnstile.render($('#turn-'+kind),{sitekey:SITEKEY,action,theme:'dark',callback:t=>{tokens[kind]=t;update()},'expired-callback':()=>{tokens[kind]='';update()},'error-callback':()=>{tokens[kind]='';print('flowResult','Cloudflare 验证组件错误，请刷新页面。','bad');update()}})}catch(e){print('flowResult','验证码渲染失败，请检查浏览器：'+String(e.message||e),'bad')}
+ }}
+function consume(kind){const token=tokens[kind];tokens[kind]='';try{turnstile.reset(widgets[kind])}catch{}update();return token}
+async function userInfo(access){const x=await api(BASE+'/auth/v1/user',null,access,'GET');if(!x.ok||!x.v.id)throw Error('无法核验登录 UID（HTTP '+x.status+'）');return x.v}
+async function fixture(access,uid){const x=await api(BASE+'/rest/v1/mmh_p995k_session_protected_qa?select=user_id,fixture_name',null,access,'GET');return x.ok&&Array.isArray(x.v)&&x.v.length===1&&x.v[0]?.user_id===uid&&x.v[0]?.fixture_name==='P995K_OWNER_ONLY'}
+async function emailLogin(){if(working||current)return;const email=$('email').value.trim(),pass=$('emailPass').value,slot=$('slot').value;
+ if(!email||!pass){print('flowResult','请输入 Staging 测试邮箱和密码。','pending');return}
+ $('emailPass').value='';working=true;update();try{await guard();const r=await api(BASE+'/auth/v1/token?grant_type=password',{email,password:pass});
+ if(!r.ok||!r.v.access_token)throw Error('邮箱密码登录未通过（HTTP '+r.status+'）');const u=await userInfo(r.v.access_token);
+ if(u.id!==r.v.user?.id)throw Error('JWT 身份与 Supabase 登录身份不一致');current={access:r.v.access_token,uid:u.id,slot};pair[slot]=u.id;
+ const own=await fixture(current.access,current.uid);
+ print('flowResult','邮箱登录 '+(own?'PASS':'待核对')+'｜账户 '+slot+'｜UID '+SHORT(u.id)+'｜QA RLS '+(own?'只读到自己的 1 条':'未得到预期记录')+'。',own?'good':'bad');
+ }catch(e){print('flowResult',String(e.message||e),'bad')}finally{working=false;update()}}
+async function bindStatus(){if(!current||working||!ready)return;working=true;update();try{const r=await api(ENDPOINT,{action:'status'},current.access);print('flowResult',r.ok?'当前 UID '+SHORT(current.uid)+'｜用户名：'+(r.v.username||'尚未绑定'):'状态检查 HTTP '+r.status+'：'+(r.v.code||'unknown'),r.ok?'good':'bad')}
+ catch(e){print('flowResult',String(e.message||e),'bad')}finally{working=false;update()}}
+async function bindName(){if(!current||!ready||!tokens.bind||working)return;const name=$('bindName').value.trim().toLowerCase(),pass=$('bindPass').value; $('bindPass').value='';
+ if(!/^[a-z][a-z0-9_]{3,19}$/.test(name)||pass.length<6){print('flowResult','用户名需 4–20 位、以字母开头；请填写此 Staging 账号的当前密码。','bad');return}
+ const captcha=consume('bind');working=true;update();try{const r=await api(ENDPOINT,{action:'bind',username:name,current_password:pass,captcha_token:captcha},current.access);
+ print('flowResult',r.ok?'用户名绑定成功：'+String(r.v.username||name)+'｜原有 UID '+SHORT(current.uid)+' 不变。':'绑定失败 HTTP '+r.status+'：'+String(r.v.code||'unknown'),r.ok?'good':'bad');
+ }catch(e){print('flowResult',String(e.message||e),'bad')}finally{working=false;update()}}
+async function usernameLogin(){if(working||current||!ready||!tokens.login)return;const name=$('username').value.trim().toLowerCase(),pass=$('usernamePass').value,slot=$('slot').value;
+ $('usernamePass').value='';if(!/^[a-z][a-z0-9_]{3,19}$/.test(name)||!pass){print('flowResult','请填写已绑定的用户名和 Staging 密码。','bad');return}
+ const captcha=consume('login');working=true;update();try{const r=await api(ENDPOINT,{action:'login',username:name,password:pass,captcha_token:captcha});
+ if(!r.ok||!r.v.access_token)throw Error('用户名登录 HTTP '+r.status+'：'+String(r.v.code||'unknown'));
+ const u=await userInfo(r.v.access_token);const own=await fixture(r.v.access_token,u.id);current={access:r.v.access_token,uid:u.id,slot};pair[slot]=u.id;
+ print('flowResult','用户名登录成功｜UID '+SHORT(u.id)+'｜原 QA 数据归属检查 '+(own?'PASS':'FAIL')+'。\n仅在当前网页内存中临时保留访问令牌，点击退出即可销毁。',own?'good':'bad');
+ }catch(e){print('flowResult',String(e.message||e),'bad')}finally{working=false;update()}}
+async function logout(){if(!current||working)return;const s=current;current=null;working=true;update();try{const r=await api(BASE+'/auth/v1/logout?scope=local',{},s.access);if(!r.ok)throw Error('登出失败（HTTP '+r.status+'）');
+ const x=await api(BASE+'/rest/v1/mmh_p995k_session_protected_qa?select=user_id',null,s.access,'GET');const blocked=[401,403].includes(x.status)||(x.ok&&Array.isArray(x.v)&&x.v.length===0);
+ print('flowResult','账户 '+s.slot+' 已退出。旧 JWT 访问 QA 记录：'+(blocked?'PASS（拒绝）':'FAIL 或待核对（HTTP '+x.status+'）'),blocked?'good':'bad');
+ }catch(e){print('flowResult',String(e.message||e),'bad')}finally{working=false;$('emailPass').value='';$('bindPass').value='';$('usernamePass').value='';update()}}
+$('preflight').addEventListener('click',readiness);$('emailLogin').addEventListener('click',emailLogin);$('status').addEventListener('click',bindStatus);$('bind').addEventListener('click',bindName);$('usernameLogin').addEventListener('click',usernameLogin);$('logout').addEventListener('click',logout);
+window.addEventListener('pagehide',()=>{current=null;$('emailPass').value='';$('bindPass').value='';$('usernamePass').value=''});
+const startup=setInterval(()=>{syncCaptcha();if(Object.keys(widgets).length===2)clearInterval(startup)},300);setTimeout(()=>clearInterval(startup),18000);update();</script><script src="https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit" async defer></script></body></html>

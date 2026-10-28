@@ -1,0 +1,22 @@
+name: N10-A7.8 synthetic two-account flow regression
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'tests/n10a78-dual-flow-mock.cjs'
+      - '.github/workflows/n10-a78-synthetic-flow.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  isolated:
+    runs-on: ubuntu-latest
+    timeout-minutes: 7
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install pinned Chromium browser driver
+        run: npm install --no-save --ignore-scripts --no-audit --no-fund playwright-core@1.56.1
+      - name: Validate mock regression harness syntax
+        run: node --check tests/n10a78-dual-flow-mock.cjs
+      - name: Exercise QA page with synthetic identities only (no real Supabase requests)
+        run: node tests/n10a78-dual-flow-mock.cjs

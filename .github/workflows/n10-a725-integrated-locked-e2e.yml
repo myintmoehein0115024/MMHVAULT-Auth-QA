@@ -1,0 +1,28 @@
+name: N10-A7.25 integrated locked username Staging E2E mock
+on:
+  push:
+    branches: [n10-a7-3-staging-readonly-review]
+    paths:
+      - 'tests/N10-A7.25-integrated-locked-username-e2e.test.cjs'
+      - 'integration/N10-A7.23-real-username-acceptance-LOCKED.cjs'
+      - 'integration/N10-A7.24-supabase-browser-adapter-REVIEW-LOCKED.cjs'
+      - '.github/workflows/n10-a725-integrated-locked-e2e.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  mock-only:
+    runs-on: ubuntu-latest
+    timeout-minutes: 4
+    steps:
+      - uses: actions/checkout@v4
+      - name: Verify strictly locked source and integration test syntax
+        run: |
+          node --check integration/N10-A7.23-real-username-acceptance-LOCKED.cjs
+          node --check integration/N10-A7.24-supabase-browser-adapter-REVIEW-LOCKED.cjs
+          node --check tests/N10-A7.25-integrated-locked-username-e2e.test.cjs
+      - name: Exercise both modules together using fake Auth, CAPTCHA and HTTP only
+        run: node --test tests/N10-A7.25-integrated-locked-username-e2e.test.cjs
+      - name: Reject any accidental source activation or production identifier
+        run: |
+          node -e "const fs=require('node:fs');const a=fs.readFileSync('integration/N10-A7.23-real-username-acceptance-LOCKED.cjs','utf8');const b=fs.readFileSync('integration/N10-A7.24-supabase-browser-adapter-REVIEW-LOCKED.cjs','utf8');if(!a.includes('const ALLOW_REAL_OPERATIONS=false')||!b.includes('const STAGING_ADAPTER_ENABLED=false')||a.includes('vrypucmyrztxgiqhjspd')||b.includes('vrypucmyrztxgiqhjspd'))process.exit(1);console.log('N10_A725_DUAL_LOCKS_PASS')"

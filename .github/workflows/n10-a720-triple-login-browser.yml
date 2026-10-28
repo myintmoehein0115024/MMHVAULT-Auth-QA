@@ -1,0 +1,22 @@
+name: N10-A7.20 triple login Premium Glass isolated preview browser QA
+on:
+  push:
+    branches: [n10-a7-3-staging-readonly-review]
+    paths:
+      - 'tests/N10-A7.20-triple-login-browser.test.cjs'
+      - '.github/workflows/n10-a720-triple-login-browser.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  browser:
+    runs-on: ubuntu-latest
+    timeout-minutes: 7
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install pinned Playwright Chromium driver
+        run: npm install --no-save --ignore-scripts --no-audit --no-fund playwright-core@1.56.1
+      - name: Exercise live QA page without credentials or network requests
+        run: |
+          node --check tests/N10-A7.20-triple-login-browser.test.cjs
+          node --test --test-concurrency=1 tests/N10-A7.20-triple-login-browser.test.cjs

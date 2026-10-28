@@ -1,0 +1,66 @@
+name: N10-A7.4 staging negative authorization tests
+on:
+  push:
+    branches: [main]
+    paths: ['.github/workflows/n10-a74-negative-auth.yml']
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  negative-tests:
+    runs-on: ubuntu-latest
+    timeout-minutes: 4
+    env:
+      STAGING_PUBLISHABLE: "sb_publishable_LxIB8564OZD48HQ8Mfsc0A_apkgERZo"
+    steps:
+      - name: Real HTTPS negative checks without user credentials
+        shell: python
+        run: |
+          import json, urllib.request, urllib.error, os, sys
+          base='https://ldivswlhtgmznzwhzsoi.supabase.co'
+          api=base+'/functions/v1/mmh-n10a6-username'
+          key=os.environ['STAGING_PUBLISHABLE']
+          origin='https://myintmoehein0115024.github.io'
+          def req(url,method='GET',data=None,headers=None):
+            payload=json.dumps(data).encode() if isinstance(data,dict) else data
+            h=headers or {}
+            q=urllib.request.Request(url,method=method,data=payload,headers=h)
+            try:
+              with urllib.request.urlopen(q,timeout=15) as r:return r.status,r.headers, r.read(2000)
+            except urllib.error.HTTPError as e:return e.code,e.headers,e.read(2000)
+          checks=[]
+          def check(name,condition,code): 
+            checks.append(bool(condition));print(('PASS' if condition else 'FAIL'),name,'HTTP',code)
+          head={'Origin':origin,'Content-Type':'application/json'}
+          code,headers,raw=req(api,'POST',{'action':'preflight'},head)
+          doc=json.loads(raw) if raw.startswith(b'{') else {}
+          check('preflight_disabled',code==200 and doc.get('enabled') is False and doc.get('registration_enabled') is False and 'access_token' not in doc,code)
+          code,_,raw=req(api,'POST',{'action':'login','username':'zzzzqa_test','password':'dummy-not-real'},head)
+          doc=json.loads(raw) if raw.startswith(b'{') else {}
+          check('login_locked',code==503 and doc.get('code')=='n10a6_disabled',code)
+          code,_,raw=req(api,'POST',{'action':'bind','username':'zzzzqa_test','password':'dummy-not-real'},head)
+          doc=json.loads(raw) if raw.startswith(b'{') else {}
+          check('bind_locked',code==503 and doc.get('code')=='n10a6_disabled',code)
+          code,_,raw=req(api,'POST',{'action':'preflight'},{'Origin':'https://invalid.example','Content-Type':'application/json'})
+          doc=json.loads(raw) if raw.startswith(b'{') else {}
+          check('foreign_origin_denied',code==403 and doc.get('code')=='origin_not_allowed',code)
+          code,_,raw=req(api,'POST',{'action':'preflight'},{'Content-Type':'application/json'})
+          doc=json.loads(raw) if raw.startswith(b'{') else {}
+          check('missing_origin_denied',code==403 and doc.get('code')=='origin_not_allowed',code)
+          code,_,raw=req(api,'GET',headers={'Origin':origin})
+          doc=json.loads(raw) if raw.startswith(b'{') else {}
+          check('wrong_method_denied',code==405 and doc.get('code')=='method_not_allowed',code)
+          code,headers,raw=req(api,'OPTIONS',headers={'Origin':origin,'Access-Control-Request-Method':'POST'})
+          check('valid_cors_preflight',code==204 and headers.get('Access-Control-Allow-Origin')==origin,code)
+          code,headers,raw=req(api,'OPTIONS',headers={'Origin':'https://invalid.example','Access-Control-Request-Method':'POST'})
+          check('foreign_cors_preflight_denied',code==204 and not headers.get('Access-Control-Allow-Origin'),code)
+          pubheaders={'apikey':key,'Accept':'application/json'}
+          for table in ['mmh_n10a6_username_links','mmh_n10a6_throttle','mmh_n10a6_auth_owner_probe']:
+            code,_,raw=req(base+'/rest/v1/'+table+'?select=*',headers=pubheaders)
+            check('anon_read_denied_'+table,code in (401,403,404),code)
+          code,_,raw=req(base+'/rest/v1/rpc/mmh_n10a6_take_attempt','POST',{'p_key':'INVALID','p_limit':1,'p_window_seconds':60},{**pubheaders,'Content-Type':'application/json'})
+          check('anon_attempt_rpc_denied',code in (401,403,404),code)
+          code,_,raw=req(base+'/rest/v1/rpc/mmh_n10a6_claim_username','POST',{'p_user_id':'00000000-0000-0000-0000-000000000000','p_username':'testx','p_window_end':'1970-01-01T00:00:00Z'},{**pubheaders,'Content-Type':'application/json'})
+          check('anon_claim_rpc_denied',code in (401,403,404),code)
+          print('N10A74_NEGATIVE_RESULT',sum(checks),'/',len(checks))
+          if not all(checks):sys.exit(1)

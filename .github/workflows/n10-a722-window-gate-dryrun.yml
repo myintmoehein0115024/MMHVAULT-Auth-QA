@@ -1,0 +1,49 @@
+name: N10-A7.22 safe time-bounded staging window dry run
+on:
+  push:
+    branches: [n10-a7-3-staging-readonly-review]
+    paths:
+      - 'tests/N10-A7.22-window-expiry-DRY-RUN.test.cjs'
+      - '.github/workflows/n10-a722-window-gate-dryrun.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  safety:
+    runs-on: ubuntu-latest
+    timeout-minutes: 4
+    steps:
+      - uses: actions/checkout@v4
+      - name: Validate original closed Edge and no-network synthetic test
+        run: |
+          node --check edge/N10-A7.17-closed-main-captcha-replay-v11.js
+          node --check tests/N10-A7.22-window-expiry-DRY-RUN.test.cjs
+      - name: Execute synthetic fake-clock window and kill-switch safety
+        run: node --test tests/N10-A7.22-window-expiry-DRY-RUN.test.cjs
+      - name: Confirm real staging login remains inaccessible via HTTPS
+        shell: python
+        run: |
+          import json,urllib.request,urllib.error,sys
+          endpoint='https://ldivswlhtgmznzwhzsoi.supabase.co/functions/v1/mmh-n10a6-username'
+          cases=[
+            ('preflight',{'action':'preflight'},200,'preflight_ok'),
+            ('login',{'action':'login','username':'qa_dummy','password':'fake-only'},503,'n10a6_disabled'),
+            ('bind',{'action':'bind','username':'qa_dummy','password':'fake-only'},503,'n10a6_disabled')
+          ]
+          passed=0
+          for label,payload,want,code in cases:
+            request=urllib.request.Request(endpoint,
+              data=json.dumps(payload).encode(),method='POST',
+              headers={'Origin':'https://myintmoehein0115024.github.io','Content-Type':'application/json'})
+            try:
+              with urllib.request.urlopen(request,timeout=18) as response:
+                status=response.status; data=json.load(response)
+            except urllib.error.HTTPError as error:
+              status=error.code;data=json.load(error)
+            good=status==want and data.get('code')==code and not any(k in data for k in ['access_token','refresh_token'])
+            if label=='preflight':
+              good=good and data.get('enabled') is False and data.get('registration_enabled') is False
+            passed+=good
+            print('N10A722_CLOSED_HTTPS',label,status,'PASS' if good else 'FAIL')
+          print('N10A722_REAL_CHECK',passed,'/',len(cases))
+          if passed!=len(cases):sys.exit(1)

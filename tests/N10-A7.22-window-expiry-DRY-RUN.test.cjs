@@ -125,7 +125,7 @@ test('preflight never activates registration even during hypothetical test windo
 });
 test('malformed login input rejected before external calls',async()=>{
  const r=rig({open:true});
- const response=await r.login();
+ const response=await r.post({action:'login',username:'bad!',password:'fake-only'});
  assert.equal(response.status,401);assert.equal(response.code,'invalid_credentials');
  assert.equal(r.getCalls(),0);
 });

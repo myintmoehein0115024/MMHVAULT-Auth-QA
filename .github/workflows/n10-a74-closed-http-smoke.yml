@@ -1,0 +1,41 @@
+name: N10-A7.4 staging closed HTTP smoke
+on:
+  push:
+    branches: [main]
+    paths: ['.github/workflows/n10-a74-closed-http-smoke.yml']
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  smoke:
+    runs-on: ubuntu-latest
+    timeout-minutes: 4
+    steps:
+      - name: Verify closed Staging login via HTTP (no credentials)
+        shell: python
+        run: |
+          import json, urllib.request, urllib.error, sys
+          target='https://ldivswlhtgmznzwhzsoi.supabase.co/functions/v1/mmh-n10a6-username'
+          cases=[('preflight', {'action':'preflight'}, 200, 'preflight_ok'),
+                 ('login', {'action':'login','username':'zzzzqa_test','password':'dummy-not-real'}, 503, 'n10a6_disabled'),
+                 ('bind', {'action':'bind','username':'zzzzqa_test','password':'dummy-not-real'}, 503, 'n10a6_disabled')]
+          passed=0
+          for name,payload,want_status,want_code in cases:
+            req=urllib.request.Request(target,method='POST',data=json.dumps(payload).encode(),headers={'Origin':'https://myintmoehein0115024.github.io','Content-Type':'application/json','Accept':'application/json','User-Agent':'MMHVAULT-N10-A7.4-QA'})
+            try:
+              with urllib.request.urlopen(req,timeout=15) as r: code=r.status; data=r.read(1024)
+            except urllib.error.HTTPError as e:
+              code=e.code;data=e.read(1024)
+            except Exception as e:
+              print(name,'NETWORK ERROR',type(e).__name__);continue
+            try:
+              body=json.loads(data)
+            except Exception:
+              print(name,'NOT_JSON',code);continue
+            response_code=str(body.get('code',''))
+            valid=code==want_status and response_code==want_code and 'access_token' not in body and 'refresh_token' not in body
+            if name=='preflight': valid=valid and body.get('enabled') is False and body.get('registration_enabled') is False
+            passed+=int(valid)
+            print('CHECK',name,'HTTP',code,'CODE',response_code,'PASS' if valid else 'FAIL')
+          print('RESULT',passed,'/',len(cases))
+          if passed!=len(cases):sys.exit(1)

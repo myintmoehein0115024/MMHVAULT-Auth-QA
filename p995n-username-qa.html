@@ -52,10 +52,38 @@ async function readiness(){if(working)return;working=true;update();try{await gua
  print('preflightResult','Staging 服务已连接。安全配置：'+(r.v.configured?'已具备':'未满足')+'；N6 登录开关：'+(r.v.enabled?'已开启':'仍关闭')+'。\n'+(ready?'可开始账户测试。':'暂时只做准备检查，不能进行用户名绑定或用户名登录。'),r.v.configured?'good':'pending');
  }else print('preflightResult','未完成：HTTP '+r.status+' · '+String(r.v.code||'unknown'),'bad');
  }catch(e){print('preflightResult','检查失败：'+String(e.message||e),'bad')}finally{working=false;update()}}
-function syncCaptcha(){if(!window.turnstile)return;for(const [kind,action] of Object.entries({bind:'mmh_username_bind',login:'mmh_username_login'})){
- if(widgets[kind]!==undefined)continue;
- try{widgets[kind]=turnstile.render($('#turn-'+kind),{sitekey:SITEKEY,action,theme:'dark',callback:t=>{tokens[kind]=t;update()},'expired-callback':()=>{tokens[kind]='';update()},'error-callback':()=>{tokens[kind]='';print('flowResult','Cloudflare 验证组件错误，请刷新页面。','bad');update()}})}catch(e){print('flowResult','验证码渲染失败，请检查浏览器：'+String(e.message||e),'bad')}
- }}
+function syncCaptcha(){
+ if(!window.turnstile||typeof window.turnstile.render!=='function'){
+  print('flowResult','Cloudflare 验证脚本尚未加载，请刷新后重试。','bad');return;
+ }
+ for(const [kind,action] of Object.entries({bind:'mmh_username_bind',login:'mmh_username_login'})){
+  if(widgets[kind]!==undefined)continue;
+  const selector='#turn-'+kind;
+  const mount=document.querySelector(selector);
+  if(!mount||mount.nodeType!==1){
+   print('flowResult','找不到 Cloudflare 验证容器：'+selector+'。请刷新网页。','bad');return;
+  }
+  try{
+   const widgetId=window.turnstile.render(selector,{
+    sitekey:SITEKEY,action,theme:'dark',
+    callback:t=>{tokens[kind]=t;update()},
+    'expired-callback':()=>{tokens[kind]='';update()},
+    'error-callback':err=>{tokens[kind]='';print('flowResult','Cloudflare 验证失败（'+String(err||'unknown')+'），请刷新页面。','bad');update()}
+   });
+   if(typeof widgetId!=='string'||!widgetId)throw Error('Cloudflare 未返回 widget ID');
+   widgets[kind]=widgetId;
+  }catch(e){
+   print('flowResult','Cloudflare '+selector+' 初始化失败：'+String(e.message||e)+'。请刷新后重试。','bad');return;
+  }
+ }
+ if(Object.keys(widgets).length===2){
+  print('flowResult','Cloudflare 双验证组件已初始化。请使用 Staging 测试账号完成后续步骤。','good');
+ }
+}
+window.mmhTurnstileOnload=function(){
+ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',syncCaptcha,{once:true});
+ else syncCaptcha();
+};
 function consume(kind){const token=tokens[kind];tokens[kind]='';try{turnstile.reset(widgets[kind])}catch{}update();return token}
 async function userInfo(access){const x=await api(BASE+'/auth/v1/user',null,access,'GET');if(!x.ok||!x.v.id)throw Error('无法核验登录 UID（HTTP '+x.status+'）');return x.v}
 async function fixture(access,uid){const x=await api(BASE+'/rest/v1/mmh_p995k_session_protected_qa?select=user_id,fixture_name',null,access,'GET');return x.ok&&Array.isArray(x.v)&&x.v.length===1&&x.v[0]?.user_id===uid&&x.v[0]?.fixture_name==='P995K_OWNER_ONLY'}
@@ -87,4 +115,4 @@ async function logout(){if(!current||working)return;const s=current;current=null
  }catch(e){print('flowResult',String(e.message||e),'bad')}finally{working=false;$('emailPass').value='';$('bindPass').value='';$('usernamePass').value='';update()}}
 $('preflight').addEventListener('click',readiness);$('emailLogin').addEventListener('click',emailLogin);$('status').addEventListener('click',bindStatus);$('bind').addEventListener('click',bindName);$('usernameLogin').addEventListener('click',usernameLogin);$('logout').addEventListener('click',logout);
 window.addEventListener('pagehide',()=>{current=null;$('emailPass').value='';$('bindPass').value='';$('usernamePass').value=''});
-const startup=setInterval(()=>{syncCaptcha();if(Object.keys(widgets).length===2)clearInterval(startup)},300);setTimeout(()=>clearInterval(startup),18000);update();</script><script src="https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit" async defer></script></body></html>
+update();</script><script src="https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit&amp;onload=mmhTurnstileOnload" async defer></script></body></html>

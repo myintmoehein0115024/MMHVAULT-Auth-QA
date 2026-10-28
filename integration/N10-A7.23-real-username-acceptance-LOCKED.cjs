@@ -27,7 +27,7 @@ async function verifiedSession(api,expected){
  const owner=user?.id;
  const cached=session?.user;
  if(!owner||cached?.id!==owner||(expected&&owner!==expected))throw Error('uid_mismatch');
- if(user.email_confirmed_at===null||user.is_anonymous===true)throw Error('unverified_owner');
+ if(!user.email_confirmed_at||user.is_anonymous===true)throw Error('unverified_owner');
  const rows=await api.ownerProbe();
  if(!Array.isArray(rows)||rows.length!==1||rows[0]?.user_id!==owner)throw Error('rls_owner_mismatch');
  return owner;
@@ -53,7 +53,8 @@ async function runControlledAcceptance({cfg,api,captcha,credentials,options={}})
   record('server_open_staging_only');
   let expectedUid;
   if(mode==='bind_then_login'){
-   await api.signInWithPassword(credentials);
+   const signed=await api.signInWithPassword(credentials);
+   if(signed?.error||!signed?.data?.user?.id)throw Error('email_login_failed');
    sessionTouched=true;
    expectedUid=await verifiedSession(api);
    record('existing_uid_rls_pass');
@@ -74,7 +75,8 @@ async function runControlledAcceptance({cfg,api,captcha,credentials,options={}})
    if(await api.getSession())throw Error('local_logout_failed');
    record('local_signout_pass');
   }else{
-   await api.signInWithPassword(credentials);
+   const signed=await api.signInWithPassword(credentials);
+   if(signed?.error||!signed?.data?.user?.id)throw Error('email_login_failed');
    sessionTouched=true;
    expectedUid=await verifiedSession(api);
    record('existing_uid_rls_pass');
@@ -97,7 +99,8 @@ async function runControlledAcceptance({cfg,api,captcha,credentials,options={}})
   record('username_login_grant_returned');
   // setSession MUST install in client of the same staging project.
   sessionTouched=true;
-  await api.setSession({access_token:login.access_token,refresh_token:login.refresh_token});
+  const installed=await api.setSession({access_token:login.access_token,refresh_token:login.refresh_token});
+  if(installed?.error||!installed?.data?.user?.id)throw Error('session_install_failed');
   const newUid=await verifiedSession(api,expectedUid);
   if(newUid!==expectedUid)throw Error('uid_mismatch');
   record('same_uid_rls_pass');
@@ -107,7 +110,7 @@ async function runControlledAcceptance({cfg,api,captcha,credentials,options={}})
   const known=new Set(['uid_mismatch','rls_owner_mismatch','unverified_owner',
    'captcha_bind_unavailable','captcha_login_unavailable','server_window_closed',
    'bind_not_accepted','local_logout_failed','rate_limited_stop',
-   'username_login_failed','test_unavailable']);
+   'username_login_failed','email_login_failed','session_install_failed','test_unavailable']);
   return result(false,known.has(code)?code:'test_unavailable',steps);
  }finally{
   if(sessionTouched){try{await api.signOutLocal()}catch{}}

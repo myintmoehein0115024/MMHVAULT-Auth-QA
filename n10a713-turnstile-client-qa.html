@@ -1,0 +1,79 @@
+<!doctype html>
+<html lang="zh-CN">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex,nofollow"><meta name="referrer" content="no-referrer">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'unsafe-inline' https://challenges.cloudflare.com; frame-src https://challenges.cloudflare.com; connect-src https://challenges.cloudflare.com https://ldivswlhtgmznzwhzsoi.supabase.co; img-src data: https://challenges.cloudflare.com; style-src 'unsafe-inline'; base-uri 'none'; object-src 'none'; form-action 'none'">
+<title>MMHVAULT · N10-A7.13 Turnstile Staging</title>
+<style>
+:root{color-scheme:dark}*{box-sizing:border-box}body{min-height:100vh;margin:0;padding:22px;background:radial-gradient(circle at 18% 2%,#244357 0%,#071524 48%,#03070e 100%);color:#eef5fe;font:15px/1.55 -apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}
+main{max-width:650px;margin:6vh auto;padding:clamp(22px,5vw,34px);border:1px solid #ffffff31;border-radius:26px;background:linear-gradient(120deg,#ffffff13,#ffffff04);backdrop-filter:blur(18px);box-shadow:0 16px 60px #0008}
+small{color:#b1c3d1;letter-spacing:.04em}h1{font-size:25px;line-height:1.25;margin:12px 0 14px}p{color:#bbcedd}b{color:#e6d0a3}
+section{padding:20px 0;border-top:1px solid #ffffff20}.control{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+select,button{font:inherit;border-radius:12px;padding:12px 16px;min-height:44px}
+select{background:#13273b;color:#f0f6ff;border:1px solid #ffffff35}
+button{background:linear-gradient(120deg,#f2d89d,#bba171);color:#111827;border:0;font-weight:700;cursor:pointer}button:disabled{opacity:.5;cursor:default}
+.secondary{background:#ffffff18;color:#e7ecf5;border:1px solid #ffffff3b}
+#turnstile{min-height:76px;max-width:100%;overflow:hidden}.state{margin-top:14px;padding:15px;border-radius:14px;background:#020e1ab8;border:1px solid #ffffff30;color:#f1d59f;min-height:68px;overflow-wrap:anywhere;white-space:pre-wrap}
+.state.pass{color:#88eac0}.state.error{color:#ffbeb4}.note{font-size:13px;color:#adbfd0}code{font-size:12px;color:#dddfec}
+</style>
+</head>
+<body><main>
+<small>MMHVAULT AUTH STAGING · N10-A7.13 · CLIENT-ONLY</small>
+<h1>Cloudflare Turnstile 验证组件测试</h1>
+<p>本页使用已登记的 <b>MMHVAULT-Username-Staging</b> 公开 Site Key，只检查验证码组件能否在此浏览器工作。<b>不会提交密码、JWT 或验证码令牌到登录服务器。</b></p>
+<section>
+<div class="control"><label for="kind">测试动作：</label><select id="kind">
+<option value="mmh_n10a6_login">用户名登录验证码</option>
+<option value="mmh_n10a6_bind">用户名绑定验证码</option>
+</select><button id="refresh" type="button" class="secondary">重新生成验证码</button></div>
+<div id="turnstile"></div><div id="widget-status" class="state" role="status" aria-live="polite">正在加载 Cloudflare Turnstile 组件…</div>
+</section>
+<section>
+<button id="preflight" type="button">确认 Staging 登录仍关闭</button>
+<div id="staging-status" class="state" role="status" aria-live="polite">尚未检查独立 Staging 状态。</div>
+</section>
+<p class="note">注意：客户端显示挑战完成仅表示 Cloudflare 已签发临时令牌，<b>不等于服务器已验证 Secret、hostname、action 或防重放</b>。临时令牌只保留在页面运行内存中；不显示、不复制、不存储。验证码过期、出错或重置时直接丢弃。</p>
+</main>
+<script>
+(()=>{
+ 'use strict';
+ const SITE_KEY='0x4AAAAAAFlXEfEHAP1TUxjr';
+ const ENDPOINT='https://ldivswlhtgmznzwhzsoi.supabase.co/functions/v1/mmh-n10a6-username';
+ let widgetId=null, ephemeralToken=null;
+ const $=id=>document.getElementById(id);
+ function note(id,content,type){$(id).textContent=content;$(id).className='state '+(type||'')}
+ function wipe(){ephemeralToken=null}
+ function renderWidget(){
+   if(!window.turnstile){note('widget-status','Cloudflare 组件尚未加载，请稍后刷新页面。','error');return}
+   wipe();
+   if(widgetId!==null){try{turnstile.remove(widgetId)}catch{} widgetId=null}
+   note('widget-status','正在申请 '+($('kind').value.endsWith('login')?'登录':'绑定')+' 专用的 Turnstile 挑战…','');
+   widgetId=turnstile.render('#turnstile',{
+     sitekey:SITE_KEY,action:$('kind').value,theme:'dark',
+     callback(token){ephemeralToken=token;note('widget-status','PASS · 浏览器成功获得一次性 Turnstile 令牌。\n服务端 Siteverify：尚未测试。\n没有向登录接口发送任何令牌。','pass')},
+     'expired-callback'(){wipe();note('widget-status','验证码已过期，请重新生成。','error')},
+     'error-callback'(){wipe();note('widget-status','Turnstile 组件加载或验证失败，请检查网络和浏览器限制。','error')},
+     'timeout-callback'(){wipe();note('widget-status','挑战超时，建议重新生成。','error')}
+   });
+ }
+ window.n10a713TurnstileLoaded=()=>renderWidget();
+ $('kind').addEventListener('change',()=>{wipe();renderWidget()});
+ $('refresh').addEventListener('click',()=>{wipe();renderWidget()});
+ $('preflight').addEventListener('click',async()=>{
+   const btn=$('preflight');btn.disabled=true;note('staging-status','正在请求仅限独立 Staging 的状态…','');
+   let timer,controller=new AbortController();
+   try{
+     timer=setTimeout(()=>controller.abort(),12000);
+     const res=await fetch(ENDPOINT,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({action:'preflight'}),cache:'no-store',credentials:'omit',signal:controller.signal});
+     const data=await res.json();
+     if(res.status===200&&data?.enabled===false&&data?.registration_enabled===false){
+       note('staging-status','PASS · Staging 新用户名登录与注册仍保持关闭。\n此页面没有触发真实登录或验证码服务端验收。','pass');
+     }else note('staging-status','警告：服务端状态不符合预期。不要进行真实登录测试。','error');
+   }catch{note('staging-status','未能读取 Staging 状态，请保持登录关闭。','error')}
+   finally{clearTimeout(timer);btn.disabled=false}
+ });
+ window.addEventListener('pagehide',wipe,{once:true});
+})();
+</script>
+<script src="https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit&amp;onload=n10a713TurnstileLoaded" async defer></script>
+</body></html>

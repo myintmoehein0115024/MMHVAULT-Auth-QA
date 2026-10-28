@@ -1,0 +1,18 @@
+name: N10-A7.10 closed Edge authorization and quota mock regressions
+on:
+  push:
+    branches: [n10-a7-3-staging-readonly-review]
+    paths:
+      - 'tests/N10-A7.10-closed-edge-mock.test.cjs'
+      - '.github/workflows/n10-a710-closed-edge-tests.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  mock:
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    steps:
+      - uses: actions/checkout@v4
+      - name: Test v5 Edge source with mocked network and fake identities
+        run: node --test tests/N10-A7.10-closed-edge-mock.test.cjs

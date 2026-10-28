@@ -1,0 +1,64 @@
+name: N10-A7.7 live Chromium and mobile viewport smoke
+on:
+  push:
+    branches: [main]
+    paths: ['.github/workflows/n10-a77-browser-smoke.yml']
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  browser:
+    runs-on: ubuntu-latest
+    timeout-minutes: 7
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install pinned lightweight browser driver
+        run: npm install --no-save --ignore-scripts --no-audit --no-fund playwright-core@1.56.1
+      - name: Real Chromium browser with no credentials
+        run: |
+          cat > .n10a77-browser-test.cjs <<'JS'
+          const {chromium} = require('playwright-core');
+          const url='https://myintmoehein0115024.github.io/MMHVAULT-Auth-QA/n10a75-real-jwt-owner-qa.html';
+          async function test() {
+            const execPath=process.env.CHROME_PATH || '/usr/bin/google-chrome';
+            const browser=await chromium.launch({executablePath:execPath,headless:true,args:['--no-sandbox']});
+            try {
+              for(const w of [1280,390,360]) {
+                const page=await browser.newPage({viewport:{width:w,height:w===1280?800:844}});
+                const errors=[];
+                page.on('pageerror',e=>errors.push(String(e.message).slice(0,120)));
+                const resp=await page.goto(url,{waitUntil:'domcontentloaded',timeout:30000});
+                await page.waitForFunction(()=>!!window.supabase?.createClient,{timeout:20000});
+                await page.waitForFunction(()=>document.querySelector('#results')?.textContent?.includes('已准备就绪'),{timeout:20000});
+                const state=await page.evaluate(()=>{
+                  const s=document.querySelector('#results').textContent||'';
+                  const doc=document.documentElement;
+                  return {
+                    initialized:s.includes('已准备就绪'),
+                    googleDisabled:document.querySelector('#google').disabled,
+                    copyDisabled:document.querySelector('#copy-qa').disabled,
+                    overflow:doc.scrollWidth-doc.clientWidth,
+                    url:location.origin,
+                    noCurrentTokens:!sessionStorage.getItem('mmh_n10a77_auth_tab_only')
+                  }
+                });
+                console.log('CHROMIUM_VIEWPORT',w,'HTTP',resp.status(),'STATE',JSON.stringify(state));
+                if(resp.status()!==200 || !state.initialized || !state.googleDisabled ||
+                   !state.copyDisabled || state.overflow>1 || !state.noCurrentTokens || errors.length) {
+                   throw Error('Browser startup/viewport check failed '+w+' '+errors.join(','));
+                }
+                if(w===390)await page.screenshot({path:'n10a77-mobile-preview.png',fullPage:true});
+                await page.close();
+              }
+              console.log('N10A77_CHROMIUM_NO_CREDENTIALS PASS 3 viewports');
+            } finally {await browser.close();}
+          }
+          test().catch(e=>{console.error(e.message);process.exit(1)});
+          JS
+          node .n10a77-browser-test.cjs
+      - uses: actions/upload-artifact@v4
+        if: success()
+        with:
+          name: n10a77-staging-qa-mobile-preview
+          path: n10a77-mobile-preview.png
+          retention-days: 7

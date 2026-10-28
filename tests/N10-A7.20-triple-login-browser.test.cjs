@@ -183,6 +183,55 @@ test('result and modal never contain credential text',async()=>{
   assert.equal(await p.locator('#password').inputValue(),'');
  }finally{await p.close()}
 });
+// N10-A7.20.1: phone access-first UX must put auth card above the fold.
+// 601px+ must retain the full desktop/tablet hero without visual regression.
+for (const width of [320,375,393,430,600]) {
+ test('mobile-first hide promo and show login card at '+width+'px',async()=>{
+  const {p,network,errors}=await openPage(width,852);
+  try{
+   const v=await p.evaluate(()=>{
+    const card=document.querySelector('.login-card');
+    const promo=document.querySelector('.hero');
+    const chip=document.querySelector('.chip');
+    const sub=document.querySelector('.brand-sub');
+    const tabs=document.querySelector('.tabbar');
+    const head=document.querySelector('header');
+    return {
+      promo:getComputedStyle(promo).display,
+      chip:getComputedStyle(chip).display,
+      sub:getComputedStyle(sub).display,
+      top:Math.round(card.getBoundingClientRect().top),
+      tabBottom:Math.round(tabs.getBoundingClientRect().bottom),
+      headBottom:Math.round(head.getBoundingClientRect().bottom),
+      overflow:document.documentElement.scrollWidth-document.documentElement.clientWidth,
+      tabWidth:tabs.getBoundingClientRect().width,
+      cardWidth:card.getBoundingClientRect().width
+    };
+   });
+   assert.equal(v.promo,'none','Marketing still visible above form');
+   assert.equal(v.chip,'none','Long QA chip still visible on phone');
+   assert.equal(v.sub,'none','Long brand subtitle still visible on phone');
+   assert.ok(v.top<132,'Login card must start near header, got '+v.top);
+   assert.ok(v.tabBottom<360,'Login methods must be available quickly, got '+v.tabBottom);
+   assert.ok(v.headBottom<80,'Header takes too much height: '+v.headBottom);
+   assert.ok(v.overflow<=1,'Horizontal overflow: '+v.overflow);
+   assert.ok(v.tabWidth>245 && v.cardWidth>275);
+   assert.deepEqual(network,[]);assert.deepEqual(errors,[]);
+   console.log('N10A7201_MOBILE',width,JSON.stringify(v));
+  }finally{await p.close()}
+ });
+}
+for (const width of [768,1024,1440]) {
+ test('tablet-desktop retains decorative hero at '+width+'px',async()=>{
+  const {p,network,errors}=await openPage(width,900);
+  try{
+   assert.notEqual(await p.locator('.hero').evaluate(e=>getComputedStyle(e).display),'none');
+   assert.ok(await p.locator('.hero h1').isVisible());
+   assert.ok(await p.locator('.hero-stats').isVisible());
+   assert.deepEqual(network,[]);assert.deepEqual(errors,[]);
+  }finally{await p.close()}
+ });
+}
 test('review output for mobile coverage',()=>{
  console.log('N10A720_UI_VIEWPORTS '+JSON.stringify(evidence));
 });

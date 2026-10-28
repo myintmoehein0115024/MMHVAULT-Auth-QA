@@ -14,13 +14,13 @@ function fixture(){
  let current=null;
  const api={
   async preflight(){seen.push('preflight');return {status:200,code:'preflight_ok',enabled:true,registration_enabled:false,scope:'isolated_staging_only'}},
-  async signInWithPassword(){seen.push('email');current=id},
+  async signInWithPassword(){seen.push('email');current=id;return {data:{user:{id}}}},
   async getUser(){seen.push('remote');return current?{id:current,email_confirmed_at:'verified'}:null},
   async getSession(){seen.push('local');return current?{user:{id:current}}:null},
   async ownerProbe(){seen.push('rls');return [{user_id:current}]},
   async bindUsername(){seen.push('bind');return {status:200,code:'bind_success'}},
   async loginUsername(){seen.push('username');return {status:200,code:'login_success',access_token:'synthetic_access',refresh_token:'synthetic_refresh'}},
-  async setSession(){seen.push('setSession');current=id},
+  async setSession(){seen.push('setSession');current=id;return {data:{user:{id}}}},
   async signOutLocal(){seen.push('logout');current=null}
  };
  const captcha={async take(action){seen.push('widget:'+action);return 'synthetic-sample-token-long-enough'}};

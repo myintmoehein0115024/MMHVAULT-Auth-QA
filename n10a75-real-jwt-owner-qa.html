@@ -24,7 +24,7 @@
   let progress;
   try{progress={...fresh(),...JSON.parse(sessionStorage.getItem(STATE)||'{}')}}catch{progress=fresh()}
   // Remove the previous QA test page's persistent session key, never clear unrelated site keys.
-  try{localStorage.removeItem('mmh_n10a75_staging_qa_only')}catch{}
+  try{localStorage.removeItem('mmh_n10a75_staging_qa_only');sessionStorage.removeItem('mmh_n10a76_staging_tab_only')}catch{}
   const save=()=>sessionStorage.setItem(STATE,JSON.stringify(progress));
   const show=(t,k='pending')=>{$('results').textContent=t;$('results').className='status '+k};
   const step=t=>$('walkthrough').textContent=t;
@@ -150,7 +150,8 @@
     const s=await db.auth.getSession();
     if(s.data?.session)throw Error('退出后会话仍存在');
     const probe=await db.from(TEST_TABLE).select('user_id').limit(2);
-    if(!probe.error&&(probe.data||[]).length!==0)throw Error('退出后匿名访问不应看到记录');
+    const anonDenied=(probe.error&&[401,403].includes(probe.status))||(!probe.error&&Array.isArray(probe.data)&&probe.data.length===0);
+    if(!anonDenied)throw Error('退出后匿名权限核验未完成');
     if(!completed){
       progress.logoutPass=true;progress.stage='signed_out';save();
       show('PASS · 邮箱本地测试会话已退出\nPASS · 匿名状态无法读取任何所有者记录\n下一步：使用 Google 测试账号登录','pass');
@@ -166,7 +167,14 @@
     show('正在转到 Google OAuth。请仅使用原来的 Staging Google 测试账号。','pending');
   }));
   $('check').addEventListener('click',()=>run(async()=>{
-    if(progress.stage==='email_ok')await verifyRound('email');
+    if(progress.stage==='email_ok'){
+      const before=await readIdentity();
+      const r=await db.auth.refreshSession();
+      if(r.error||!r.data?.session)throw Error('刷新会话未成功');
+      const after=await readIdentity();
+      if(before.id!==after.id)throw Error('刷新后 UID 改变');
+      show('PASS · 邮箱会话、RLS 与刷新后的 UID 一致。\n下一步：点击「验证退出／下一步」。','pass');
+    }
     else if(progress.stage==='google_pending'||progress.stage==='done'){
       if(progress.stage==='done') {const user=await readIdentity();show('PASS · 当前 Google 会话 RLS 核验通过\n'+summary(),'pass');}
       else await verifyRound('google');

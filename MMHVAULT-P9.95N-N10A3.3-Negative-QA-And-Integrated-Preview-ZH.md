@@ -150,3 +150,12 @@
 此测试仅表明已测试的专用 QA 数据表对旧 JWT 的拒绝，不可推广到所有生产 API 的 JWT 即时失效。
 
 **状态**：N10-A3.4 邮箱会话全回归和 N10-A3.5 Google 会话全回归均通过。N10-A3.6 真实用户名登录尚未执行，新的 Staging 函数仍需保持关闭，正式 MMHVAULT 未修改。
+
+
+## N10-A3.6 登录前只读安全检查（2026-10-28）
+
+- 已重新读取部署在隔离 Staging 的 `mmh-staging-n10a3-username-login` v1，确认 `CODE_GATE_OPEN=false`，且仍有 `MMH_N10A3_ENABLED` 独立 Secret 开关。新用户名登录不可用；正式 MMHVAULT 无改动。
+- Staging Security Advisor 返回 INFO：`public.mmh_p995i_username_links` 与 `public.mmh_p995j_login_throttle` 表开启 RLS 但无策略。此前权限检查显示普通访客无对应表权限，属于内用服务端表的预期限制；不得为消除 INFO 增加开放策略。
+- Staging Security Advisor 返回 WARN：泄露密码保护目前未启用。官方参考：https://supabase.com/docs/guides/auth/password-security#password-strength-and-leaked-password-protection 。正式上线前须评估、设置并重新验收密码安全策略。
+- 真正用户名登录测试尚未进行；先完成独立接口时间限制、异常撤销路径、限流与回滚审核。仅进行短时间、隔离、由用户主动输入 Staging 账户 B 测试密码的测试，不触碰旧 N6/N9 和正式财务数据。
+- 不把本次 Google 的旧 JWT 对**专用 QA 表**的拒绝当作所有生产 API 的 JWT 全局即时失效证明。

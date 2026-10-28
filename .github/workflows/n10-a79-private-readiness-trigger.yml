@@ -1,0 +1,23 @@
+name: N10-A7.9 private Staging readiness diagnostic trigger
+on:
+  push:
+    branches: [main]
+    paths: ['.github/workflows/n10-a79-private-readiness-trigger.yml']
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  trigger:
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    steps:
+      - name: Trigger private Supabase log of boolean readiness (no credentials)
+        shell: python
+        run: |
+          import urllib.request, json
+          u='https://ldivswlhtgmznzwhzsoi.supabase.co/functions/v1/mmh-n10a6-username?qa_diag=n10a79'
+          req=urllib.request.Request(u,method='POST',data=b'{"action":"preflight"}',headers={'Origin':'https://myintmoehein0115024.github.io','Content-Type':'application/json'})
+          with urllib.request.urlopen(req,timeout=15) as resp:
+            v=json.loads(resp.read(1500))
+            assert resp.status==200 and v.get('enabled') is False and isinstance(v.get('prerequisites_present'),bool)
+            print('PRIVATE_DIAGNOSTIC_TRIGGER HTTP 200 PASS; endpoint remains closed')

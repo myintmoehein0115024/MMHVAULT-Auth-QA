@@ -51,8 +51,9 @@ function fixture(opts={}){
   async signOut(arg){
    events.push('sign_out_local');
    if(arg?.scope!=='local')throw Error('unexpected_global_signout');
-   if(opts.signoutFails)return errorFor('logout_failure');
-   if(!opts.stickyLogout){active=false;currentUid=null}
+   const numberOfSignouts=events.filter(x=>x==='sign_out_local').length;
+   if(opts.signoutFails||opts.finalSignoutFails&&numberOfSignouts===2)return errorFor('logout_failure');
+   if(!opts.stickyLogout&&!(opts.finalSessionStaysActive&&numberOfSignouts===2)){active=false;currentUid=null}
    return {error:null};
   }
  };
@@ -150,6 +151,7 @@ test('completed bind → local logout → username auth verifies same UID with 2
  assert.ok(!JSON.stringify(r).includes(JWT));
  assert.ok(!JSON.stringify(r).includes(USER.email));
  assert.equal(f.active,false);
+ assert.ok([...r.steps].includes('final_local_logout_pass'),'PASS requires verified local logout');
 });
 test('existing alias only uses username captcha and does not bind',async()=>{
  const f=fixture(),r=await f.build(true,true,{options:{mode:'login_existing_alias'}});
@@ -249,4 +251,19 @@ test('invalid staging project blocks before all SDK/network operations',async()=
 test('sample public key is required and no service-role secret may appear',async()=>{
  const f=fixture(),r=await f.build(true,true,{cfg:{...cfg,publishableKey:'sb_secret_not_a_public_key'}});
  assert.equal(r.ok,false);assert.deepEqual(f.events,[]);
+});
+
+test('final signOut returns SDK error: NEVER report login acceptance PASS',async()=>{
+ const f=fixture({finalSignoutFails:true}),r=await f.build();
+ assert.equal(r.ok,false);assert.equal(r.code,'local_logout_failed');
+ assert.ok(![...r.steps].includes('final_local_logout_pass'));
+ assert.equal(f.events.filter(x=>x==='sign_out_local').length,3,'best-effort cleanup retried');
+ assert.equal(f.active,false);
+});
+test('final signOut silently leaves session active: MUST reject PASS and retry cleanup',async()=>{
+ const f=fixture({finalSessionStaysActive:true}),r=await f.build();
+ assert.equal(r.ok,false);assert.equal(r.code,'local_logout_failed');
+ assert.ok(![...r.steps].includes('final_local_logout_pass'));
+ assert.equal(f.events.filter(x=>x==='sign_out_local').length,3);
+ assert.equal(f.active,false);
 });

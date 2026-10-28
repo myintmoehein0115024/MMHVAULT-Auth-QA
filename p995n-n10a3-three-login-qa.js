@@ -114,11 +114,11 @@ async function username(){
  try{
   const r=await req(USERNAME_ENDPOINT,{action:'preflight'});
   if(!r.ok||r.data?.code!=='preflight_ok'){
-   usernameMessage(t('安全关闭：N10-A3.2 服务端尚未部署或不可用。没有发送用户名密码。','Safely locked: N10-A3.2 server is not deployed or unavailable. No password sent.')+' HTTP '+r.status,'normal');
+   usernameMessage(t('安全关闭：N10-A3.6 服务端不可用或无法访问。没有发送用户名密码。','Safely locked: N10-A3.6 server is unavailable. No password sent.')+' HTTP '+r.status,'normal');
    return;
   }
   if(r.data?.enabled!==true){
-   usernameMessage(t('PASS：N10-A3.2 服务端登录开关关闭。用户名密码登录不可用（预期状态）。','PASS: N10-A3.2 gate remains closed; username login unavailable as designed.'),'good');
+   usernameMessage(t('PASS：N10-A3.6 v2 限时测试开关关闭。用户名密码登录不可用（预期状态）。','PASS: N10-A3.6 v2 timed gate remains closed; username login unavailable as designed.'),'good');
    return;
   }
   if(r.data?.configured!==true||r.data?.scope!=='staging_account_b_only')throw Error('Unexpected server configuration');
@@ -127,7 +127,7 @@ async function username(){
   usernameMessage(t('仅 Staging B：临时测试接口已启用。请完成 Cloudflare 验证后输入测试密码。','Staging B only: temporary test endpoint enabled. Complete Cloudflare challenge before test password.'),'good');
  }catch(e){
   usernameReadyUntil=0;captchaToken=null;
-  usernameMessage(t('保持锁定：无法验证 N10-A3.2 接口。','Locked: cannot validate N10-A3.2 endpoint.')+' '+String(e.message||e),'bad');
+  usernameMessage(t('保持锁定：无法验证 N10-A3.6 v2 接口。','Locked: cannot validate N10-A3.6 v2 endpoint.')+' '+String(e.message||e),'bad');
  }finally{busy=false;update();}
 }
 async function usernameLogin(ev){

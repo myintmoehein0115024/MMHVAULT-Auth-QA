@@ -1,0 +1,75 @@
+name: N10-A7.14 Turnstile QA browser behavior regression
+on:
+  push:
+    branches: [main]
+    paths: ['.github/workflows/n10-a714-turnstile-ui-regression.yml']
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  client:
+    runs-on: ubuntu-latest
+    timeout-minutes: 6
+    steps:
+      - uses: actions/checkout@v4
+      - name: Browser dependency
+        run: npm install --no-save --ignore-scripts --no-audit --no-fund playwright-core@1.56.1
+      - name: Verify browser actions with simulated Turnstile callbacks (no real tokens)
+        run: |
+          cat > .n10a714-test.cjs <<'JS'
+          const {chromium}=require('playwright-core');
+          const url='https://myintmoehein0115024.github.io/MMHVAULT-Auth-QA/n10a713-turnstile-client-qa.html';
+          (async()=>{
+            const b=await chromium.launch({executablePath:'/usr/bin/google-chrome',headless:true,args:['--no-sandbox']});
+            try{
+              const page=await b.newPage({viewport:{width:390,height:844}});
+              let realLoginRequests=0;const errors=[];
+              page.on('pageerror',e=>errors.push(e.message));
+              await page.route('https://ldivswlhtgmznzwhzsoi.supabase.co/**',route=>{
+                realLoginRequests++;route.abort();
+              });
+              await page.route('https://challenges.cloudflare.com/turnstile/v0/api.js**',r=>
+                r.fulfill({status:200,contentType:'application/javascript',body:
+                  "window.turnstile={render:(selector,options)=>{window.__qaWidget=options;return 'mock';},remove:()=>{}};window.n10a713TurnstileLoaded?.();"
+                })
+              );
+              let live=false;
+              for(let i=0;i<12;i++){
+                const res=await page.goto(url,{waitUntil:'domcontentloaded',timeout:15000});
+                const html=await page.content();
+                if(res.status()===200&&html.includes('challengeState')&&html.includes('checkGeneration===generation')){live=true;break}
+                await page.waitForTimeout(3000);
+              }
+              if(!live)throw Error('updated QA page not deployed yet');
+              await page.waitForFunction(()=>window.__qaWidget?.action==='mmh_n10a6_login',{timeout:10000});
+              let state=await page.locator('#widget-status').textContent();
+              if(!state.includes('正在申请'))throw Error('widget not initiated');
+              await page.evaluate(()=>window.__qaWidget.callback('dummy-synthetic-one-time-token'));
+              state=await page.locator('#widget-status').textContent();
+              if(!state.includes('PASS')||!state.includes('尚未测试'))throw Error('success state wrong');
+              if((await page.content()).includes('dummy-synthetic-one-time-token'))throw Error('token appears in HTML');
+              await page.locator('#kind').selectOption('mmh_n10a6_bind');
+              await page.waitForFunction(()=>window.__qaWidget?.action==='mmh_n10a6_bind',{timeout:10000});
+              await page.evaluate(()=>window.__qaWidget['expired-callback']());
+              state=await page.locator('#widget-status').textContent();
+              if(!state.includes('已过期'))throw Error('expired state not shown');
+              await page.locator('#refresh').click();
+              await page.evaluate(()=>window.__qaWidget['error-callback']());
+              state=await page.locator('#widget-status').textContent();
+              if(!state.includes('失败'))throw Error('error state not shown');
+              const meta=await page.evaluate(()=>({
+                overflow:document.documentElement.scrollWidth-document.documentElement.clientWidth,
+                sessionStorageKeys:sessionStorage.length,localStorageKeys:localStorage.length,
+                hasSecretInDOM:document.documentElement.outerHTML.includes('sb_secret_')
+              }));
+              if(errors.length||realLoginRequests||meta.overflow>1||meta.sessionStorageKeys||meta.localStorageKeys||meta.hasSecretInDOM)
+                throw Error('safety fail '+JSON.stringify({errors,realLoginRequests,meta}));
+              console.log('N10A714_MOCK_WIDGET_CALLBACK_SUCCESS PASS');
+              console.log('N10A714_BIND_ACTION_SWITCH PASS');
+              console.log('N10A714_EXPIRED_AND_ERROR_STATES PASS');
+              console.log('N10A714_NO_TOKEN_PERSISTENCE_OR_REAL_LOGIN PASS');
+              console.log('N10A714_MOBILE_VIEWPORT PASS');
+            }finally{await b.close()}
+          })().catch(e=>{console.error('N10A714_TEST_FAILED',e.stack||e);process.exit(1)});
+          JS
+          node .n10a714-test.cjs

@@ -91,3 +91,25 @@
 - 使用模拟浏览器对象，验证接口不可用/关闭两种情况均不会发送登录请求，密码框和提交按钮保持禁用。
 
 **阶段结论：**真实浏览器无密码 preflight PASS，N10-A3.3 的安全闭锁验收完成。新函数继续代码级关闭；真实用户名登录、在新页面的邮箱/Google 回归、生产数据的整体安全验收仍待进行。正式 MMHVAULT 未修改。
+
+## N10-A3.4 新页面邮箱完整会话回归（2026-10-28）
+
+用户在 Mac Chrome 无痕窗口运行 `p995n-n10a3-three-login-qa.html?v=2`，提供了邮箱登录、会话续期、退出和旧 JWT 专用 QA 表拒绝的连续截图，验收如下：
+
+| 验收项 | 截图结果 |
+|---|---|
+| 邮箱账户 B 登录 | PASS |
+| 原 UID `72a8d120…cffc` 不变 | PASS |
+| 专用 QA RLS 仅本人一条 | PASS · 1 |
+| Refresh Token 续期后 UID/RLS 不变 | PASS |
+| 显式退出登录 | PASS |
+| 旧 JWT 被拒绝读取专用 QA 表 | PASS |
+| 页面 UID、QA RLS、METHOD 清空 | PASS |
+
+**结论：**N10-A3.4 邮箱完整真实 Staging 会话回归 PASS；这是专用 QA 表和当前测试会话的验证，不能据此推断全部生产数据表或任意使用场景下旧 JWT 已即时失效。
+
+**后续：**N10-A3.5 Google OAuth 新页面回归尚未执行。新页面回调必须独立列入 Staging `Redirect URLs`：
+
+`https://myintmoehein0115024.github.io/MMHVAULT-Auth-QA/p995n-n10a3-three-login-qa.html`
+
+先验证 Google A 原 UID `1bc5708a…c690`、专用 QA RLS、会话续期与退出；用户名真实登录仍保持 BLOCKED，不要开启旧 N6/N9 或正式生产功能。

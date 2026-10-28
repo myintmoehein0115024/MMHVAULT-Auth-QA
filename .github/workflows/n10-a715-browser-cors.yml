@@ -1,0 +1,68 @@
+name: N10-A7.15 staging Siteverify browser and CORS preflight
+on:
+  push:
+    branches: [main]
+    paths: ['.github/workflows/n10-a715-browser-cors.yml']
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  live:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Verify authorization CORS OPTIONS on actual Staging Edge
+        shell: python
+        run: |
+          import urllib.request,urllib.error
+          url='https://ldivswlhtgmznzwhzsoi.supabase.co/functions/v1/mmh-n10a15-siteverify-qa'
+          req=urllib.request.Request(url,method='OPTIONS',headers={
+            'Origin':'https://myintmoehein0115024.github.io',
+            'Access-Control-Request-Method':'POST',
+            'Access-Control-Request-Headers':'authorization,apikey,content-type'
+          })
+          try:
+            with urllib.request.urlopen(req,timeout=18) as r:
+              status=r.status;headers=r.headers
+          except urllib.error.HTTPError as e:
+            status=e.code;headers=e.headers
+          allow=headers.get('Access-Control-Allow-Origin')
+          print('N10A715_CORS_OPTIONS_HTTP',status)
+          print('N10A715_CORS_ALLOWED_ORIGIN',allow)
+          assert status in [200,204] and allow=='https://myintmoehein0115024.github.io'
+          print('N10A715_CORS_PASSED')
+      - name: Install pinned Chromium helper
+        run: npm install --no-save --ignore-scripts --no-audit --no-fund playwright-core@1.56.1
+      - name: Open actual HTTPS QA page desktop/mobile without credentials
+        run: |
+          cat > .n10a715-browser.cjs <<'JS'
+          const {chromium}=require('playwright-core');
+          const URL='https://myintmoehein0115024.github.io/MMHVAULT-Auth-QA/n10a715-real-siteverify-qa.html';
+          (async()=>{
+            const browser=await chromium.launch({executablePath:'/usr/bin/google-chrome',headless:true,args:['--no-sandbox']});
+            try{
+              for(const width of [390,1280]){
+                const page=await browser.newPage({viewport:{width,height:844}});
+                const errors=[];
+                page.on('pageerror',e=>errors.push(e.message));
+                const response=await page.goto(URL,{waitUntil:'domcontentloaded',timeout:25000});
+                if(response.status()!==200)throw Error('QA site HTTP failed');
+                await page.waitForFunction(()=>document.querySelector('#auth-state')?.textContent?.includes('未登录'),null,{timeout:20000});
+                const state=await page.evaluate(()=>({
+                  pendingLogin:!!document.getElementById('login'),
+                  protectedHidden:document.getElementById('test-pane')?.classList.contains('hidden'),
+                  noOldTokens:sessionStorage.length===0,
+                  overflow:document.documentElement.scrollWidth-document.documentElement.clientWidth,
+                  sdkLoaded:!!window.supabase?.createClient,
+                  noSecretInDom:!document.documentElement.outerHTML.includes('sb_secret_')
+                }));
+                console.log('N10A715_CHROMIUM_WIDTH',width,JSON.stringify(state));
+                if(!state.pendingLogin||!state.protectedHidden||!state.noOldTokens||state.overflow>1||!state.sdkLoaded||!state.noSecretInDom||errors.length)
+                  throw Error('Staging QA initial state failed '+JSON.stringify({width,state,errors}));
+                await page.close();
+              }
+              console.log('N10A715_BROWSER_2_VIEWPORTS PASS');
+            }finally{await browser.close()}
+          })().catch(e=>{console.error('N10A715_BROWSER_FAIL',String(e));process.exit(1)});
+          JS
+          node .n10a715-browser.cjs

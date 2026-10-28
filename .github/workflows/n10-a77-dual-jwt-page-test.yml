@@ -1,0 +1,75 @@
+name: N10-A7.7 dual-account JWT QA page safety and syntax
+on:
+  push:
+    branches: [main]
+    paths: ['.github/workflows/n10-a77-dual-jwt-page-test.yml']
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  qa-page:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - name: Static auth flow assertions + extract inline JS
+        shell: python
+        run: |
+          import re, pathlib
+          page=pathlib.Path('n10a75-real-jwt-owner-qa.html').read_text(encoding='utf-8')
+          assert page.count('https://ldivswlhtgmznzwhzsoi.supabase.co') >= 2
+          assert 'https://vrypucmyrztxgiqhjspd.supabase.co' not in page
+          assert 'sb_secret_' not in page and 'SERVICE_ROLE_KEY' not in page
+          assert 'storage:window.sessionStorage' in page
+          assert "sessionStorage.removeItem('mmh_n10a76_staging_tab_only')" in page
+          assert 'progress.emailHash===hash' in page
+          assert 'getUser()' in page and 'getSession()' in page
+          assert 'refreshSession()' in page and 'scope:&#39;local&#39;' not in page
+          assert 'mmh_n10a6_auth_owner_probe' in page
+          assert 'anonDenied=' in page
+          assert "progress.stage='done'" in page
+          assert 'content="default-src ' in page
+          matches=re.findall(r'<script(?:\s+[^>]*)?>(.*?)</script>',page,re.DOTALL)
+          assert len(matches)==2,(len(matches),'unexpected script tags')
+          code=matches[-1]
+          assert 'const PUBLIC_KEY=' in code and 'sb_publishable_' in code
+          pathlib.Path('/tmp/n10a77-inline.js').write_text(code,encoding='utf-8')
+          print('STATIC_STAGE_SECURITY_ASSERTIONS PASS')
+      - name: JavaScript syntax validation
+        run: node --check /tmp/n10a77-inline.js
+      - name: Verify pinned Supabase SDK SRI matches actual CDN artifact
+        shell: python
+        run: |
+          import hashlib,base64,re,urllib.request,pathlib
+          page=pathlib.Path('n10a75-real-jwt-owner-qa.html').read_text(encoding='utf-8')
+          m=re.search(r'<script\s+defer\s+src="(https://cdn\.jsdelivr\.net/npm/@supabase/supabase-js@2\.57\.4/dist/umd/supabase\.min\.js)"\s+integrity="(sha384-[^"]+)"\s+crossorigin="anonymous"',page)
+          assert m,'Pinned SRI script not found'
+          r=urllib.request.urlopen(urllib.request.Request(m.group(1),headers={'User-Agent':'MMHVAULT-N10A77-QA'}),timeout=20)
+          blob=r.read(2_000_000)
+          actual='sha384-'+base64.b64encode(hashlib.sha384(blob).digest()).decode('ascii')
+          assert actual==m.group(2),'SRI integrity digest mismatch'
+          print('SDK_SHA384_SRI PASS; CDN bytes',len(blob))
+      - name: Verify live QA Pages deployment and no credential leakage
+        shell: python
+        run: |
+          import urllib.request,pathlib,time,sys
+          uri='https://myintmoehein0115024.github.io/MMHVAULT-Auth-QA/n10a75-real-jwt-owner-qa.html'
+          for trial in range(12):
+            try:
+              r=urllib.request.urlopen(urllib.request.Request(uri,headers={'User-Agent':'MMHVAULT-N10A77-QA'}),timeout=12)
+              live=r.read(80000).decode('utf-8')
+              if (r.status==200 and 'progress.emailHash===hash' in live
+                  and 'anonDenied=' in live and 'sha384-AkNSQdpt' in live
+                  and 'storage:window.sessionStorage' in live
+                  and 'SERVICE_ROLE_KEY' not in live and 'sb_secret_' not in live
+                  and 'https://vrypucmyrztxgiqhjspd.supabase.co' not in live):
+                print('LIVE_HTTPS 200 PASS')
+                print('LIVE_TWO_ACCOUNT_FLOW_DEPLOYED PASS')
+                print('LIVE_SRI_AND_STAGE_ONLY PASS')
+                break
+              else: problem='stale deploy or missing test behavior'
+            except Exception as e: problem=type(e).__name__
+            time.sleep(4)
+          else:
+            raise SystemExit('LIVE_TEST_FAIL '+problem)
+          print('N10A77_PAGE_PREFLIGHT_PASS')

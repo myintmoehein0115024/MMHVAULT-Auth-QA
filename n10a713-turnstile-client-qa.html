@@ -32,29 +32,37 @@ button{background:linear-gradient(120deg,#f2d89d,#bba171);color:#111827;border:0
 <button id="preflight" type="button">确认 Staging 登录仍关闭</button>
 <div id="staging-status" class="state" role="status" aria-live="polite">尚未检查独立 Staging 状态。</div>
 </section>
-<p class="note">注意：客户端显示挑战完成仅表示 Cloudflare 已签发临时令牌，<b>不等于服务器已验证 Secret、hostname、action 或防重放</b>。临时令牌只保留在页面运行内存中；不显示、不复制、不存储。验证码过期、出错或重置时直接丢弃。</p>
+<p class="note">说明：自动化浏览器中的个别 Cloudflare 子域名 DNS 失败可能是非致命情况，不代表您的浏览器无法验证。注意：客户端显示挑战完成仅表示 Cloudflare 已签发临时令牌，<b>不等于服务器已验证 Secret、hostname、action 或防重放</b>。临时令牌只保留在页面运行内存中；不显示、不复制、不存储。验证码过期、出错或重置时直接丢弃。</p>
 </main>
 <script>
 (()=>{
  'use strict';
  const SITE_KEY='0x4AAAAAAFlXEfEHAP1TUxjr';
  const ENDPOINT='https://ldivswlhtgmznzwhzsoi.supabase.co/functions/v1/mmh-n10a6-username';
- let widgetId=null, ephemeralToken=null;
+ let widgetId=null, ephemeralToken=null,watchdog=null,generation=0,challengeState='idle';
  const $=id=>document.getElementById(id);
  function note(id,content,type){$(id).textContent=content;$(id).className='state '+(type||'')}
- function wipe(){ephemeralToken=null}
+ function wipe(){ephemeralToken=null;if(watchdog!==null){clearTimeout(watchdog);watchdog=null}}
  function renderWidget(){
    if(!window.turnstile){note('widget-status','Cloudflare 组件尚未加载，请稍后刷新页面。','error');return}
-   wipe();
+   wipe();generation++;challengeState='pending';
    if(widgetId!==null){try{turnstile.remove(widgetId)}catch{} widgetId=null}
    note('widget-status','正在申请 '+($('kind').value.endsWith('login')?'登录':'绑定')+' 专用的 Turnstile 挑战…','');
-   widgetId=turnstile.render('#turnstile',{
+   try{widgetId=turnstile.render('#turnstile',{
      sitekey:SITE_KEY,action:$('kind').value,theme:'dark',
-     callback(token){ephemeralToken=token;note('widget-status','PASS · 浏览器成功获得一次性 Turnstile 令牌。\n服务端 Siteverify：尚未测试。\n没有向登录接口发送任何令牌。','pass')},
-     'expired-callback'(){wipe();note('widget-status','验证码已过期，请重新生成。','error')},
-     'error-callback'(){wipe();note('widget-status','Turnstile 组件加载或验证失败，请检查网络和浏览器限制。','error')},
-     'timeout-callback'(){wipe();note('widget-status','挑战超时，建议重新生成。','error')}
+     callback(token){challengeState='success';wipe();ephemeralToken=token;note('widget-status','PASS · 浏览器成功获得一次性 Turnstile 令牌。\n服务端 Siteverify：尚未测试。\n没有向登录接口发送任何令牌。','pass')},
+     'expired-callback'(){challengeState='expired';wipe();note('widget-status','验证码已过期，请重新生成。','error')},
+     'error-callback'(){challengeState='error';wipe();note('widget-status','Turnstile 组件加载或验证失败，请检查网络和浏览器限制。','error')},
+     'timeout-callback'(){challengeState='timeout';wipe();note('widget-status','挑战超时，建议重新生成。','error')}
    });
+   }catch{challengeState='error';wipe();note('widget-status','组件初始化失败。请刷新页面或尝试关闭扩展程序。','error');return}
+   const checkGeneration=generation;
+   watchdog=setTimeout(()=>{
+     watchdog=null;
+     if(checkGeneration===generation&&challengeState==='pending'&&!ephemeralToken){
+       note('widget-status','验证码尚未完成。若已显示挑战，请继续按提示操作；若始终空白，请点击「重新生成验证码」、关闭广告拦截扩展，或换网络重试。\n尚未通过浏览器验证码验收。','');
+     }
+   },18000);
  }
  window.n10a713TurnstileLoaded=()=>renderWidget();
  $('kind').addEventListener('change',()=>{wipe();renderWidget()});

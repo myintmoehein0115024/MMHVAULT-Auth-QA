@@ -76,6 +76,7 @@ test('email tab switches label/type and renders demo error',async()=>{
   assert.equal(await p.locator('#identityLabel').textContent(),'邮箱地址');
   assert.equal(await p.locator('#tab-email').getAttribute('aria-selected'),'true');
   await p.locator('#identity').fill('demo@example.invalid');
+  await p.locator('.demo-panel summary').click();
   await p.locator('#scenario').selectOption('invalid');
   await p.locator('#submit').click();
   assert.ok((await p.locator('#status').textContent()).includes('账号或密码不正确'));
@@ -112,7 +113,8 @@ test('English translation updates labels, notices, example result',async()=>{
   assert.equal(await p.locator('html').getAttribute('lang'),'en');
   assert.equal(await p.locator('#identityLabel').textContent(),'Username');
   assert.ok((await p.locator('.fineprint').textContent()).includes('No Supabase'));
-  await p.locator('#identity').fill('demo_user');await p.locator('#scenario').selectOption('session');
+  await p.locator('#identity').fill('demo_user');await p.locator('.demo-panel summary').click();
+  await p.locator('#scenario').selectOption('session');
   await p.locator('#submit').click();
   assert.ok((await p.locator('#status').textContent()).includes('remote UID and local UID disagree'));
   await p.locator('#zh').click();
@@ -134,6 +136,7 @@ test('CAPTCHA scenario simulates failure without any Cloudflare requests',async(
  const {p,network}=await openPage();
  try{
   await p.locator('#identity').fill('demo_user');
+  await p.locator('.demo-panel summary').click();
   await p.locator('#scenario').selectOption('captcha');
   await p.locator('#submit').click();
   assert.ok((await p.locator('#status').textContent()).includes('验证码未通过'));
@@ -212,7 +215,7 @@ for (const width of [320,375,393,430,600]) {
    assert.equal(v.chip,'none','Long QA chip still visible on phone');
    assert.equal(v.sub,'none','Long brand subtitle still visible on phone');
    assert.ok(v.top<132,'Login card must start near header, got '+v.top);
-   assert.ok(v.tabBottom<360,'Login methods must be available quickly, got '+v.tabBottom);
+   assert.ok(v.tabBottom<460,'Login methods must be available quickly, got '+v.tabBottom);
    assert.ok(v.headBottom<80,'Header takes too much height: '+v.headBottom);
    assert.ok(v.overflow<=1,'Horizontal overflow: '+v.overflow);
    assert.ok(v.tabWidth>245 && v.cardWidth>275);
@@ -222,16 +225,126 @@ for (const width of [320,375,393,430,600]) {
  });
 }
 for (const width of [768,1024,1440]) {
- test('tablet-desktop retains decorative hero at '+width+'px',async()=>{
+ test('tablet-desktop retains clean centered auth card at '+width+'px',async()=>{
   const {p,network,errors}=await openPage(width,900);
   try{
-   assert.notEqual(await p.locator('.hero').evaluate(e=>getComputedStyle(e).display),'none');
-   assert.ok(await p.locator('.hero h1').isVisible());
-   assert.ok(await p.locator('.hero-stats').isVisible());
+   assert.equal(await p.locator('.hero').evaluate(e=>getComputedStyle(e).display),'none');
+   assert.ok(await p.locator('.login-card').isVisible());
+   assert.ok(await p.locator('#auth-signup').isVisible());
+   assert.ok(await p.locator('.login-card').evaluate(e=>e.getBoundingClientRect().width<=475));
    assert.deepEqual(network,[]);assert.deepEqual(errors,[]);
   }finally{await p.close()}
  });
 }
+
+test('top-level Sign In and Sign Up tabs switch with no network or real auth',async()=>{
+ const {p,network,errors}=await openPage(393,852);
+ try{
+  assert.equal(await p.locator('#auth-signin').getAttribute('aria-selected'),'true');
+  await p.locator('#auth-signup').click();
+  assert.equal(await p.locator('#auth-signup').getAttribute('aria-selected'),'true');
+  assert.equal(await p.locator('#signup-pane').isVisible(),true);
+  assert.equal(await p.locator('#signin-pane').isVisible(),false);
+  assert.equal(await p.locator('#cardTitle').textContent(),'创建账户');
+  for(const id of ['signupUsername','signupEmail','signupPassword','signupConfirm'])assert.ok(await p.locator('#'+id).isVisible());
+  await p.locator('#auth-signin').click();
+  assert.equal(await p.locator('#signup-pane').isVisible(),false);
+  assert.equal(await p.locator('#signin-pane').isVisible(),true);
+  assert.deepEqual(network,[]);assert.deepEqual(errors,[]);
+ }finally{await p.close()}
+});
+test('signup rejects malformed username before mock success',async()=>{
+ const {p,network}=await openPage();
+ try{
+  await p.locator('#auth-signup').click();
+  await p.locator('#signupUsername').fill('Ab!');
+  await p.locator('#signupEmail').fill('demo@example.invalid');
+  await p.locator('#signupPassword').fill('fictionalpass');
+  await p.locator('#signupConfirm').fill('fictionalpass');
+  await p.locator('#signupAcknowledged').check();
+  await p.locator('#signup-form button[type="submit"]').click();
+  assert.ok((await p.locator('#status').textContent()).includes('有效的示例用户名'));
+  assert.equal(await p.locator('#signupPassword').inputValue(),'');
+  assert.deepEqual(network,[]);
+ }finally{await p.close()}
+});
+test('signup only accepts fictional .invalid email and never sends email',async()=>{
+ const {p,network}=await openPage();
+ try{
+  await p.locator('#auth-signup').click();
+  await p.locator('#signupUsername').fill('demo_user');
+  await p.locator('#signupEmail').fill('real@example.com');
+  await p.locator('#signupPassword').fill('fakePASS12');await p.locator('#signupConfirm').fill('fakePASS12');
+  await p.locator('#signupAcknowledged').check();await p.locator('#signup-form button[type="submit"]').click();
+  assert.ok((await p.locator('#status').textContent()).includes('demo@example.invalid'));
+  assert.equal(await p.locator('#signupEmail').inputValue(),'');
+  assert.deepEqual(network,[]);
+ }finally{await p.close()}
+});
+test('signup mismatched sample password fails and clears both fields',async()=>{
+ const {p,network}=await openPage();
+ try{
+  await p.locator('#auth-signup').click();await p.locator('#signupUsername').fill('demo_user');
+  await p.locator('#signupEmail').fill('demo@example.invalid');
+  await p.locator('#signupPassword').fill('fakePASSWORD1');await p.locator('#signupConfirm').fill('differentPASSWORD');
+  await p.locator('#signupAcknowledged').check();await p.locator('#signup-form button[type="submit"]').click();
+  assert.ok((await p.locator('#status').textContent()).includes('不一致'));
+  assert.equal(await p.locator('#signupPassword').inputValue(),'');
+  assert.equal(await p.locator('#signupConfirm').inputValue(),'');
+  assert.deepEqual(network,[]);
+ }finally{await p.close()}
+});
+test('signup valid fictional data simulates result, creates no account or browser storage',async()=>{
+ const {p,network,errors}=await openPage();
+ try{
+  await p.locator('#auth-signup').click();
+  await p.locator('#signupUsername').fill('demo_user');
+  await p.locator('#signupEmail').fill('demo@example.invalid');
+  await p.locator('#signupPassword').fill('fakePASSWORD1');await p.locator('#signupConfirm').fill('fakePASSWORD1');
+  await p.locator('#signupAcknowledged').check();
+  await p.locator('#signup-form button[type="submit"]').click();
+  assert.ok((await p.locator('#status').textContent()).includes('模拟注册流程成功'));
+  assert.equal(await p.locator('#signupPassword').inputValue(),'');
+  assert.equal(await p.evaluate(()=>localStorage.length+sessionStorage.length),0);
+  assert.deepEqual(network,[]);assert.deepEqual(errors,[]);
+ }finally{await p.close()}
+});
+test('signup bilingual heading translation and Google signup modal mock',async()=>{
+ const {p,network}=await openPage();
+ try{
+  await p.locator('#auth-signup').click();await p.locator('#en').click();
+  assert.equal(await p.locator('#cardTitle').textContent(),'Create Account');
+  assert.equal(await p.locator('label[for="signupUsername"]').textContent(),'Username');
+  await p.locator('#googleSignup').click();
+  assert.ok((await p.locator('#dialogTitle').textContent()).includes('Google signup'));
+  await p.locator('#dialogOK').click();
+  await p.locator('#zh').click();
+  assert.equal(await p.locator('#cardTitle').textContent(),'创建账户');
+  assert.deepEqual(network,[]);
+ }finally{await p.close()}
+});
+for(const width of [320,393,600,768,1440]){
+ test('clean signup panel responsive '+width+'px and never shows promo',async()=>{
+  const {p,network,errors}=await openPage(width,900);
+  try{
+   await p.locator('#auth-signup').click();
+   const v=await p.evaluate(()=>({
+    overflow:document.documentElement.scrollWidth-document.documentElement.clientWidth,
+    cardTop:document.querySelector('.login-card').getBoundingClientRect().top,
+    signupWidth:document.getElementById('signup-pane').getBoundingClientRect().width,
+    hero:getComputedStyle(document.querySelector('.hero')).display,
+    stored:localStorage.length+sessionStorage.length
+   }));
+   assert.equal(v.hero,'none');
+   assert.ok(v.cardTop<140);
+   assert.ok(v.overflow<=1);
+   assert.ok(v.signupWidth>245);
+   assert.equal(v.stored,0);
+   assert.deepEqual(network,[]);assert.deepEqual(errors,[]);
+  }finally{await p.close()}
+ });
+}
+
 test('review output for mobile coverage',()=>{
  console.log('N10A720_UI_VIEWPORTS '+JSON.stringify(evidence));
 });

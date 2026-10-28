@@ -1,0 +1,81 @@
+<!doctype html>
+<html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="robots" content="noindex,nofollow,noarchive"><meta name="referrer" content="no-referrer"><meta http-equiv="Content-Security-Policy" content="default-src &#x27;none&#x27;; connect-src https://ldivswlhtgmznzwhzsoi.supabase.co; script-src &#x27;sha256-26O5VO+gczBP1s41uXb+PuyD7BOkfG1YkMS2jm5yhIQ=&#x27;; style-src &#x27;sha256-2a1CzCExvBv3Hlza5JYVXmJr2Zkg3QT8YFfJ9RzxjIk=&#x27;; form-action &#x27;none&#x27;; base-uri &#x27;none&#x27;; object-src &#x27;none&#x27;; frame-src &#x27;none&#x27;"><meta name="theme-color" content="#06101c"><title>MMHVAULT · P9.95N-N5 双用户 RLS 安全验收</title><style>*{box-sizing:border-box}html{color-scheme:dark}body{margin:0;min-width:290px;min-height:100vh;background:radial-gradient(ellipse at 20% 5%,#193754 0,transparent 44%),radial-gradient(ellipse at 85% 88%,#10263d 0,transparent 56%),#06101c;color:#eef4fd;font:15px/1.65 -apple-system,BlinkMacSystemFont,"Segoe UI","Microsoft YaHei",sans-serif}.shell{max-width:830px;margin:35px auto;padding:16px}.head{display:flex;justify-content:space-between;align-items:start;gap:12px;flex-wrap:wrap}.eyebrow{font-size:12px;font-weight:800;letter-spacing:2px;color:#f0c980}.pill{border:1px solid #967c4e;border-radius:99px;padding:4px 12px;font-size:11px;color:#f5d18b}.pane{background:linear-gradient(160deg,#20334aef,#101d2eeb);border:1px solid #5c79905c;border-radius:24px;padding:27px;box-shadow:0 25px 65px #0005;backdrop-filter:blur(19px)}h1{font-size:clamp(24px,4.5vw,36px);line-height:1.24;margin:14px 0 9px}h2{font-size:18px;margin:20px 0 8px}p{color:#b9cadc;margin:8px 0 14px}.small{font-size:12px;color:#a9bbcd}.warn{background:#573f2326;border:1px solid #90704c70;border-radius:12px;padding:11px 13px}.cols{display:grid;grid-template-columns:1fr 1fr;gap:15px}.card{background:#061321a6;border:1px solid #7e9bb34a;border-radius:14px;padding:16px;min-width:0}.flex{display:flex;gap:10px;align-items:center;flex-wrap:wrap}label{display:block;color:#ced9e5;font-size:13px;margin:12px 0 5px}input,select{width:100%;padding:13px 12px;background:#071828;color:#fff;border:1px solid #587086;border-radius:10px;font:inherit;outline-offset:2px}button{background:linear-gradient(115deg,#f6d993,#ddb566);color:#122035;border:0;border-radius:12px;font:700 14px/1.45 inherit;padding:13px 17px;cursor:pointer}button.secondary{background:#172c40;color:#e6effb;border:1px solid #71879b}button:disabled{opacity:.45;cursor:default}.buttons{display:flex;gap:9px;flex-wrap:wrap;margin-top:18px}.result{white-space:pre-wrap;overflow-wrap:anywhere;min-height:40px;border-radius:10px;border:1px solid #49657b;padding:11px 13px;color:#cbd9e6;background:#0b1b2bf0}.good{color:#82ebc3}.bad{color:#ffaca6}.pending{color:#f5d18b}.data-row{white-space:pre-line;font-size:13px;color:#afc2d6;border-bottom:1px solid #34485e90;padding:6px 0}.data-row:last-child{border-bottom:0}code{font:12px/1.5 ui-monospace,Consolas,monospace;color:#f6d79c;word-break:break-word}footer{font-size:12px;color:#94adc1;margin:20px 5px}@media(max-width:650px){.shell{margin:0;padding:10px}.pane{padding:18px;border-radius:18px}.cols{grid-template-columns:1fr}.buttons button{flex:1 1 190px}}</style></head><body>
+<main class="shell"><div class="pane"><div class="head"><span class="eyebrow">MMHVAULT · SECURITY QA</span><span class="pill">P9.95N-N5 · STAGING ONLY</span></div><h1>双用户登录与数据隔离验收</h1><p>仅用于隔离的 Supabase Staging：验证<strong>不同 UID、每人只能看到自己的 QA 记录、注销后旧 JWT 不可读取</strong>。此页面不连接正式 MMHVAULT 财务数据库。</p><p class="warn">🔐 此测试页只把您输入的邮箱、密码直接提交至 Staging 的 Supabase Auth 服务。不会上传到 ChatGPT，不会保存到 localStorage、Cookie 或第三方分析服务。只使用与正式站不同的 Staging 测试密码。</p>
+<h2>① 使用测试账号登录</h2><label for="slot">本次测试身份</label><select id="slot"><option value="A">账户 A · 原有测试账号</option><option value="B">账户 B · 新增测试账号</option></select><label for="email">Staging 测试邮箱</label><input id="email" type="email" inputmode="email" autocomplete="off" spellcheck="false" placeholder="仅输入 Staging 测试账号邮箱" maxlength="320"><label for="password">Staging 测试密码（不保存）</label><input id="password" type="password" autocomplete="new-password" placeholder="仅测试密码" maxlength="256"><div class="buttons"><button id="login" type="button">登录并检查 RLS</button><button class="secondary" id="logout" type="button" disabled>退出并验证旧 JWT</button><button class="secondary" id="anon" type="button">检查匿名拒绝</button></div>
+<h2>② 测试过程</h2><div class="result" id="status" role="status" aria-live="polite">请选择 A 或 B。先登录、检查 RLS，再退出并测试旧令牌。</div><h2>③ 分账号结果</h2><div class="cols"><section class="card"><strong>账户 A</strong><div class="data-row" id="Astatus">待测</div></section><section class="card"><strong>账户 B</strong><div class="data-row" id="Bstatus">待测</div></section></div><h2>④ 双账号 UID 比对</h2><div class="result" id="identity" role="status" aria-live="polite">待测试</div><p class="small">执行顺序：A 登录 → RLS → 注销 → B 登录 → RLS → 注销；如果 A 只支持 Google 登录，先测试 B，A 留待 OAuth 专项。不需要把任何密码或完整 UID 截图发给我。</p>
+</div><footer>只操作 QA 表 <code>public.mmh_p995k_session_protected_qa</code>，不会修改用户认证数据。未启用 <code>MMH_P995N_ENABLED</code>。该测试不代表正式全部财务表通过跨账号渗透测试。</footer></main><script>"use strict";
+const API='https://ldivswlhtgmznzwhzsoi.supabase.co';
+const KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxkaXZzd2xodGdtem56d2h6c29pIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTMwODgxOTksImV4cCI6MjEwODY2NDE5OX0.y_XAkQZOSbOatWswYMbGTWyZBmrMIWooTBsw9xQVyPM';
+const ORIGIN='https://myintmoehein0115024.github.io';
+const FIXTURE='mmh_p995k_session_protected_qa';
+const $=id=>document.getElementById(id);
+const record={A:{uid:null,login:null,owner:null,revoked:null},B:{uid:null,login:null,owner:null,revoked:null}};
+let active=null, busy=false;
+const short=id=>typeof id==='string'?id.slice(0,6)+'…'+id.slice(-4):'未确认';
+function stat(id,text,cls=''){let e=$(id);e.textContent=text;e.className='result '+cls;}
+function show(){for(const name of ['A','B']){let r=record[name];$(name+'status').textContent='登录：'+(r.login??'待测')+'\n所有者 RLS：'+(r.owner??'待测')+'\n注销旧 JWT：'+(r.revoked??'待测')+'\n身份：'+short(r.uid)}
+ let a=record.A.uid,b=record.B.uid;
+ stat('identity',a&&b?(a!==b?'PASS：A 与 B 的 UID 不相同。':'FAIL：两个测试步骤登录到了同一个 UID，请确认使用了不同账号。'):'待 A 与 B 各登录一次后检查 UID 是否独立。',a&&b?(a!==b?'good':'bad'):'');
+}
+function lock(on){busy=on;$('login').disabled=on||Boolean(active);$('logout').disabled=on||!active;$('anon').disabled=on;$('slot').disabled=on||Boolean(active);$('email').disabled=on||Boolean(active);$('password').disabled=on||Boolean(active)}
+async function request(path,method='GET',body=null,access=null){
+ const headers={'apikey':KEY,'Accept':'application/json','Cache-Control':'no-store'};
+ if(body!==null)headers['Content-Type']='application/json';
+ if(access)headers['Authorization']='Bearer '+access;
+ const controller=new AbortController(), timer=setTimeout(()=>controller.abort(),12000);
+ try{const r=await fetch(API+path,{method,headers,body:body===null?undefined:JSON.stringify(body),cache:'no-store',credentials:'omit',referrerPolicy:'no-referrer',redirect:'error',signal:controller.signal});
+ let json=null;try{json=await r.json()}catch{};
+ return {status:r.status,ok:r.ok,json};
+ }finally{clearTimeout(timer)}
+}
+async function readFixture(token){return await request('/rest/v1/'+FIXTURE+'?select=user_id,fixture_name','GET',null,token)}
+async function runLogin(){
+ if(active||busy)return;
+ if(location.origin!==ORIGIN||location.protocol!=='https:'){stat('status','出于安全考虑，只允许在用户自己的 GitHub Pages HTTPS 域名上执行。','bad');return}
+ const slot=$('slot').value,email=$('email').value.trim(),password=$('password').value;
+ if(!['A','B'].includes(slot)||!email||!password){stat('status','请填写测试账号的邮箱与密码。','pending');return}
+ $('password').value='';lock(true);stat('status','正在向隔离 Staging 进行直接邮箱登录和 RLS 检查…','pending');
+ let token=null;
+ try{
+  const auth=await request('/auth/v1/token?grant_type=password','POST',{email,password});
+  if(!auth.ok||typeof auth.json?.access_token!=='string'){
+    record[slot].login='FAIL（邮箱密码登录未通过）';stat('status','Staging 登录未成功。请检查测试账号密码；Google-only 账号不能在这里直接用 Google 按钮登录。HTTP '+auth.status,'bad');show();return;
+  }
+  token=auth.json.access_token;
+  const identity=await request('/auth/v1/user','GET',null,token);
+  if(!identity.ok||!identity.json?.id||identity.json.id!==auth.json.user?.id)throw Error('登录后的 UID 身份不一致。');
+  const uid=identity.json.id;
+  record[slot].uid=uid;record[slot].login='PASS';
+  const read=await readFixture(token);
+  if(!read.ok){record[slot].owner='FAIL（RLS 读取 HTTP '+read.status+'）';stat('status','登录成功，但所有者读取未完成，请检查数据库授权。','bad')}
+  else if(!Array.isArray(read.json)){record[slot].owner='FAIL（非预期响应）';stat('status','RLS 响应不是数组。','bad')}
+  else if(read.json.length===1&&read.json[0]?.user_id===uid&&read.json[0]?.fixture_name==='P995K_OWNER_ONLY'){
+    record[slot].owner='PASS（只返回自己的 1 条 QA 记录）';stat('status','账户 '+slot+' 的登录与所有者读取通过。下一步点击“退出并验证旧 JWT”。','good');
+  }else{record[slot].owner='FAIL（返回 '+read.json.length+' 条记录或所有者 UID 不一致）';stat('status','RLS 隔离检查未通过，请不要开启正式多用户登录。','bad')}
+  active={slot,token};token=null;show();
+ }catch(e){stat('status','请求失败：'+(e?.name==='AbortError'?'网络超时':String(e?.message||'无法连接')),'bad')}
+ finally{ // no persistence; only active session token held briefly in JS memory
+  lock(false);
+ }
+}
+async function runLogout(){if(!active||busy)return;const {slot,token}=active;active=null;lock(true);stat('status','正在注销 Staging 会话，并用旧访问令牌检查 RLS…','pending');
+ try{
+  const logout=await request('/auth/v1/logout?scope=local','POST',{},token);
+  if(!logout.ok){record[slot].revoked='待测（登出 HTTP '+logout.status+'）';stat('status','登出失败，无法安全判定旧令牌，请停止测试。','bad');return}
+  const old=await readFixture(token);
+  if(old.ok&&Array.isArray(old.json)&&old.json.length>0){record[slot].revoked='FAIL（注销后仍可读取记录）';stat('status','注销后的旧 JWT 仍能读取数据。请勿开启多用户认证。','bad')}
+  else if((old.ok&&Array.isArray(old.json)&&old.json.length===0)||[401,403].includes(old.status)){
+    record[slot].revoked='PASS（旧 JWT 无法读取 QA 记录）';stat('status','账户 '+slot+' 退出及旧 JWT 阻断通过。可以切换测试另一账号。','good');
+  }else{record[slot].revoked='待核对（HTTP '+old.status+'）';stat('status','旧 JWT 检查响应未能明确判断。','pending')}
+ }catch(e){record[slot].revoked='待重试';stat('status','登出/旧 JWT 验证中断：'+String(e?.message||e),'bad')}
+ finally{lock(false);$('email').value='';$('password').value='';show()}
+}
+async function runAnon(){if(busy||active)return;lock(true);stat('status','检查匿名用户是否无法读取 QA 表…','pending');try{const r=await request('/rest/v1/'+FIXTURE+'?select=user_id');
+ if([401,403].includes(r.status)||(r.ok&&Array.isArray(r.json)&&r.json.length===0)){stat('status','PASS：匿名访问被拒绝或未返回任何 QA 数据（HTTP '+r.status+'）。','good')}
+ else {stat('status','FAIL：匿名查询返回非预期结果（HTTP '+r.status+'）。','bad')}
+ }catch(e){stat('status','匿名访问测试无法连接：'+String(e?.message||e),'pending')}finally{lock(false)}}
+$('login').addEventListener('click',runLogin);
+$('logout').addEventListener('click',runLogout);
+$('anon').addEventListener('click',runAnon);
+window.addEventListener('pagehide',()=>{active=null;$('password').value='';});
+show();lock(false);</script></body></html>

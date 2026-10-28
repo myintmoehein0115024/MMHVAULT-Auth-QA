@@ -1,28 +1,220 @@
 <!doctype html>
-<html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="robots" content="noindex,nofollow"><title>MMHVAULT · N10-A7.5 真实 JWT 所有者验收</title>
+<html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="robots" content="noindex,nofollow"><title>MMHVAULT · N10-A7.7 真实 JWT 所有者验收</title>
 <meta name="referrer" content="no-referrer"><meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'unsafe-inline' https://cdn.jsdelivr.net; connect-src https://ldivswlhtgmznzwhzsoi.supabase.co; style-src 'unsafe-inline'; img-src data:; base-uri 'none'; object-src 'none'; form-action 'none'"><style>
 :root{color-scheme:dark}*{box-sizing:border-box}body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;background:radial-gradient(circle at 20% 5%,#193750 0,#0a1828 39%,#03080f 100%);color:#edf3ff;margin:0;padding:20px;min-height:100vh}main{max-width:660px;margin:5vh auto;background:linear-gradient(145deg,#ffffff12,#ffffff06);border:1px solid #ffffff26;border-radius:26px;padding:28px;box-shadow:0 28px 80px #0009;backdrop-filter:blur(22px)}small{color:#99b4ca;letter-spacing:.06em}h1{font-size:24px;margin:8px 0}p{color:#b8c9db;line-height:1.65}form{display:grid;gap:12px;margin:18px 0}label{font-size:13px;color:#c5d2e5}input{display:block;width:100%;margin-top:6px;background:#0d1c2d;border:1px solid #ffffff35;color:#eef7ff;border-radius:12px;padding:13px;font-size:16px}button{cursor:pointer;border:1px solid #e4c68e;padding:12px 17px;border-radius:12px;color:#081524;background:linear-gradient(140deg,#ead29d,#bfa16a);font-weight:700;font-size:14px}button.secondary{border-color:#ffffff38;color:#eef7ff;background:#ffffff16}button:disabled{opacity:.5;cursor:not-allowed}.actions{display:flex;gap:10px;flex-wrap:wrap}.status{margin:15px 0;border:1px solid #ffffff24;border-radius:15px;padding:16px;white-space:pre-wrap;overflow-wrap:anywhere;font:13px/1.7 ui-monospace,SFMono-Regular,monospace}.pass{color:#8de5be}.fail{color:#ffd1bb}.pending{color:#e8d49b}.note{font-size:13px}hr{border:0;border-top:1px solid #ffffff24;margin:25px 0}#results{max-width:100%}b{color:#f2d7a8}
-</style></head><body><main><small>MMHVAULT / ISOLATED AUTH STAGING / N10-A7.5</small><h1>真实登录会话 + RLS 所有者验证</h1><p>本测试只连接独立 Staging 的 Supabase 项目。您可以使用已经存在的 <b>Staging 测试账号</b>，请不要输入正式 MMHVAULT 的个人金融账号密码。</p>
+</style></head><body><main><small>MMHVAULT / ISOLATED AUTH STAGING / N10-A7.5</small><h1>双用户真实 JWT · OAuth · RLS 连续验收</h1><p>本测试只连接独立 Staging 的 Supabase 项目。您可以使用已经存在的 <b>Staging 测试账号</b>，请不要输入正式 MMHVAULT 的个人金融账号密码。</p>
 <form id="login"><label>Staging 测试邮箱<input id="email" autocomplete="username" inputmode="email" type="email" required></label><label>Staging 测试密码<input id="pass" autocomplete="current-password" type="password" required></label><div class="actions"><button type="submit">使用邮箱测试账号登录</button><button class="secondary" id="google" type="button">使用 Google 测试账号登录</button></div></form>
 <div class="actions"><button class="secondary" id="check" type="button">验证当前会话的 UID 与 RLS</button><button class="secondary" id="logout" type="button">退出 Staging 测试</button></div><div id="results" class="status pending" aria-live="polite">尚未执行真实 JWT 验证。未输入任何真实密码或令牌。</div>
-<hr><p class="note">安全说明：本页面不会读取正式生产数据，不会创建新用户，不会上报密码或令牌；结果只显示通过/失败，不展示 Token。邮箱与 Google 登录由 Supabase Auth 提供。需要 Staging 的 OAuth 回调白名单包含本页地址。测试会话仅保存在当前浏览器标签页内，关闭该标签页即清除。</p></main>
-<script defer src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.57.4/dist/umd/supabase.min.js"></script>
+<div class="status pending" id="walkthrough" aria-live="polite">步骤 1：先用 Staging 邮箱测试账号登录（非正式 MMHVAULT 账号）。<br>步骤 2：验证后点击「验证退出」。<br>步骤 3：使用已有的 Staging Google 测试账号登录，页面将自动检查两个 UID 是否不同。</div>
+<div class="actions"><button class="secondary" type="button" id="safe-logout">验证退出／下一步</button><button class="secondary" type="button" id="reset-qa">重置本轮验收</button><button class="secondary" type="button" id="copy-qa">复制脱敏验收摘要</button></div><hr><p class="note">安全说明：本页面不会读取正式生产数据，不会创建新用户，不会上报密码或令牌；结果只显示通过/失败，不展示 Token。邮箱与 Google 登录由 Supabase Auth 提供。需要 Staging 的 OAuth 回调白名单包含本页地址。测试会话仅保存在当前浏览器标签页内，关闭该标签页即清除。</p></main>
+<script defer src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.57.4/dist/umd/supabase.min.js" integrity="sha384-AkNSQdptcXlJ0/NBZc4qGk86cDVXcCevwoWgEKIpHOEfbvlXGLlIkimQtONt8KNf" crossorigin="anonymous"></script>
 <script>
+
 (() => {
   'use strict';
-  try{window.localStorage.removeItem('mmh_n10a75_staging_qa_only');}catch{} // clear legacy persistent QA-only token
   const SITE='https://ldivswlhtgmznzwhzsoi.supabase.co';
   const PUBLIC_KEY='sb_publishable_LxIB8564OZD48HQ8Mfsc0A_apkgERZo';
-  const red=document.getElementById('results');let db=null,busy=false;
-  const show=(text,kind='pending')=>{red.textContent=text;red.className='status '+kind};
-  const ready=()=>{if(!db&&window.supabase){db=window.supabase.createClient(SITE,PUBLIC_KEY,{auth:{flowType:'pkce',detectSessionInUrl:true,autoRefreshToken:true,persistSession:true,storage:window.sessionStorage,storageKey:'mmh_n10a76_staging_tab_only'}});}return !!db};
-  const sleep=ms=>new Promise(r=>setTimeout(r,ms));
-  async function guard(f){if(busy)return;busy=true;for(const b of document.querySelectorAll('button'))b.disabled=true;try{if(!ready())throw Error('Supabase JS 加载失败');await f();}catch(e){show('FAIL · '+String(e?.message||e).slice(0,150),'fail')}finally{busy=false;for(const b of document.querySelectorAll('button'))b.disabled=false;document.getElementById('pass').value='';}}
-  async function check(){const u=await db.auth.getUser(),s=await db.auth.getSession();if(u.error||s.error||!u.data?.user?.id||u.data.user.id!==s.data?.session?.user?.id){show('FAIL · 真实登录会话未建立或 Auth UID 不一致','fail');return;}const uid=u.data.user.id;const r=await db.from('mmh_n10a6_auth_owner_probe').select('user_id').limit(3);if(r.error){show('FAIL · RLS 查询未成功：'+r.error.message,'fail');return;}const rows=r.data||[];if(rows.length===1&&rows[0].user_id===uid){show('PASS · Supabase Auth getUser/getSession UID 一致\nPASS · 使用当前真实 JWT 查询 QA 表\nPASS · RLS 仅返回自身 1 条记录\n身份类别：'+(u.data.user.app_metadata?.providers?.includes('google')?'Google OAuth':'Email Auth')+'\n未展示或复制任何访问令牌','pass');}else{show('FAIL · 所有者记录数量或 UID 不符，实际返回 '+rows.length+' 行。','fail');}}
-  document.getElementById('check').addEventListener('click',()=>guard(check));
-  document.getElementById('login').addEventListener('submit',ev=>{ev.preventDefault();guard(async()=>{const email=document.getElementById('email').value.trim(),password=document.getElementById('pass').value;const r=await db.auth.signInWithPassword({email,password});if(r.error)throw Error('Staging 登录失败，请确认账号或密码');await check();})});
-  document.getElementById('google').addEventListener('click',()=>guard(async()=>{const r=await db.auth.signInWithOAuth({provider:'google',options:{redirectTo:location.origin+location.pathname}});if(r.error)throw Error('Google OAuth 未通过');show('正在通过 Supabase Google OAuth 跳转…','pending');}));
-  document.getElementById('logout').addEventListener('click',()=>guard(async()=>{await db.auth.signOut({scope:'local'});show('已退出独立 Staging 测试会话','pending');}));
-  (async()=>{for(let i=0;i<25&&!ready();i++)await sleep(120);if(!ready()){show('Supabase JS CDN 不可用；请检查网络','fail');return;}const {data}=await db.auth.getSession();if(data.session)await check();else show('独立 Staging 验证页已就绪，请使用 Staging 测试身份登录。','pending');})().catch(()=>show('测试页面初始化失败','fail'));
+  const STORAGE='mmh_n10a77_auth_tab_only', STATE='mmh_n10a77_qa_stage';
+  const TEST_TABLE='mmh_n10a6_auth_owner_probe';
+  const EXPECTED_ORIGIN='https://myintmoehein0115024.github.io';
+  const EXPECTED_PATH='/MMHVAULT-Auth-QA/n10a75-real-jwt-owner-qa.html';
+  const $=id=>document.getElementById(id);
+  let db=null,busy=false;
+  const fresh=()=>({stage:'start',emailHash:'',salt:'',emailPass:false,logoutPass:false,googlePass:false,distinctPass:false,refreshPass:false,oauthPending:false});
+  let progress;
+  try{progress={...fresh(),...JSON.parse(sessionStorage.getItem(STATE)||'{}')}}catch{progress=fresh()}
+  // Remove the previous QA test page's persistent session key, never clear unrelated site keys.
+  try{localStorage.removeItem('mmh_n10a75_staging_qa_only')}catch{}
+  const save=()=>sessionStorage.setItem(STATE,JSON.stringify(progress));
+  const show=(t,k='pending')=>{$('results').textContent=t;$('results').className='status '+k};
+  const step=t=>$('walkthrough').textContent=t;
+  const safeError=e=>String(e?.message||e||'未知错误').slice(0,140).replace(/(access_token|refresh_token|code|token)=\S+/gi,'[redacted]');
+  function ready(){
+    if(location.origin!==EXPECTED_ORIGIN || location.pathname!==EXPECTED_PATH)throw Error('QA 路径不匹配');
+    if(!db && window.supabase){
+      db=window.supabase.createClient(SITE,PUBLIC_KEY,{auth:{
+        flowType:'pkce',detectSessionInUrl:true,persistSession:true,autoRefreshToken:true,
+        storage:window.sessionStorage,storageKey:STORAGE
+      }});
+    }
+    return Boolean(db);
+  }
+  const pause=ms=>new Promise(r=>setTimeout(r,ms));
+  async function run(f){
+    if(busy)return;
+    busy=true;
+    Array.from(document.querySelectorAll('button')).forEach(b=>b.disabled=true);
+    try{
+      if(!ready())throw Error('Supabase SDK 暂不可用');
+      await f();
+    }catch(e){show('未通过 · '+safeError(e),'fail')}
+    finally{
+      busy=false;
+      $('pass').value='';
+      Array.from(document.querySelectorAll('button')).forEach(b=>b.disabled=false);
+      renderStage();
+    }
+  }
+  async function fingerprint(uid){
+    if(!progress.salt) {
+      progress.salt=Array.from(crypto.getRandomValues(new Uint8Array(16)),x=>x.toString(16).padStart(2,'0')).join('');
+      save();
+    }
+    const bytes=new TextEncoder().encode(progress.salt+':'+uid);
+    const digest=new Uint8Array(await crypto.subtle.digest('SHA-256',bytes));
+    return Array.from(digest,x=>x.toString(16).padStart(2,'0')).join('');
+  }
+  function summary(){
+    return [
+      'MMHVAULT N10-A7.7 / Staging 两用户真实 JWT 安全验收',
+      '测试日期(UTC): '+new Date().toISOString(),
+      'Email JWT/RLS: '+(progress.emailPass?'PASS':'PENDING'),
+      'Email Logout & anonymous access: '+(progress.logoutPass?'PASS':'PENDING'),
+      'Google OAuth JWT/RLS: '+(progress.googlePass?'PASS':'PENDING'),
+      'Email / Google UID distinct: '+(progress.distinctPass?'PASS':'PENDING'),
+      'Token refresh & UID retention: '+(progress.refreshPass?'PASS':'PENDING'),
+      'Result: '+(progress.stage==='done'?'PASS':'INCOMPLETE'),
+      'No UID, password, session token or email address included.'
+    ].join('\n');
+  }
+  function renderStage(){
+    const stage=progress.stage;
+    if(stage==='start')step('步骤 1/3 · 请使用已存在的 Staging 邮箱测试账号登录。');
+    else if(stage==='email_ok')step('步骤 2/3 · 邮箱 UID、RLS 与 Token 刷新已通过；现在点击「验证退出／下一步」。');
+    else if(stage==='signed_out')step('步骤 3/3 · 已安全退出邮箱会话；现在点击「使用 Google 测试账号登录」。请使用与邮箱测试账号不同的 Google 身份。');
+    else if(stage==='google_pending')step('Google OAuth 回调处理中。若页面未恢复，请检查 Staging 的 Redirect URL 白名单及浏览器 sessionStorage。');
+    else if(stage==='done')step('双用户 JWT、独立 UID、RLS 与刷新验收通过。您可复制脱敏结果并退出。');
+    else step('身份状态待确认；请重置验收。');
+    $('email').disabled=stage!=='start';
+    $('pass').disabled=stage!=='start';
+    $('login').querySelector('button[type=submit]').disabled=busy||stage!=='start';
+    $('google').disabled=busy||stage!=='signed_out';
+    $('safe-logout').disabled=busy||(!['email_ok','done'].includes(stage));
+    $('copy-qa').disabled=busy||stage==='start';
+  }
+  async function readIdentity(){
+    const u=await db.auth.getUser();
+    const s=await db.auth.getSession();
+    if(u.error||s.error||!u.data?.user?.id||u.data.user.id!==s.data?.session?.user?.id||!s.data.session?.access_token)throw Error('Auth UID 与会话不一致');
+    const identity=u.data.user;
+    const proof=await db.from(TEST_TABLE).select('user_id').limit(3);
+    if(proof.error)throw Error('RLS 查询拒绝：'+proof.error.code);
+    const rows=proof.data||[];
+    if(rows.length!==1||rows[0].user_id!==identity.id)throw Error('RLS 归属校验失败');
+    return identity;
+  }
+  async function verifyRound(kind){
+    const before=await readIdentity();
+    const provider=Array.isArray(before.app_metadata?.providers)?before.app_metadata.providers:[before.app_metadata?.provider];
+    if(!provider.includes(kind))throw Error('登录身份与预期身份不符：'+kind);
+    const {data,error}=await db.auth.refreshSession();
+    if(error||!data?.session?.access_token)throw Error('会话刷新未通过');
+    const after=await readIdentity();
+    if(before.id!==after.id)throw Error('刷新后 UID 改变');
+    const hash=await fingerprint(after.id);
+    progress.refreshPass=true;
+    if(kind==='email'){
+      if(progress.stage!=='start')throw Error('验收顺序不正确');
+      progress.emailHash=hash;
+      progress.emailPass=true;
+      progress.stage='email_ok';
+      save();
+      show('PASS · 邮箱真实 JWT / getUser+getSession UID\nPASS · RLS 仅访问自己的 1 条记录\nPASS · Refresh Token 后 UID 不变\n下一步：点击「验证退出／下一步」','pass');
+    }else{
+      if(progress.stage!=='google_pending'||!progress.emailPass||!progress.logoutPass)throw Error('尚未完成邮箱验收与退出');
+      if(progress.emailHash===hash)throw Error('Google 账号 UID 与邮箱测试账号相同，不构成双用户测试');
+      progress.distinctPass=true;
+      progress.googlePass=true;
+      progress.oauthPending=false;
+      progress.stage='done';
+      save();
+      show('PASS · Google OAuth 真实 JWT / RLS\nPASS · Google 与 Email UID 不同\nPASS · Refresh Token 轮换后 UID 不变\n\n'+summary(),'pass');
+    }
+  }
+  $('login').addEventListener('submit',ev=>{
+    ev.preventDefault();
+    run(async()=>{
+      if(progress.stage!=='start')throw Error('请先完成或重置当前验收');
+      const email=$('email').value.trim(),password=$('pass').value;
+      $('pass').value='';
+      const response=await db.auth.signInWithPassword({email,password});
+      if(response.error)throw Error('Staging 邮箱登录失败（请使用测试账户）');
+      await verifyRound('email');
+    });
+  });
+  $('safe-logout').addEventListener('click',()=>run(async()=>{
+    if(!['email_ok','done'].includes(progress.stage))throw Error('当前无需退出');
+    const completed=progress.stage==='done';
+    const r=await db.auth.signOut({scope:'local'});
+    if(r.error)throw Error('退出登录失败');
+    const s=await db.auth.getSession();
+    if(s.data?.session)throw Error('退出后会话仍存在');
+    const probe=await db.from(TEST_TABLE).select('user_id').limit(2);
+    if(!probe.error&&(probe.data||[]).length!==0)throw Error('退出后匿名访问不应看到记录');
+    if(!completed){
+      progress.logoutPass=true;progress.stage='signed_out';save();
+      show('PASS · 邮箱本地测试会话已退出\nPASS · 匿名状态无法读取任何所有者记录\n下一步：使用 Google 测试账号登录','pass');
+    }else show('本标签页 Staging 测试会话已退出；脱敏验收记录仍可复制。','pass');
+  }));
+  $('google').addEventListener('click',()=>run(async()=>{
+    if(progress.stage!=='signed_out')throw Error('请先完成邮箱测试并验证退出');
+    const oldSession=await db.auth.getSession();
+    if(oldSession.data?.session)throw Error('仍存在邮箱登录会话');
+    progress.stage='google_pending';progress.oauthPending=true;save();
+    const r=await db.auth.signInWithOAuth({provider:'google',options:{redirectTo:EXPECTED_ORIGIN+EXPECTED_PATH}});
+    if(r.error){progress.stage='signed_out';progress.oauthPending=false;save();throw Error('Google OAuth 启动失败');}
+    show('正在转到 Google OAuth。请仅使用原来的 Staging Google 测试账号。','pending');
+  }));
+  $('check').addEventListener('click',()=>run(async()=>{
+    if(progress.stage==='email_ok')await verifyRound('email');
+    else if(progress.stage==='google_pending'||progress.stage==='done'){
+      if(progress.stage==='done') {const user=await readIdentity();show('PASS · 当前 Google 会话 RLS 核验通过\n'+summary(),'pass');}
+      else await verifyRound('google');
+    }else show('当前没有需要复核的已登录测试会话。','pending');
+  }));
+  $('logout').addEventListener('click',()=>run(async()=>{
+    const r=await db.auth.signOut({scope:'local'});
+    if(r.error)throw Error('退出失败');
+    show('测试会话已退出。验收阶段不改变；需要重新开始请按「重置本轮验收」。','pending');
+  }));
+  $('reset-qa').addEventListener('click',()=>run(async()=>{
+    try{await db.auth.signOut({scope:'local'})}catch{}
+    progress=fresh();sessionStorage.removeItem(STATE);
+    sessionStorage.removeItem(STORAGE);
+    save();show('测试进度已重置。请使用 Staging 测试邮箱开始。');
+  }));
+  $('copy-qa').addEventListener('click',()=>run(async()=>{
+    const str=summary();await navigator.clipboard.writeText(str);
+    show('脱敏摘要已复制，不含账号、密码、UID 或 JWT。\n\n'+str,progress.stage==='done'?'pass':'pending');
+  }));
+  (async()=>{
+    for(let i=0;i<100&&!window.supabase;i++)await pause(100);
+    if(!ready())throw Error('Supabase SDK 未能加载或页面来源不正确');
+    const params=new URLSearchParams(location.search);
+    if(params.has('error')||params.has('error_code')){
+      show('Google OAuth 回调未完成，请检查 Redirect URL 白名单及授权状态。','fail');
+      history.replaceState(null,'',location.pathname);
+      return;
+    }
+    const {data,error}=await db.auth.getSession();
+    if(error)throw Error('读取 Auth 会话失败');
+    // Supabase-js auto-handles PKCE code exchange during initialization.
+    if(progress.oauthPending){
+      if(data.session){
+        await verifyRound('google');
+        history.replaceState(null,'',location.pathname);
+      }else{
+        show('Google 回调尚未恢复真实 Staging 会话，请检查 Google Redirect URI；不判定 PASS。','pending');
+      }
+    }else if(progress.stage==='email_ok'&&data.session){
+      show('邮箱测试会话已恢复。点击「验证当前会话的 UID 与 RLS」或「验证退出／下一步」。','pending');
+    }else if(data.session&&progress.stage==='start'){
+      show('检测到先前的 QA 标签页会话；请点击「重置本轮验收」，避免与旧身份混用。','pending');
+    }else if(progress.stage==='done')show(summary(),'pass');
+    else show('已准备就绪。请按照上方步骤使用现有 Staging 测试账号完成真实 JWT 测试。','pending');
+    renderStage();
+  })().catch(e=>{show('初始化失败 · '+safeError(e),'fail');renderStage()});
+  renderStage();
 })();
+
 </script></body></html>

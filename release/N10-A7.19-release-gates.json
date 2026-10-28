@@ -69,8 +69,8 @@
     {
       "id": "G04",
       "name": "Atomic replay rejected in live v2 QA via 403 token_replayed",
-      "status": "pending",
-      "evidence": "Last live second request hit 429 qa_rate_limited, not 403",
+      "status": "pass",
+      "evidence": "2026-10-28 18:37 UTC screenshot: first genuine Siteverify HTTP 200 siteverify_pass; second reuse rejected HTTP 403 token_replayed by Staging atomic guard; independent Staging Edge logs recorded 200 and 403 in the corresponding period.",
       "blocking": true
     },
     {

@@ -1,0 +1,26 @@
+name: N10-A7.24 locked browser adapter SDK and RLS review
+on:
+  push:
+    branches: [n10-a7-3-staging-readonly-review]
+    paths:
+      - 'tests/N10-A7.24-staging-browser-adapter-locked.test.cjs'
+      - 'integration/N10-A7.24-supabase-browser-adapter-REVIEW-LOCKED.cjs'
+      - '.github/workflows/n10-a724-browser-adapter-locked.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  safety-and-mocks:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - name: Validate locked adapter and isolated test syntax
+        run: |
+          node --check integration/N10-A7.24-supabase-browser-adapter-REVIEW-LOCKED.cjs
+          node --check tests/N10-A7.24-staging-browser-adapter-locked.test.cjs
+      - name: Run mocked Staging browser adapter and RLS contract suite
+        run: node --test tests/N10-A7.24-staging-browser-adapter-locked.test.cjs
+      - name: Confirm QA adapter not enabled or connected to production
+        run: |
+          node -e "const s=require('node:fs').readFileSync('integration/N10-A7.24-supabase-browser-adapter-REVIEW-LOCKED.cjs','utf8');if(!s.includes('const STAGING_ADAPTER_ENABLED=false')||s.includes('vrypucmyrztxgiqhjspd')||s.includes('sb_secret_'))process.exit(1);console.log('N10A724_REVIEW_LOCKED PASS')"

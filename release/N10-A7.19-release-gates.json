@@ -119,7 +119,7 @@
       "id": "G11",
       "name": "Real Staging existing UID username bind and logout test",
       "status": "pending",
-      "evidence": "NOT RUN",
+      "evidence": "NOT RUN: existing UID username bind and sign-out need short-lived Staging gate and real JWT/RLS proof",
       "blocking": true
     },
     {

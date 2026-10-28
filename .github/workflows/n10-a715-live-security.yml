@@ -1,0 +1,66 @@
+name: N10-A7.15 private Siteverify live HTTP and QA page safety
+on:
+  push:
+    branches: [main]
+    paths: ['.github/workflows/n10-a715-live-security.yml']
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  live-negative:
+    runs-on: ubuntu-latest
+    timeout-minutes: 4
+    steps:
+      - uses: actions/checkout@v4
+      - name: Live API unauthenticated denial and closed login gate
+        shell: python
+        run: |
+          import json,urllib.request,urllib.error,pathlib,re,sys
+          source=pathlib.Path('n10a715-real-siteverify-qa.html').read_text(encoding='utf-8')
+          m=re.search(r"const PUBLIC_KEY='(sb_publishable_[\w-]+)'",source)
+          assert m,'staging public key missing'
+          pub=m.group(1)
+          assert 'SERVICE_ROLE_KEY' not in source and 'sb_secret_' not in source
+          assert 'sessionStorage' in source and "expected_action:expected" in source
+          base='https://ldivswlhtgmznzwhzsoi.supabase.co/functions/v1/'
+          origin='https://myintmoehein0115024.github.io'
+          def request(url,payload,withOrigin=True,withAuthorization=False,method='POST'):
+            headers={'apikey':pub,'Content-Type':'application/json'}
+            if withOrigin:headers['Origin']=origin
+            if withAuthorization:headers['Authorization']='Bearer fake-invalid-jwt'
+            req=urllib.request.Request(url,headers=headers,method=method,data=json.dumps(payload).encode() if method=='POST' else None)
+            try:
+              with urllib.request.urlopen(req,timeout=15) as response:return response.status,response.read(1400)
+            except urllib.error.HTTPError as ex:return ex.code,ex.read(1400)
+          verifier=base+'mmh-n10a15-siteverify-qa'
+          good=0
+          for name,auth in [('no_jwt',False),('invalid_jwt',True)]:
+            status,_=request(verifier,{'action':'verify','expected_action':'mmh_n10a6_login','captcha_token':'not-a-valid-turnstile-token'},withAuthorization=auth)
+            passed=status in (401,403)
+            good+=passed
+            print('N10A715_GATEWAY',name,'HTTP',status,'PASS' if passed else 'FAIL')
+          code,raw=request(base+'mmh-n10a6-username',{'action':'login','username':'synthetic_test','password':'not-a-real-password'})
+          try:result=json.loads(raw)
+          except:result={}
+          passed=code==503 and result.get('code')=='n10a6_disabled'
+          good+=passed
+          print('N10A715_ORIGINAL_LOGIN_STILL_CLOSED',code,'PASS' if passed else 'FAIL')
+          print('N10A715_GATEWAY',good,'/',3)
+          if good!=3:sys.exit(1)
+      - name: QA page actually deployed and contains no secret material
+        shell: python
+        run: |
+          import urllib.request,time
+          url='https://myintmoehein0115024.github.io/MMHVAULT-Auth-QA/n10a715-real-siteverify-qa.html'
+          for i in range(12):
+            try:
+              with urllib.request.urlopen(url,timeout=12) as r:
+                html=r.read(100000).decode()
+                ok=r.status==200 and 'mmh-n10a15-siteverify-qa' in html and "sessionStorage" in html and 'siteverify_pass' in html
+                ok=ok and 'SERVICE_ROLE_KEY' not in html and 'sb_secret_' not in html and "const PUBLIC_KEY='sb_publishable_" in html
+                if ok:
+                  print('N10A715_LIVE_QA_PAGE HTTP 200 PASS')
+                  break
+            except Exception:pass
+            time.sleep(4)
+          else:raise SystemExit('N10A715_LIVE_QA_PAGE FAIL deployment not ready')

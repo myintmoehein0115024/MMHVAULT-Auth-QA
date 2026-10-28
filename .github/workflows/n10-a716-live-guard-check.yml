@@ -1,0 +1,67 @@
+name: N10-A7.16 real fail-closed and replay UI deployment smoke
+on:
+  push:
+    branches: [main]
+    paths: ['.github/workflows/n10-a716-live-guard-check.yml']
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  no-credentials:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Confirm staging QA has no public bypass and main login is closed
+        shell: python
+        run: |
+          import json,urllib.request,urllib.error,sys,time
+          base='https://ldivswlhtgmznzwhzsoi.supabase.co/functions/v1/'
+          origin='https://myintmoehein0115024.github.io'
+          def post(slug,body,auth=None):
+            h={'Origin':origin,'Content-Type':'application/json'}
+            if auth:h['Authorization']='Bearer '+auth
+            req=urllib.request.Request(base+slug,method='POST',headers=h,data=json.dumps(body).encode())
+            try:
+              with urllib.request.urlopen(req,timeout=15) as r:
+                return r.status,r.read(2000).decode()
+            except urllib.error.HTTPError as e:
+              return e.code,e.read(2000).decode()
+          cases=[
+            ('siteverify_without_jwt','mmh-n10a15-siteverify-qa',{'action':'verify','expected_action':'mmh_n10a6_login','captcha_token':'dummy-placeholder-qa-only-token'},None,[401,403]),
+            ('siteverify_invalid_jwt','mmh-n10a15-siteverify-qa',{'action':'verify','expected_action':'mmh_n10a6_login','captcha_token':'dummy-placeholder-qa-only-token'},'fake-invalid-jwt',[401,403]),
+            ('main_login_closed','mmh-n10a6-username',{'action':'login','username':'qa_dummy_notreal','password':'dummy-password-notreal'},None,[503]),
+            ('main_bind_closed','mmh-n10a6-username',{'action':'bind','username':'qa_dummy_notreal','password':'dummy-password-notreal'},None,[503])
+          ]
+          passed=0
+          for name,slug,payload,jwt,allowed in cases:
+            status,data=post(slug,payload,jwt)
+            ok=status in allowed and 'access_token' not in data and 'refresh_token' not in data
+            if name.startswith('main_'):
+              try:ok=ok and json.loads(data).get('code')=='n10a6_disabled'
+              except:ok=False
+            passed+=int(ok)
+            print('N10A716_LIVE',name,'HTTP',status,'PASS' if ok else 'FAIL')
+          print('N10A716_LIVE_PROTECTION',passed,'/',len(cases))
+          if passed!=len(cases):sys.exit(1)
+      - name: Confirm updated live QA UI requires atomic replay protection
+        shell: python
+        run: |
+          import time,urllib.request,sys
+          url='https://myintmoehein0115024.github.io/MMHVAULT-Auth-QA/n10a715-real-siteverify-qa.html'
+          for attempt in range(13):
+            try:
+              with urllib.request.urlopen(url,timeout=12) as r:
+                html=r.read(100000).decode('utf-8')
+                valid=r.status==200 and "replay.code==='token_replayed'" in html
+                valid=valid and 'Staging 数据库原子单次令牌保护' in html
+                valid=valid and 'siteverify_pass' in html and 'sessionStorage' in html
+                valid=valid and 'sb_secret_' not in html and 'SERVICE_ROLE_KEY' not in html
+                if valid:
+                  print('N10A716_LIVE_QA_PAGE_HTTP 200 PASS')
+                  print('N10A716_ATOMIC_REPLAY_UI_DEPLOYED PASS')
+                  break
+            except Exception:pass
+            time.sleep(4)
+          else:
+            print('N10A716_QA_PAGE_NOT_UPDATED FAIL')
+            sys.exit(1)

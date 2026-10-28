@@ -27,7 +27,7 @@ label{display:block;color:#b6c9da;font-size:12px;margin:16px 0 7px}input{width:1
   <div id="usernamePreflight" class="result" data-tone="normal" aria-live="polite">新接口 v1 已部署，登录仍关闭。先点击「检查」读取服务端状态，不要输入密码。</div>
   <form id="usernameForm">
     <label for="usernamePassword" data-zh="账户 B 的 Staging 密码（仅开启后可输入）" data-en="Account B Staging password (locked until enabled)">账户 B 的 Staging 密码（仅开启后可输入）</label>
-    <input id="usernamePassword" type="password" autocomplete="off" maxlength="256" placeholder="••••••••" disabled>
+    <input id="usernamePassword" type="password" autocomplete="new-password" maxlength="256" placeholder="未填写 · 安全锁定" readonly disabled>
     <div id="usernameCaptcha" class="captcha-slot" hidden></div>
     <button id="usernameLoginBtn" class="primary" type="submit" disabled data-zh="用户名登录并验证原 UID" data-en="Username login & verify UID">用户名登录并验证原 UID</button>
   </form>

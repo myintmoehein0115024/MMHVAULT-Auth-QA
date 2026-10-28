@@ -1,8 +1,8 @@
 /**
- * MMHVAULT · P9.95N-N10-A3.2 — REVIEW SOURCE ONLY.
- * DO NOT DEPLOY without security review / dedicated test plan.
+ * MMHVAULT · P9.95N-N10-A3.6 — TIME-BOUND STAGING SECURITY REVIEW.
+ * Deploy is allowed only with the hardcoded login gate CLOSED.
  * Staging B-only demonstration; N6/N9 are not modified.
- * Test gate is intentionally hard-coded CLOSED.
+ * Test gate is intentionally hard-coded CLOSED; expiry must be explicitly reviewed.
  */
 const PROJECT = "ldivswlhtgmznzwhzsoi";
 const BASE = Deno.env.get("SUPABASE_URL") || "";
@@ -11,23 +11,36 @@ const SERVICE = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") || "";
 const TURNSTILE = Deno.env.get("MMH_P995N_TURNSTILE_SECRET") || "";
 const SALT = Deno.env.get("MMH_P995N_RATE_SALT") || "";
 const SECRET_ENABLED = Deno.env.get("MMH_N10A3_ENABLED") === "true";
-const CODE_GATE_OPEN = false; // deliberate fail-closed; no production/test login is available
+const CODE_GATE_OPEN = false; // fail closed: do NOT set true during routine deployment
+const WINDOW_START_UTC = "1970-01-01T00:00:00.000Z"; // inert in v2
+const WINDOW_END_UTC = "1970-01-01T00:00:00.000Z"; // inert in v2
+const MAX_WINDOW_MS = 15 * 60 * 1000; // one short, reviewed staging QA window
 const ORIGIN = "https://myintmoehein0115024.github.io";
 const HOST = "myintmoehein0115024.github.io";
 const UID_B = "72a8d120-e4d4-4c49-89df-02b85c89cffc";
 const NAME_B = "myintmoehein0115024";
 const NAME_RE = /^[a-z][a-z0-9_]{3,19}$/;
-const READY = BASE === "https://" + PROJECT + ".supabase.co" &&
-  ANON.length > 20 && SERVICE.length > 20 && TURNSTILE.length > 12 &&
-  SALT.length >= 32 && SECRET_ENABLED && CODE_GATE_OPEN;
 const CONFIGURED = BASE === "https://" + PROJECT + ".supabase.co" &&
   ANON.length > 20 && SERVICE.length > 20 && TURNSTILE.length > 12 &&
   SALT.length >= 32;
+function withinWindow(now = Date.now()) {
+  const start = Date.parse(WINDOW_START_UTC);
+  const end = Date.parse(WINDOW_END_UTC);
+  return Number.isFinite(start) && Number.isFinite(end) &&
+    end > start && end - start <= MAX_WINDOW_MS &&
+    now >= start && now < end;
+}
+function loginReady() {
+  // Re-evaluate on EVERY request, including after asynchronous verification:
+  // long-lived Edge instances must not preserve a stale "enabled" constant.
+  return CODE_GATE_OPEN && SECRET_ENABLED && CONFIGURED && withinWindow();
+}
 
 function headers(origin) {
   return {
     "Content-Type": "application/json; charset=utf-8",
     "Cache-Control": "no-store, private, max-age=0",
+    "X-Robots-Tag": "noindex, nofollow",
     "Pragma": "no-cache",
     "Referrer-Policy": "no-referrer",
     "X-Content-Type-Options": "nosniff",
@@ -164,10 +177,10 @@ Deno.serve(async request => {
   } catch { return respond(origin, 400, "bad_json"); }
   if (data.action === "preflight")
     return respond(origin, 200, "preflight_ok",
-      { configured: CONFIGURED, enabled: READY, scope: "staging_account_b_only" });
+      { configured: CONFIGURED, enabled: loginReady(), scope: "staging_account_b_only" });
   if (data.action !== "login") return respond(origin, 400, "unsupported_action");
   // This must be checked before any password/identity validation.
-  if (!READY) return respond(origin, 503, "staging_n10a3_disabled");
+  if (!loginReady()) return respond(origin, 503, "staging_n10a3_disabled");
 
   const name = typeof data.username === "string" ? data.username.trim().toLowerCase() : "";
   const password = data.password;
@@ -191,6 +204,9 @@ Deno.serve(async request => {
     if (!issued) return respond(origin, 401, "invalid_credentials");
     if (!await verifyIssued(issued))
       return respond(origin, 503, "qa_owner_check_failed");
+    // A window may expire while Cloudflare, Auth and RLS calls are in flight.
+    // This second check ensures no token is handed off after expiry.
+    if (!loginReady()) return respond(origin, 503, "staging_window_closed");
     // Access and refresh tokens are returned to the authenticated QA browser
     // only after UID and RLS verification; the client keeps them in memory.
     const response = respond(origin, 200, "login_success", {

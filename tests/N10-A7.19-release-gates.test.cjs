@@ -44,9 +44,14 @@ test('staging username main remains code-closed with 1970 expiry',()=>{
  assert.equal(s.window_start,'1970-01-01T00:00:00.000Z');
  assert.equal(s.window_end,'1970-01-01T00:00:00.000Z');
 });
-test('actual replay pending is not accidentally represented as pass',()=>{
- assert.equal(manifest.gates.find(g=>g.id==='G04').status,'pending');
- assert.match(manifest.gates.find(g=>g.id==='G04').evidence,/429/);
+test('real atomic replay is accepted as PASS only with evidence of 200 + 403, not prior 429',()=>{
+ const g=manifest.gates.find(g=>g.id==='G04');
+ assert.equal(g.status,'pass');
+ assert.match(g.evidence,/HTTP 200/);
+ assert.match(g.evidence,/HTTP 403/);
+ assert.match(g.evidence,/token_replayed/);
+ assert.match(g.evidence,/2026-10-28/);
+ assert.ok(!/only.*429|429.*not 403/i.test(g.evidence));
 });
 test('registration and auth-side CAPTCHA remain blocked until actual verified signup',()=>{
  assert.equal(manifest.gates.find(g=>g.id==='G12').status,'pending');

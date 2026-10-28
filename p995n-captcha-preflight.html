@@ -11,13 +11,14 @@ small{display:block;letter-spacing:.12em;color:var(--accent);font-weight:750}.pi
 h1{font-size:clamp(22px,5.5vw,32px);letter-spacing:-.035em;margin:14px 0 12px}p{color:var(--sub);margin:0 0 16px}.stage{border:1px solid var(--line);background:rgba(4,14,25,.5);border-radius:16px;padding:18px 10px;display:flex;align-items:center;justify-content:center;min-height:106px;margin:24px 0 16px;overflow:auto}
 button{cursor:pointer;border:none;border-radius:13px;font:inherit;font-weight:700;padding:13px 20px;width:100%;background:linear-gradient(135deg,#ffe4a4,#e6b75f);color:#172334;transition:opacity .15s}button:disabled{opacity:.42;cursor:not-allowed}output{display:block;margin-top:16px;white-space:pre-wrap;word-break:break-word;border:1px solid var(--line);padding:14px;border-radius:14px;background:rgba(0,0,0,.2);min-height:64px;color:#d8e2ec;font-size:14px}footer{margin-top:18px;color:#9fb2c5;font-size:12px}.success{color:#85ecc9}.error{color:#ffb1a9}code{color:#d7dfe7;overflow-wrap:anywhere}
 </style></head><body><main>
-<small>MMHVAULT · SECURITY QA</small><span class="pill">P9.95N-N4 · STAGING ONLY</span>
+<small>MMHVAULT · SECURITY QA</small><span class="pill">P9.95N-N4.1 · SITE KEY FIX · STAGING ONLY</span>
 <h1>Cloudflare 验证码连接测试</h1>
 <p>此页面只验证 Cloudflare Turnstile 与隔离 Supabase Staging 的连接。不收集账号、密码或财务数据，也不会开启正式网站的用户名登录。</p>
-<div class="stage"><div class="cf-turnstile" data-sitekey="0x4AAAAAAFIXEfEHAP1TUxjr" data-action="mmh_captcha_preflight" data-callback="onTurnstileDone" data-expired-callback="onTurnstileExpired" data-error-callback="onTurnstileError"></div></div>
+<div class="stage"><div class="cf-turnstile" data-sitekey="0x4AAAAAAFlXEfEHAP1TUxjr" data-action="mmh_captcha_preflight" data-callback="onTurnstileDone" data-expired-callback="onTurnstileExpired" data-error-callback="onTurnstileError"></div></div>
 <button id="testButton" type="button" disabled>先完成上方验证码</button>
-<output id="message" role="status" aria-live="polite">正在等待 Cloudflare Turnstile 验证…</output>
+<output id="message" role="status" aria-live="polite">已修正 Site Key，正在等待 Cloudflare Turnstile 验证…</output>
 <footer>仅适用于 <code>myintmoehein0115024.github.io</code>。请不要用本地 <code>file://</code> 打开，也不要上传至正式 MMHVAULT 主站。</footer>
+<p style="font-size:12px;line-height:1.7;margin-top:14px;color:#9fb2c5">若继续显示 <code>Troubleshoot</code>，请先试普通 Chrome 窗口（当前截图是无痕模式），或其他浏览器，并留意上方显示的错误码。</p>
 </main>
 <script>
 'use strict';
@@ -28,7 +29,22 @@ let captchaToken='',busy=false;
 function status(msg,kind){out.textContent=msg;out.className=kind||'';}
 window.onTurnstileDone=function(token){captchaToken=token;btn.disabled=false;btn.textContent='验证 Staging 服务器连接';status('验证码已生成。点击按钮向 Staging 服务器进行一次安全核验。');};
 window.onTurnstileExpired=function(){captchaToken='';btn.disabled=true;btn.textContent='验证码已过期';status('验证码已过期，请重新验证。','error');};
-window.onTurnstileError=function(){captchaToken='';btn.disabled=true;status('Cloudflare 组件加载失败。请检查网络与允许域名。','error');};
+window.onTurnstileError=function(errorCode){
+ captchaToken='';btn.disabled=true;
+ const code=String(errorCode||'unknown');
+ const help=/^110(100|110)$/.test(code)?'Site Key 无效或不存在，请核对 Cloudflare 的 Site Key。':
+ /^110200$/.test(code)?'当前域名没有在 Turnstile 的 Hostname Management 允许列表里。':
+ /^200500$/.test(code)?'Cloudflare 验证 iframe 被网络或浏览器阻挡，请尝试关闭扩展、切换正常浏览窗口或网络。':
+ /^(300|600)/.test(code)?'验证挑战失败，请刷新页面，或更换浏览器、网络后重试。':
+ '请刷新页面；如持续失败，请尝试普通浏览窗口并关闭可能阻挡 Cloudflare 的扩展。';
+ status('Cloudflare 验证失败（错误码：'+code+'）。\n'+help+'\n请截图告诉我错误码，不要发 Secret Key。','error');
+ return true;
+};
+window.onScriptLoadError=function(){status('Cloudflare 脚本无法下载，请检查网络、广告拦截及浏览器扩展。','error')};
+setTimeout(()=>{if(!window.turnstile&&!captchaToken){
+ status('Cloudflare 验证脚本似乎没有成功加载。请检查网络或浏览器拦截，再刷新试一次。','error');
+}},13000);
+
 btn.addEventListener('click',async()=>{
  if(busy||!captchaToken)return;
  busy=true;btn.disabled=true;btn.textContent='正在检查服务端…';status('正在请求隔离 Staging 验证端点…');
@@ -43,5 +59,5 @@ btn.addEventListener('click',async()=>{
  finally{busy=false;captchaToken='';btn.textContent='重新验证请完成新的验证码';try{window.turnstile?.reset();}catch{}btn.disabled=true;}
 });
 </script>
-<script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
+<script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer onerror="onScriptLoadError()"></script>
 </body></html>

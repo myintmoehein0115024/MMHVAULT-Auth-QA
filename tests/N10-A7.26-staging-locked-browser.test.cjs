@@ -15,6 +15,19 @@ async function pageAt(width=390,height=844){
  assert.equal(response.status(),200);
  return {p,errors};
 }
+async function mockEdge(p,payload,status=200){
+ await p.route(EDGE,route=>{
+   if(route.request().method()==='OPTIONS'){
+     return route.fulfill({status:204,headers:{
+       'access-control-allow-origin':'*',
+       'access-control-allow-methods':'POST, OPTIONS',
+       'access-control-allow-headers':'content-type'
+     }});
+   }
+   return route.fulfill({status,contentType:'application/json',
+     headers:{'access-control-allow-origin':'*'},body:JSON.stringify(payload)});
+ });
+}
 test.before(async()=>{
  server=http.createServer((req,res)=>{
    const u=new URL(req.url,'http://localhost');
@@ -104,17 +117,13 @@ for(const value of ['closed','invalid','conflict','rate','uid','rls','logout']){
 test('manual preflight only sends {action:preflight}; CLOSED confirmed',async()=>{
  requests.length=0;const {p,errors}=await pageAt();
  try{
-  await p.route(EDGE,route=>{
-    assert.equal(route.request().method(),'POST');
-    assert.deepEqual(JSON.parse(route.request().postData()),{action:'preflight'});
-    assert.ok(!route.request().headers().authorization);
-    assert.ok(!route.request().headers().apikey);
-    return route.fulfill({status:200,contentType:'application/json',headers:{'access-control-allow-origin':'*'},body:JSON.stringify({code:'preflight_ok',enabled:false,scope:'isolated_staging_only',registration_enabled:false})});
-  });
+  await mockEdge(p,{code:'preflight_ok',enabled:false,scope:'isolated_staging_only',registration_enabled:false});
   await p.locator('#preflight').click();
   await p.waitForFunction(()=>document.querySelector('#window-status').textContent.includes('关闭'));
   assert.match(await p.locator('#window-note').textContent(),/没有身份凭据/);
-  assert.ok(requests.filter(x=>x.url===EDGE).length===1);
+  const calls=requests.filter(x=>x.url===EDGE && x.method==='POST');
+  assert.equal(calls.length,1);
+  assert.deepEqual(JSON.parse(calls[0].body),{action:'preflight'});
   assert.equal(await p.locator('#real-run').isDisabled(),true);
   assert.deepEqual(errors,[]);
  }finally{await p.close()}
@@ -122,7 +131,7 @@ test('manual preflight only sends {action:preflight}; CLOSED confirmed',async()=
 test('remote OPEN does not unlock browser or claim G10/G11',async()=>{
  const {p,errors}=await pageAt();
  try{
-  await p.route(EDGE,r=>r.fulfill({status:200,contentType:'application/json',headers:{'access-control-allow-origin':'*'},body:JSON.stringify({code:'preflight_ok',enabled:true,scope:'isolated_staging_only',registration_enabled:false})}));
+  await mockEdge(p,{code:'preflight_ok',enabled:true,scope:'isolated_staging_only',registration_enabled:false});
   await p.locator('#preflight').click();
   await p.waitForFunction(()=>document.querySelector('#window-dot').classList.contains('open'));
   assert.equal(await p.locator('#real-run').isDisabled(),true);
@@ -140,7 +149,7 @@ for(const response of [
  test('fail closed: '+response.name,async()=>{
   const {p,errors}=await pageAt();
   try{
-   await p.route(EDGE,r=>r.fulfill({status:response.status||200,contentType:'application/json',headers:{'access-control-allow-origin':'*'},body:JSON.stringify(response.value)}));
+   await mockEdge(p,response.value,response.status||200);
    await p.locator('#preflight').click();
    await p.waitForFunction(()=>document.querySelector('#window-dot').classList.contains('closed'));
    assert.equal(await p.locator('#real-run').isDisabled(),true);

@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="zh-CN"><head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="robots" content="noindex,nofollow,noarchive"><meta name="theme-color" content="#081725">
+<title>MMHVAULT · P9.95N Turnstile Staging 验证</title>
+<style>
+:root{color-scheme:dark;--txt:#f5f7fa;--sub:#b8c7d7;--accent:#f2c879;--line:rgba(188,214,235,.2)}*{box-sizing:border-box}
+body{margin:0;min-height:100vh;background:radial-gradient(ellipse at 20% 5%,#1a3349 0%,#0c1a2a 50%,#040c15 100%);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Arial,sans-serif;color:var(--txt);line-height:1.55;display:grid;place-items:center;padding:20px}
+main{width:min(100%,540px);border:1px solid var(--line);border-radius:24px;padding:clamp(20px,5vw,36px);background:linear-gradient(140deg,rgba(255,255,255,.085),rgba(255,255,255,.025));box-shadow:0 22px 90px rgba(0,0,0,.28);backdrop-filter:blur(20px)}
+small{display:block;letter-spacing:.12em;color:var(--accent);font-weight:750}.pill{display:inline-block;border:1px solid rgba(224,193,126,.37);color:var(--accent);padding:4px 10px;border-radius:99px;font-size:12px;margin-top:12px}
+h1{font-size:clamp(22px,5.5vw,32px);letter-spacing:-.035em;margin:14px 0 12px}p{color:var(--sub);margin:0 0 16px}.stage{border:1px solid var(--line);background:rgba(4,14,25,.5);border-radius:16px;padding:18px 10px;display:flex;align-items:center;justify-content:center;min-height:106px;margin:24px 0 16px;overflow:auto}
+button{cursor:pointer;border:none;border-radius:13px;font:inherit;font-weight:700;padding:13px 20px;width:100%;background:linear-gradient(135deg,#ffe4a4,#e6b75f);color:#172334;transition:opacity .15s}button:disabled{opacity:.42;cursor:not-allowed}output{display:block;margin-top:16px;white-space:pre-wrap;word-break:break-word;border:1px solid var(--line);padding:14px;border-radius:14px;background:rgba(0,0,0,.2);min-height:64px;color:#d8e2ec;font-size:14px}footer{margin-top:18px;color:#9fb2c5;font-size:12px}.success{color:#85ecc9}.error{color:#ffb1a9}code{color:#d7dfe7;overflow-wrap:anywhere}
+</style></head><body><main>
+<small>MMHVAULT · SECURITY QA</small><span class="pill">P9.95N-N4 · STAGING ONLY</span>
+<h1>Cloudflare 验证码连接测试</h1>
+<p>此页面只验证 Cloudflare Turnstile 与隔离 Supabase Staging 的连接。不收集账号、密码或财务数据，也不会开启正式网站的用户名登录。</p>
+<div class="stage"><div class="cf-turnstile" data-sitekey="0x4AAAAAAFIXEfEHAP1TUxjr" data-action="mmh_captcha_preflight" data-callback="onTurnstileDone" data-expired-callback="onTurnstileExpired" data-error-callback="onTurnstileError"></div></div>
+<button id="testButton" type="button" disabled>先完成上方验证码</button>
+<output id="message" role="status" aria-live="polite">正在等待 Cloudflare Turnstile 验证…</output>
+<footer>仅适用于 <code>myintmoehein0115024.github.io</code>。请不要用本地 <code>file://</code> 打开，也不要上传至正式 MMHVAULT 主站。</footer>
+</main>
+<script>
+'use strict';
+const ENDPOINT = 'https://ldivswlhtgmznzwhzsoi.supabase.co/functions/v1/mmh-staging-p995n-captcha-preflight';
+const ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxkaXZzd2xodGdtem56d2h6c29pIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTMwODgxOTksImV4cCI6MjEwODY2NDE5OX0.y_XAkQZOSbOatWswYMbGTWyZBmrMIWooTBsw9xQVyPM'; // Staging public anon key, not a secret
+const btn=document.getElementById('testButton');const out=document.getElementById('message');
+let captchaToken='',busy=false;
+function status(msg,kind){out.textContent=msg;out.className=kind||'';}
+window.onTurnstileDone=function(token){captchaToken=token;btn.disabled=false;btn.textContent='验证 Staging 服务器连接';status('验证码已生成。点击按钮向 Staging 服务器进行一次安全核验。');};
+window.onTurnstileExpired=function(){captchaToken='';btn.disabled=true;btn.textContent='验证码已过期';status('验证码已过期，请重新验证。','error');};
+window.onTurnstileError=function(){captchaToken='';btn.disabled=true;status('Cloudflare 组件加载失败。请检查网络与允许域名。','error');};
+btn.addEventListener('click',async()=>{
+ if(busy||!captchaToken)return;
+ busy=true;btn.disabled=true;btn.textContent='正在检查服务端…';status('正在请求隔离 Staging 验证端点…');
+ try{
+  const controller=new AbortController();const timeout=setTimeout(()=>controller.abort(),12000);
+  let res;
+  try{res=await fetch(ENDPOINT,{method:'POST',headers:{'Content-Type':'application/json','apikey':ANON_KEY},body:JSON.stringify({token:captchaToken}),mode:'cors',cache:'no-store',signal:controller.signal});}finally{clearTimeout(timeout);}
+  const data=await res.json().catch(()=>({}));
+  if(res.ok&&data.code==='captcha_verified')status('✅ 验证成功！Cloudflare 已完成服务器端 Siteverify，Staging 连接正常。\n此测试不涉及真实账号登录。','success');
+  else status('服务器返回 '+res.status+'：'+String(data.code||'unknown')+'。\n请把这个错误代码截图发给我（不要显示密钥）。','error');
+ }catch(e){status('请求未完成：可能是网络、CORS 或超时问题。\n请检查网址及 Staging 设置后重试。','error');}
+ finally{busy=false;captchaToken='';btn.textContent='重新验证请完成新的验证码';try{window.turnstile?.reset();}catch{}btn.disabled=true;}
+});
+</script>
+<script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
+</body></html>

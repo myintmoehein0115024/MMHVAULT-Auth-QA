@@ -1,0 +1,52 @@
+name: N10-A7.11 bounded-body and closed-gate Staging regression
+on:
+  push:
+    branches: [n10-a7-3-staging-readonly-review]
+    paths:
+      - 'tests/N10-A7.11-bounded-body-edge.test.cjs'
+      - '.github/workflows/n10-a711-bounded-body.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  mock:
+    runs-on: ubuntu-latest
+    timeout-minutes: 4
+    steps:
+      - uses: actions/checkout@v4
+      - name: Run local V7 source security tests with mock network (no credentials)
+        run: node --test tests/N10-A7.11-bounded-body-edge.test.cjs
+  https-smoke:
+    runs-on: ubuntu-latest
+    timeout-minutes: 4
+    steps:
+      - name: Real Staging HTTP negative tests, do not send credentials
+        shell: python
+        run: |
+          import json,urllib.request,urllib.error,sys
+          url='https://ldivswlhtgmznzwhzsoi.supabase.co/functions/v1/mmh-n10a6-username'
+          h={'Origin':'https://myintmoehein0115024.github.io','Content-Type':'application/json'}
+          cases=[
+            ('preflight',json.dumps({'action':'preflight'}).encode(),200,'preflight_ok'),
+            ('login-closed',json.dumps({'action':'login','username':'dummy_qauser','password':'not-a-real-pass'}).encode(),503,'n10a6_disabled'),
+            ('bind-closed',json.dumps({'action':'bind','username':'dummy_qauser','password':'not-a-real-pass'}).encode(),503,'n10a6_disabled'),
+            ('over-4kb',json.dumps({'action':'preflight','padding':'x'*5500}).encode(),413,'payload_too_large'),
+            ('invalid-json',b'{"action":"preflight"',400,'bad_json')
+          ]
+          ok=0
+          for name,payload,status_expected,code_expected in cases:
+            req=urllib.request.Request(url,data=payload,headers=h,method='POST')
+            try:
+              with urllib.request.urlopen(req,timeout=15) as r:
+                status=r.status;raw=r.read(2000)
+            except urllib.error.HTTPError as ex:
+              status=ex.code;raw=ex.read(2000)
+            try:result=json.loads(raw)
+            except Exception:result={}
+            valid=status==status_expected and result.get('code')==code_expected
+            if name=='preflight':valid=valid and result.get('enabled') is False and result.get('registration_enabled') is False
+            valid=valid and 'access_token' not in result and 'refresh_token' not in result
+            ok+=int(valid)
+            print('HTTP_CASE',name,'status',status,'code',result.get('code'),'PASS' if valid else 'FAIL')
+          print('N10A711_LIVE_CLOSED_HTTP',ok,'/',len(cases))
+          if ok!=len(cases):sys.exit(1)

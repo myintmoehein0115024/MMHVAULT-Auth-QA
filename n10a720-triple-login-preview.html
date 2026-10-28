@@ -1,0 +1,251 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="robots" content="noindex,nofollow,noarchive"><meta name="referrer" content="no-referrer">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'unsafe-inline'; style-src 'unsafe-inline'; img-src data:; connect-src 'none'; form-action 'none'; frame-src 'none'; object-src 'none'; base-uri 'none'">
+<meta name="theme-color" content="#050d19">
+<title>MMHVAULT — Triple Login · Isolated Interactive Prototype</title>
+<style>
+:root{color-scheme:dark;--bg:#040c17;--ink:#f8f6ef;--muted:#a4b2c0;--dim:#75899b;--gold:#f0c779;--gold2:#ffe1a3;--cyan:#86c9e8;--line:rgba(182,207,225,.20);--panel:rgba(12,26,43,.73)}
+*{box-sizing:border-box}html{min-height:100%;scroll-behavior:smooth}body{margin:0;min-height:100vh;color:var(--ink);background:var(--bg);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Inter,system-ui,sans-serif;overflow-x:hidden}
+a{color:inherit}button,input{font:inherit}button{cursor:pointer}button:disabled{cursor:not-allowed;opacity:.6}
+button:focus-visible,input:focus-visible,.tab:focus-visible{outline:2px solid var(--gold);outline-offset:3px}
+.background{position:fixed;inset:0;z-index:-2;background:radial-gradient(circle at 10% 18%,rgba(53,119,162,.28),transparent 33%),radial-gradient(circle at 88% 92%,rgba(186,132,50,.17),transparent 33%),linear-gradient(130deg,#030812 0%,#091a2b 48%,#030912 100%)}
+.background:after{content:"";position:absolute;inset:0;opacity:.18;background-image:linear-gradient(to right,rgba(153,181,203,.15) 1px,transparent 1px),linear-gradient(to bottom,rgba(153,181,203,.15) 1px,transparent 1px);background-size:56px 56px;mask-image:linear-gradient(#000,transparent 94%)}
+.orb{position:fixed;z-index:-1;pointer-events:none;border-radius:50%;filter:blur(68px);opacity:.45}.orb.one{width:340px;height:340px;background:#21456c;left:-130px;top:28%}.orb.two{width:280px;height:280px;background:#795c28;right:-120px;bottom:-40px}
+.shell{max-width:1280px;min-height:100vh;margin:0 auto;padding:30px clamp(18px,4vw,56px);display:flex;flex-direction:column}
+header{display:flex;justify-content:space-between;align-items:center;gap:20px;flex-wrap:wrap}
+.brand{display:flex;align-items:center;gap:13px;text-decoration:none}.brand-mark{width:48px;height:48px;flex-shrink:0;border-radius:15px;border:1px solid rgba(245,208,132,.46);display:grid;place-items:center;background:linear-gradient(145deg,rgba(236,191,100,.18),rgba(255,255,255,.04));box-shadow:inset 0 1px #ffffff24,0 12px 32px #0004}
+.brand-mark span{font-size:25px;font-weight:700;line-height:1;color:var(--gold2);font-family:Georgia,serif}.brand-name{font-weight:800;letter-spacing:.19em;color:var(--gold2);font-size:17px}.brand-sub{display:block;font-size:9px;letter-spacing:.25em;color:#b4bfd1;margin-top:3px}
+.header-tools{display:flex;align-items:center;gap:10px}.chip{color:var(--gold2);font-size:11px;border:1px solid #e6c27f64;background:#e6c27f0c;padding:8px 11px;border-radius:999px;letter-spacing:.11em;font-weight:700}.lang{display:flex;gap:3px;align-items:center;background:#fff1;border:1px solid var(--line);border-radius:13px;padding:4px}.lang button{background:transparent;border:0;color:#b3c0ca;border-radius:9px;padding:7px 11px;font-size:12px}.lang button[aria-pressed=true]{background:#dbbd7b24;color:var(--gold2);font-weight:700}
+main{flex:1;display:grid;grid-template-columns:minmax(0,1fr) minmax(380px,478px);gap:clamp(30px,5vw,90px);align-items:center;padding:50px 0 40px}
+.hero{padding:20px 0 50px;min-width:0}.eyebrow{font-size:12px;color:var(--gold);letter-spacing:.31em;text-transform:uppercase;font-weight:700;margin-bottom:26px;display:flex;align-items:center;gap:11px}.eyebrow:before{content:"";width:24px;height:1px;background:var(--gold)}
+h1{font-size:clamp(43px,5.8vw,83px);line-height:1.08;letter-spacing:-.065em;font-weight:700;max-width:700px;margin:0}.gold{font-family:Georgia,"Times New Roman",serif;font-weight:400;font-style:italic;color:var(--gold2)}
+.hero-desc{max-width:510px;color:#b8c8d5;font-size:clamp(15px,1.4vw,18px);line-height:1.85;margin-top:27px}
+.hero-rule{margin-top:38px;height:1px;background:linear-gradient(90deg,#d4b87766,transparent);max-width:510px}
+.hero-stats{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px;margin-top:30px;max-width:510px}
+.stat strong{font-size:15px;color:#f9eccf;display:block;font-weight:650}.stat span{color:#839aab;font-size:12px;display:block;margin-top:8px;line-height:1.4}
+.login-card{position:relative;isolation:isolate;border:1px solid rgba(196,214,227,.26);border-radius:30px;background:linear-gradient(155deg,rgba(25,47,66,.84),rgba(9,23,37,.88) 65%,rgba(17,29,42,.95));box-shadow:0 28px 90px #0009,inset 0 1px rgba(255,255,255,.17),0 0 0 6px #ffffff04;backdrop-filter:blur(25px);padding:clamp(22px,3.2vw,35px);min-width:0}
+.login-card:before{content:"";position:absolute;inset:0;border-radius:inherit;background:radial-gradient(circle at 90% -20%,#c7a56a15,transparent 55%);pointer-events:none;z-index:-1}
+.card-top{display:flex;justify-content:space-between;align-items:center;gap:12px}
+.step{font-size:11px;letter-spacing:.17em;color:var(--gold);text-transform:uppercase;font-weight:750}
+.card-icon{height:36px;width:36px;border:1px solid #dbbc7756;border-radius:12px;display:grid;place-items:center;background:#c4a5700f;color:var(--gold2);font-size:17px}
+h2{font-size:29px;letter-spacing:-.035em;margin:20px 0 8px;font-weight:650}
+.card-desc{font-size:13px;color:#9eb2c3;line-height:1.7;margin:0 0 24px}
+.tabbar{display:grid;grid-template-columns:1fr 1fr;gap:4px;padding:4px;background:#040c16a6;border:1px solid #d4e4f31c;border-radius:15px;margin-bottom:22px}
+.tabbar button{color:#92a7b8;background:transparent;border:0;border-radius:11px;padding:12px 8px;font-weight:650;font-size:13px;transition:background .2s,color .2s}
+.tabbar button[aria-selected=true]{color:#f7e4bc;background:linear-gradient(125deg,#806a3a41,#bba36c16);box-shadow:inset 0 0 0 1px #d9bd7d3d}
+.field{margin-bottom:16px}label{display:block;color:#cedbe5;font-weight:550;font-size:13px;margin-bottom:9px}
+.input-wrap{display:flex;align-items:center;min-height:51px;background:#040d19b8;border:1px solid #b6d4e83b;border-radius:13px;transition:border-color .2s,box-shadow .2s;overflow:hidden}.input-wrap:focus-within{border-color:#eac981a3;box-shadow:0 0 0 3px #d8bc7830}
+.input-icon{display:inline-flex;align-items:center;justify-content:center;width:46px;color:#9bafbe;flex-shrink:0}
+.input-wrap input{background:transparent;border:0;outline:none;min-width:0;flex:1;height:50px;padding:0 11px 0 0;color:#fff;font-size:14px}
+.input-wrap input::placeholder{color:#738b9f}.input-wrap button{background:transparent;border:0;color:#b1c5d4;font-size:12px;padding:12px;white-space:nowrap}
+.row-between{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;margin:3px 0 21px}
+.check{display:flex;align-items:center;gap:8px;font-size:12px;color:#9fb1be;cursor:pointer;margin:0}.check input{accent-color:#d5af65;margin:0}
+.text-btn{border:0;background:none;color:#efcf8a;font-size:12px;padding:6px 0;font-weight:650}
+.primary{width:100%;background:linear-gradient(120deg,#f8dea7 0%,#cba35e 100%);border:1px solid #fde7b1;border-radius:13px;height:51px;color:#18202a;font-weight:800;font-size:14px;box-shadow:0 12px 32px #c8a26026;transition:filter .18s,transform .18s}
+.primary:hover{filter:brightness(1.08);transform:translateY(-1px)}
+.divider{display:flex;align-items:center;gap:14px;color:#8ba1b2;font-size:11px;margin:22px 0}.divider:before,.divider:after{content:"";height:1px;flex:1;background:var(--line)}
+.google{width:100%;height:49px;background:#ffffff09;border:1px solid #c5d6e33b;border-radius:13px;color:#ecf1f5;font-size:13px;font-weight:650;display:flex;align-items:center;justify-content:center;gap:11px}
+.google:hover{background:#ffffff12}.google-symbol{background:#fff;border-radius:50%;color:#4285f4;font-weight:900;font-size:15px;display:inline-grid;place-items:center;width:23px;height:23px;font-family:Arial,sans-serif}
+.fineprint{font-size:11px;color:#7b92a5;line-height:1.75;text-align:center;margin:19px 0 0}
+.status{margin-top:18px;border:1px solid #d4b66c56;background:#d7ae5918;color:#f5dca5;border-radius:12px;padding:12px 14px;font-size:12px;line-height:1.65;white-space:pre-wrap}
+.status.ok{border-color:#83d5b065;background:#3c906c23;color:#baf1d5}
+.status.err{border-color:#fba4a165;background:#ce565a1a;color:#ffd0c8}
+.hidden{display:none!important}
+.demo-panel{margin-top:16px;background:#0614249d;border-radius:13px;border:1px dashed #d3bd8270;padding:12px 14px}
+.demo-panel strong{color:#eacb8e;font-size:11px;letter-spacing:.09em}.demo-panel p{margin:7px 0;color:#a7b8c7;font-size:11px;line-height:1.65}
+.demo-panel select{width:100%;margin-top:5px;color:#e7f0f7;background:#0b1b2b;border:1px solid #ffffff28;border-radius:9px;padding:8px;min-height:40px}
+footer{display:flex;justify-content:space-between;align-items:center;gap:16px;flex-wrap:wrap;color:#8095a4;font-size:11px;padding:16px 0 8px;border-top:1px solid #ffffff20}
+footer span:last-child{color:#bba77d}
+.modal{position:fixed;inset:0;z-index:20;display:grid;place-items:center;padding:18px;background:rgba(1,6,12,.78);backdrop-filter:blur(10px)}
+.dialog{background:linear-gradient(140deg,#152b40,#081522);border:1px solid #e6d1a650;box-shadow:0 26px 95px #000d;border-radius:25px;max-width:450px;width:100%;padding:28px;position:relative}
+.dialog h3{font-size:22px;margin:0 0 12px}.dialog p{color:#b8c8d5;font-size:14px;line-height:1.75}.dialog .primary{margin-top:9px}
+.close{position:absolute;right:14px;top:11px;border:0;background:none;color:#c8d0da;font-size:24px;padding:6px 9px}
+[hidden]{display:none!important}
+@media(max-width:900px){.shell{padding:22px 21px}.hero{padding:8px 0}.hero-desc{margin-top:15px}main{grid-template-columns:1fr;gap:24px;padding:26px 0}.hero h1{font-size:clamp(35px,7vw,54px)}.hero-rule{margin-top:22px}.hero-stats{margin-top:18px}.login-card{max-width:570px;width:100%;margin:0 auto}.chip{font-size:9px}.hero{max-width:650px}}
+@media(max-width:480px){.shell{padding:17px 15px}.brand-mark{width:42px;height:42px}.brand-name{font-size:15px}.brand-sub{font-size:8px}.header-tools{gap:6px}.chip{font-size:9px;padding:7px 9px}.lang button{padding:6px 8px}main{padding:28px 0;gap:24px}.eyebrow{margin-bottom:14px;font-size:10px}h1{font-size:38px}.hero-desc{font-size:14px;margin-top:14px}.hero-rule{margin-top:18px}.hero-stats{margin-top:16px;gap:8px}.stat strong{font-size:12px}.stat span{font-size:10px}.login-card{border-radius:24px;padding:22px 18px}h2{font-size:25px}.fineprint{font-size:10px}footer{gap:7px;font-size:10px}}
+@media(prefers-reduced-motion:reduce){*,*:before,*:after{transition:none!important;animation:none!important;scroll-behavior:auto!important}}
+</style>
+</head>
+<body>
+<div class="background" aria-hidden="true"></div><div class="orb one" aria-hidden="true"></div><div class="orb two" aria-hidden="true"></div>
+<div class="shell">
+<header>
+  <div class="brand" aria-label="MMHVAULT"><div class="brand-mark"><span>M</span></div><div><span class="brand-name">MMHVAULT</span><span class="brand-sub">PERSONAL FINANCE &amp; WEALTH</span></div></div>
+  <div class="header-tools"><span class="chip" data-i18n="previewTag">独立测试原型 · DEMO</span><div class="lang" role="group" aria-label="Language"><button type="button" id="zh" aria-pressed="true">中文</button><button type="button" id="en" aria-pressed="false">EN</button></div></div>
+</header>
+<main>
+ <section class="hero">
+  <div class="eyebrow" data-i18n="eyebrow">YOUR WEALTH. YOUR CONTROL.</div>
+  <h1><span data-i18n="heroLine1">掌控财富，</span><br><span class="gold" data-i18n="heroLine2">从容开启。</span></h1>
+  <p class="hero-desc" data-i18n="intro">熟悉的安全体验，全新的登录选择。为您的每一步财富规划提供清晰、有序的入口。</p>
+  <div class="hero-rule"></div>
+  <div class="hero-stats">
+   <div class="stat"><strong data-i18n="statOne">3 种登录</strong><span data-i18n="statOneSub">自由切换入口</span></div>
+   <div class="stat"><strong data-i18n="statTwo">同一身份</strong><span data-i18n="statTwoSub">规划保持一致</span></div>
+   <div class="stat"><strong data-i18n="statThree">安全优先</strong><span data-i18n="statThreeSub">保留原有保护</span></div>
+  </div>
+ </section>
+ <section class="login-card" aria-labelledby="cardTitle">
+  <div class="card-top"><span class="step" data-i18n="step">SECURE ACCESS · PREVIEW</span><span class="card-icon" aria-hidden="true">✦</span></div>
+  <h2 id="cardTitle" data-i18n="welcome">欢迎回来</h2>
+  <p class="card-desc" data-i18n="subtitle">选择一种登录方式，体验新版 MMHVAULT。</p>
+  <div class="tabbar" role="tablist" aria-label="登录方式">
+   <button id="tab-username" role="tab" aria-selected="true" aria-controls="demo-form" type="button" data-mode="username" data-i18n="usernameTab">用户名登录</button>
+   <button id="tab-email" role="tab" aria-selected="false" aria-controls="demo-form" type="button" data-mode="email" data-i18n="emailTab">邮箱登录</button>
+  </div>
+  <form id="demo-form" autocomplete="off" novalidate>
+   <div class="field"><label id="identityLabel" for="identity" data-i18n="usernameLabel">用户名</label>
+    <div class="input-wrap"><span class="input-icon" aria-hidden="true">◈</span><input id="identity" type="text" maxlength="254" placeholder="demo_user" autocomplete="off" spellcheck="false" required></div>
+   </div>
+   <div class="field"><label for="password" data-i18n="passwordLabel">密码（模拟）</label>
+    <div class="input-wrap"><span class="input-icon" aria-hidden="true">◇</span><input id="password" type="password" autocomplete="off" placeholder="请勿输入真实密码" maxlength="128"><button id="reveal" type="button" aria-pressed="false" data-i18n="show">显示</button></div>
+   </div>
+   <div class="row-between">
+    <label class="check"><input type="checkbox" id="remember"><span data-i18n="remember">记住登录方式（本页仅演示）</span></label>
+    <button id="forgot" class="text-btn" type="button" data-i18n="forgot">忘记密码？</button>
+   </div>
+   <button id="submit" class="primary" type="submit" data-i18n="tryLogin">体验模拟登录</button>
+  </form>
+  <div class="divider" data-i18n="or">或继续使用</div>
+  <button class="google" id="google" type="button"><span class="google-symbol" aria-hidden="true">G</span><span data-i18n="google">使用 Google 登录（演示）</span></button>
+  <div class="demo-panel"><strong data-i18n="demoModeTitle">测试结果模拟器 · 不连接服务器</strong><p data-i18n="demoInfo">可切换不同结果来查看反馈样式。输入内容不会提交、保存或传输。</p>
+   <label for="scenario" data-i18n="scenarioLabel">选择模拟场景</label>
+   <select id="scenario"><option value="success" data-i18n="successChoice">正常流程（仅演示）</option><option value="invalid" data-i18n="invalidChoice">账号或密码错误</option><option value="captcha" data-i18n="captchaChoice">验证码失败</option><option value="session" data-i18n="sessionChoice">会话 UID 不一致</option></select>
+  </div>
+  <div class="status hidden" role="status" aria-live="polite" id="status"></div>
+  <p class="fineprint" data-i18n="footerDisclaimer">独立视觉原型 · 不接入 Supabase · 不支持真实账号登录或注册</p>
+ </section>
+</main>
+<footer><span data-i18n="copyright">MMHVAULT · 私人财富管理视觉验证</span><span data-i18n="footerRight">AUTH QA / N10-A7.20 · PRODUCTION UNCHANGED</span></footer>
+</div>
+<div id="dialog" class="modal hidden" role="presentation">
+ <div class="dialog" role="dialog" aria-modal="true" aria-labelledby="dialogTitle" aria-describedby="dialogText">
+  <button id="closeDialog" class="close" type="button" aria-label="关闭">×</button>
+  <div class="step" data-i18n="modalTag">安全体验 · 模拟流程</div>
+  <h3 id="dialogTitle"></h3><p id="dialogText"></p>
+  <button id="dialogOK" type="button" class="primary" data-i18n="understood">知道了</button>
+ </div>
+</div>
+<script>
+(function(){
+ 'use strict';
+ // DELIBERATE SAFETY: pure client-only prototype. No Supabase/Auth calls,
+ // network, localStorage, sessionStorage, cookies, real Google OAuth or tokens.
+ const dict={
+ zh:{
+  previewTag:'独立测试原型 · DEMO',eyebrow:'YOUR WEALTH. YOUR CONTROL.',
+  heroLine1:'掌控财富，',heroLine2:'从容开启。',intro:'熟悉的安全体验，全新的登录选择。为您的每一步财富规划提供清晰、有序的入口。',
+  statOne:'3 种登录',statOneSub:'自由切换入口',statTwo:'同一身份',statTwoSub:'规划保持一致',statThree:'安全优先',statThreeSub:'保留原有保护',
+  step:'SECURE ACCESS · PREVIEW',welcome:'欢迎回来',subtitle:'选择一种登录方式，体验新版 MMHVAULT。',
+  usernameTab:'用户名登录',emailTab:'邮箱登录',usernameLabel:'用户名',emailLabel:'邮箱地址',passwordLabel:'密码（模拟）',show:'显示',hide:'隐藏',
+  remember:'记住登录方式（本页仅演示）',forgot:'忘记密码？',tryLogin:'体验模拟登录',or:'或继续使用',google:'使用 Google 登录（演示）',
+  demoModeTitle:'测试结果模拟器 · 不连接服务器',demoInfo:'可切换不同结果来查看反馈样式。输入内容不会提交、保存或传输。',
+  scenarioLabel:'选择模拟场景',successChoice:'正常流程（仅演示）',invalidChoice:'账号或密码错误',captchaChoice:'验证码失败',sessionChoice:'会话 UID 不一致',
+  footerDisclaimer:'独立视觉原型 · 不接入 Supabase · 不支持真实账号登录或注册',copyright:'MMHVAULT · 私人财富管理视觉验证',
+  footerRight:'AUTH QA / N10-A7.20 · 正式站未修改',understood:'知道了',modalTag:'安全体验 · 模拟流程',
+  fillIdentity:'请输入示例用户名或邮箱（不要使用真实账户资料）。',badUsername:'用户名示例应为 4–20 位小写字母、数字或下划线，且以字母开头。',
+  badEmail:'请填写示例邮箱，例如 demo@example.invalid。',
+  resultSuccess:'模拟成功：登录界面和成功反馈可正常显示。\n没有建立任何 Supabase 会话，也不会跳转财务页面。',
+  resultInvalid:'模拟失败：账号或密码不正确。请检查示例内容。\n没有连接真实认证系统。',
+  resultCaptcha:'模拟失败：验证码未通过。正式实现需要 Cloudflare 服务器端验证。',
+  resultSession:'模拟保护生效：远程 UID 与本地会话 UID 不一致，拒绝进入财务页面。',
+  googleTitle:'Google 登录预览',googleText:'这里展示 Google 入口的位置与交互。此原型不会跳转 Google，也不会请求您的 Google 账号权限。正式 OAuth 逻辑保持在现有网站。',
+  forgotTitle:'密码恢复预览',forgotText:'正式版本将保留邮箱验证码/恢复链接及 UID 身份校验。本原型不会发送邮件，也不会更改密码。',
+  passwordPlaceholder:'请勿输入真实密码',usernamePlaceholder:'demo_user',emailPlaceholder:'demo@example.invalid'
+ },
+ en:{
+  previewTag:'ISOLATED QA PROTOTYPE · DEMO',eyebrow:'YOUR WEALTH. YOUR CONTROL.',heroLine1:'A clearer path',heroLine2:'to your wealth.',
+  intro:'The security you know, with more ways to sign in. A considered first step toward every financial goal.',
+  statOne:'3 methods',statOneSub:'Choose your access',statTwo:'One identity',statTwoSub:'Your data stays yours',statThree:'Security first',statThreeSub:'Existing safeguards',
+  step:'SECURE ACCESS · PREVIEW',welcome:'Welcome back',subtitle:'Choose a sign-in method to preview the new experience.',
+  usernameTab:'Username',emailTab:'Email',usernameLabel:'Username',emailLabel:'Email address',passwordLabel:'Password (demo)',show:'Show',hide:'Hide',
+  remember:'Remember method (demo only)',forgot:'Forgot password?',tryLogin:'Try demo sign-in',or:'Or continue with',google:'Continue with Google (demo)',
+  demoModeTitle:'Outcome simulator · No server connection',demoInfo:'Switch outcomes to inspect UI states. Inputs are never sent, stored, or transmitted.',
+  scenarioLabel:'Simulated outcome',successChoice:'Normal flow (demo)',invalidChoice:'Invalid credentials',captchaChoice:'CAPTCHA failed',sessionChoice:'Session UID mismatch',
+  footerDisclaimer:'Standalone visual demo · No Supabase · No real sign-in or registration',
+  copyright:'MMHVAULT · Private wealth experience',footerRight:'AUTH QA / N10-A7.20 · PRODUCTION UNCHANGED',understood:'Got it',modalTag:'SECURITY EXPERIENCE · DEMO',
+  fillIdentity:'Enter a sample username or email. Never use real account details.',
+  badUsername:'Demo username: 4–20 lowercase letters, numbers or underscores, starting with a letter.',
+  badEmail:'Use a sample email, such as demo@example.invalid.',
+  resultSuccess:'Simulated success: the UI is ready for review.\nNo Supabase session was created and no financial page was opened.',
+  resultInvalid:'Demo failure: the account or password is incorrect.\nNo real authentication was attempted.',
+  resultCaptcha:'Demo failure: CAPTCHA was not verified. Production will require server-side verification.',
+  resultSession:'Simulated security check: remote UID and local UID disagree. Access is denied.',
+  googleTitle:'Google sign-in preview',googleText:'This is an interactive design preview, not a Google OAuth request. No permissions or real account login are requested.',
+  forgotTitle:'Password recovery preview',forgotText:'The eventual flow retains email-based recovery and identity checks. No email is sent and no password is changed.',
+  passwordPlaceholder:'Never enter a real password',usernamePlaceholder:'demo_user',emailPlaceholder:'demo@example.invalid'
+ }
+ };
+ let language='zh',mode='username',activeModal=false,lastFocus=null;
+ const $=id=>document.getElementById(id);
+ function t(k){return dict[language][k]||k}
+ function clearSensitive(){ $('identity').value=''; $('password').value=''; }
+ function status(message,kind){const el=$('status');el.textContent=message;el.className='status '+(kind||'');}
+ function resetStatus(){const el=$('status');el.textContent='';el.className='status hidden';}
+ function setMode(next){
+   if(next!=='username'&&next!=='email')return;
+   mode=next;clearSensitive();resetStatus();
+   $('identity').type=mode==='email'?'email':'text';
+   $('identity').maxLength=mode==='email'?254:20;
+   $('identity').placeholder=t(mode==='email'?'emailPlaceholder':'usernamePlaceholder');
+   $('identityLabel').textContent=t(mode==='email'?'emailLabel':'usernameLabel');
+   for(const key of ['username','email']){$('tab-'+key).setAttribute('aria-selected',String(mode===key))}
+   $('tab-'+mode).focus();
+ }
+ function localize(next){
+   language=next;
+   document.documentElement.lang=language==='zh'?'zh-CN':'en';
+   for(const element of document.querySelectorAll('[data-i18n]'))element.textContent=t(element.getAttribute('data-i18n'));
+   $('zh').setAttribute('aria-pressed',String(language==='zh'));
+   $('en').setAttribute('aria-pressed',String(language==='en'));
+   $('identityLabel').textContent=t(mode==='email'?'emailLabel':'usernameLabel');
+   $('identity').placeholder=t(mode==='email'?'emailPlaceholder':'usernamePlaceholder');
+   $('password').placeholder=t('passwordPlaceholder');
+   $('reveal').textContent=t($('password').type==='password'?'show':'hide');
+   resetStatus();
+   if(activeModal)closeModal();
+ }
+ function showModal(title,text){
+   lastFocus=document.activeElement;activeModal=true;
+   $('dialogTitle').textContent=title;$('dialogText').textContent=text;
+   $('dialog').classList.remove('hidden');$('closeDialog').focus();
+ }
+ function closeModal(){activeModal=false;$('dialog').classList.add('hidden');if(lastFocus?.focus)lastFocus.focus()}
+ $('zh').addEventListener('click',()=>localize('zh'));$('en').addEventListener('click',()=>localize('en'));
+ for(const tab of document.querySelectorAll('.tabbar button'))tab.addEventListener('click',()=>setMode(tab.dataset.mode));
+ $('reveal').addEventListener('click',()=>{
+   const show=$('password').type==='password';$('password').type=show?'text':'password';
+   $('reveal').setAttribute('aria-pressed',String(show));$('reveal').textContent=t(show?'hide':'show');
+ });
+ $('demo-form').addEventListener('submit',e=>{
+   e.preventDefault();const name=$('identity').value.trim();
+   // Never inspect/retain a password. The demo deliberately does not validate secrets.
+   $('password').value='';
+   if(!name){status(t('fillIdentity'),'err');return}
+   if(mode==='username'&&!/^[a-z][a-z0-9_]{3,19}$/.test(name)){status(t('badUsername'),'err');return}
+   if(mode==='email'&&!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(name)){status(t('badEmail'),'err');return}
+   const cases={success:['resultSuccess','ok'],invalid:['resultInvalid','err'],captcha:['resultCaptcha','err'],session:['resultSession','err']};
+   const [key,kind]=cases[$('scenario').value]||cases.invalid;status(t(key),kind);
+ });
+ $('forgot').addEventListener('click',()=>{clearSensitive();showModal(t('forgotTitle'),t('forgotText'))});
+ $('google').addEventListener('click',()=>{clearSensitive();showModal(t('googleTitle'),t('googleText'))});
+ $('closeDialog').addEventListener('click',closeModal);$('dialogOK').addEventListener('click',closeModal);
+ $('dialog').addEventListener('click',e=>{if(e.target===$('dialog'))closeModal()});
+ document.addEventListener('keydown',e=>{
+   if(e.key==='Escape'&&activeModal){e.preventDefault();closeModal()}
+   if(activeModal&&e.key==='Tab'){
+     const controls=[$('closeDialog'),$('dialogOK')];
+     const i=controls.indexOf(document.activeElement);
+     if(e.shiftKey&&i===0){e.preventDefault();controls[1].focus()}
+     else if(!e.shiftKey&&i===1){e.preventDefault();controls[0].focus()}
+   }
+ });
+ // No persistent storage. This checkbox intentionally changes NO state outside UI.
+ $('remember').addEventListener('change',()=>resetStatus());
+ localize('zh');
+})();
+</script>
+</body></html>

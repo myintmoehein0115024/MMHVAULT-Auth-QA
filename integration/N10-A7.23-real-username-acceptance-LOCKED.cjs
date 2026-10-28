@@ -71,8 +71,8 @@ async function runControlledAcceptance({cfg,api,captcha,credentials,options={}})
    record('bind_success');
    // Local only: preserve sessions on other devices and never global logout.
    await api.signOutLocal();
-   sessionTouched=false;
    if(await api.getSession())throw Error('local_logout_failed');
+   sessionTouched=false;
    record('local_signout_pass');
   }else{
    const signed=await api.signInWithPassword(credentials);
@@ -81,8 +81,8 @@ async function runControlledAcceptance({cfg,api,captcha,credentials,options={}})
    expectedUid=await verifiedSession(api);
    record('existing_uid_rls_pass');
    await api.signOutLocal();
-   sessionTouched=false;
    if(await api.getSession())throw Error('local_logout_failed');
+   sessionTouched=false;
    record('local_signout_pass');
   }
   // A NEW widget is mandatory for username login. Never replay the bind token.
@@ -104,6 +104,11 @@ async function runControlledAcceptance({cfg,api,captcha,credentials,options={}})
   const newUid=await verifiedSession(api,expectedUid);
   if(newUid!==expectedUid)throw Error('uid_mismatch');
   record('same_uid_rls_pass');
+  // Never report PASS until the temporary QA username session is actually gone.
+  await api.signOutLocal();
+  if(await api.getSession())throw Error('local_logout_failed');
+  sessionTouched=false;
+  record('final_local_logout_pass');
   return result(true,'staging_username_acceptance_pass',steps);
  }catch(error){
   const code=String(error?.message||'test_unavailable');

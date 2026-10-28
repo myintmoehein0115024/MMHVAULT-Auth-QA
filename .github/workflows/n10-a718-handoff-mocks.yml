@@ -1,0 +1,22 @@
+name: N10-A7.18 isolated UID-safe username handoff mocks
+on:
+  push:
+    branches: [n10-a7-3-staging-readonly-review]
+    paths:
+      - 'tests/N10-A7.18-username-session-handoff-mocks.test.cjs'
+      - '.github/workflows/n10-a718-handoff-mocks.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  mock:
+    runs-on: ubuntu-latest
+    timeout-minutes: 4
+    steps:
+      - uses: actions/checkout@v4
+      - name: Check inert session adapter syntax
+        run: |
+          node --check integration/N10-A7.18-username-handoff-PREVIEW-ONLY.cjs
+          node --check tests/N10-A7.18-username-session-handoff-mocks.test.cjs
+      - name: Verify closed gate, project/ref binding, UID mismatch and session cleanup
+        run: node --test tests/N10-A7.18-username-session-handoff-mocks.test.cjs

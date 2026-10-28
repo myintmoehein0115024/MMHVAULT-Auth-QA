@@ -1,0 +1,40 @@
+name: N10-A7.16 clear 429 rate-limit UI smoke
+on:
+  push:
+    branches: [main]
+    paths: ['.github/workflows/n10-a716-rate-limit-ui.yml']
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  deployed-copy:
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    steps:
+      - uses: actions/checkout@v4
+      - name: Verify two distinct 429 branches and deploy
+        shell: python
+        run: |
+          import pathlib,urllib.request,time,sys
+          p=pathlib.Path('n10a715-real-siteverify-qa.html')
+          src=p.read_text(encoding='utf-8')
+          reqs=[
+            "if(first.status===429&&first.code==='qa_rate_limited')",
+            "else if(replay.status===429&&replay.code==='qa_rate_limited')",
+            "replay.code==='token_replayed'",
+            "这不是 Cloudflare Secret 验证失败"
+          ]
+          assert all(x in src for x in reqs)
+          assert 'SERVICE_ROLE_KEY' not in src and 'sb_secret_' not in src
+          print('N10A716_RATE_LIMIT_SOURCE PASS')
+          url='https://myintmoehein0115024.github.io/MMHVAULT-Auth-QA/n10a715-real-siteverify-qa.html'
+          for attempt in range(15):
+            try:
+              with urllib.request.urlopen(urllib.request.Request(url,headers={'Cache-Control':'no-cache'}),timeout=10) as r:
+                page=r.read(100000).decode('utf-8')
+                if r.status==200 and all(x in page for x in reqs):
+                  print('N10A716_RATE_LIMIT_LIVE_HTTPS 200 PASS')
+                  break
+            except Exception: pass
+            time.sleep(3)
+          else: sys.exit('N10A716_RATE_LIMIT_LIVE_HTTPS FAILED: GitHub Pages stale')

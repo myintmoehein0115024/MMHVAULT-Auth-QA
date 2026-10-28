@@ -1,0 +1,38 @@
+<!doctype html>
+<html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="robots" content="noindex,nofollow">
+<meta name="referrer" content="no-referrer"><meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'unsafe-inline'; style-src 'unsafe-inline'; connect-src https://ldivswlhtgmznzwhzsoi.supabase.co; base-uri 'none'; object-src 'none'; form-action 'none'">
+<title>MMHVAULT · N10-A7.11 Staging 配置验收</title>
+<style>:root{color-scheme:dark}*{box-sizing:border-box}body{background:radial-gradient(ellipse at 15% 5%,#203d52 0%,#081626 46%,#030a13 100%);color:#ecf3ff;margin:0;padding:22px;min-height:100vh;font:15px/1.55 -apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif}main{max-width:610px;margin:7vh auto;padding:clamp(20px,5vw,34px);border-radius:25px;border:1px solid #ffffff36;background:linear-gradient(140deg,#ffffff10,#ffffff04);box-shadow:0 20px 70px #0008;backdrop-filter:blur(20px)}small{color:#a4b6c6}h1{font-size:24px;margin:8px 0 12px}p{color:#bdcbd9}button{font:inherit;cursor:pointer;border-radius:13px;background:linear-gradient(125deg,#f1d69f,#bfa36f);color:#111922;padding:12px 20px;border:0;font-weight:700}button:disabled{opacity:.5;cursor:wait}.result{margin:20px 0;padding:18px;background:#071727bb;border:1px solid #ffffff29;border-radius:15px;white-space:pre-wrap;overflow-wrap:anywhere}.good{color:#91e5b7}.warn{color:#f4d08a}.bad{color:#ffb9ad}.steps{font-size:13px}.steps b{color:#ebd2a2}code{color:#d0e6f0;font-size:12px}a{color:#e8ca94}footer{margin-top:24px;color:#9aabbc;font-size:12px}</style>
+</head><body><main>
+<small>ISOLATED AUTH STAGING · N10-A7.11</small>
+<h1>服务端安全配置就绪检查</h1>
+<p>此页面仅查询独立 Staging 的公开预检状态，<b>不会读取或提交密钥</b>，不会登录、注册或修改任何账户。</p>
+<button type="button" id="go">检查 Staging 是否准备就绪</button>
+<div class="result warn" id="result" role="status" aria-live="polite">尚未检查。即使密钥已配置，用户名登录也必须保持关闭，直到完成下一轮安全验收。</div>
+<div class="steps"><p>如果显示“配置未齐全”，请仅在 <b>Supabase → MMHVAULT-Auth-Staging → Edge Functions → Secrets</b> 中设置：</p>
+<p><code>N10A6_TURNSTILE_SECRET</code>：从 Cloudflare 的 <b>MMHVAULT-Username-Staging</b> Widget 安全复制 Secret Key。</p>
+<p><code>N10A6_RATE_HMAC_KEY</code>：由密码管理器生成独立、高随机度、至少 32 字符的 Secret。</p>
+<p><b>切勿</b>将 Secret 发到聊天、GitHub、截图或前端代码。请继续保持 <code>N10A6_STAGING_ENABLED</code> 为关闭状态。</p></div>
+<footer>这个页面只能确认配置条件是否存在，无法检查 Secret 值是否正确或 Turnstile 是否真实通过。绿色结果不代表已允许真实用户名登录。</footer></main>
+<script>
+(()=>{'use strict';
+const go=document.getElementById('go'),out=document.getElementById('result');
+const endpoint='https://ldivswlhtgmznzwhzsoi.supabase.co/functions/v1/mmh-n10a6-username';
+function render(text,tone){out.className='result '+tone;out.textContent=text;}
+go.addEventListener('click',async()=>{
+ go.disabled=true;render('正在检查独立 Staging…','warn');
+ try{
+  const controller=new AbortController();const timer=setTimeout(()=>controller.abort(),12000);
+  let response;
+  try{response=await fetch(endpoint,{method:'POST',cache:'no-store',credentials:'omit',referrerPolicy:'no-referrer',headers:{'Content-Type':'application/json'},body:JSON.stringify({action:'preflight'}),signal:controller.signal})}
+  finally{clearTimeout(timer)}
+  const data=await response.json();
+  if(response.status!==200||data.code!=='preflight_ok'||typeof data.prerequisites_present!=='boolean'){render('检查失败：预检接口响应不符合预期。请保持登录关闭。','bad');return}
+  if(data.enabled!==false||data.registration_enabled!==false){render('警告：Staging 登录状态意外开启！请立即复核代码闸门和启用配置。','bad');return}
+  if(data.prerequisites_present){render('PASS · 两项专用配置所需条件已存在。\nPASS · 登录仍关闭。\n\n下一步仍需服务端验证、Turnstile 与短时测试；当前不能正式开放。','good')}
+  else{render('PENDING · Staging 专用配置条件仍未齐全。\nPASS · 登录仍关闭。\n\n请到 Supabase Edge Functions → Secrets 完成两项 Secret 设置，勿在此页面输入密钥。','warn')}
+ }catch(e){render('无法读取 Staging 状态（网络或服务问题）。\n没有更改任何配置；请保持登录关闭。','bad')}
+ finally{go.disabled=false}
+});
+})();
+</script></body></html>

@@ -4,6 +4,7 @@ on:
     branches: [n10-a7-3-staging-readonly-review]
     paths:
       - 'tests/N10-A7.19-release-gates.test.cjs'
+      - 'release/N10-A7.19-release-gates.json'
       - '.github/workflows/n10-a719-release-gates.yml'
   workflow_dispatch:
 permissions:

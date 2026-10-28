@@ -1,0 +1,51 @@
+<!doctype html>
+<html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="robots" content="noindex,nofollow">
+<title>MMHVAULT · N10-A7.4 关闭状态 HTTPS 测试</title>
+<style>:root{color-scheme:dark}*{box-sizing:border-box}body{margin:0;background:radial-gradient(circle at 20% 0%,#18354b,#07101b 48%,#03080e);color:#e7f2ff;font:15px/1.6 -apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;min-height:100vh;padding:22px}main{max-width:680px;margin:5vh auto;padding:30px;border:1px solid #ffffff28;border-radius:24px;background:#ffffff0b;box-shadow:0 18px 56px #0008;backdrop-filter:blur(20px)}small{color:#99b4c3}h1{font-size:24px;margin:8px 0}p{color:#b5c7d7}.row{border-top:1px solid #ffffff24;padding:14px 0;display:flex;justify-content:space-between;gap:18px}.good{color:#80e0c0}.bad{color:#ffb5b5}.pending{color:#e6d48a}button{background:#c8af79;color:#0b1520;border:0;padding:13px 20px;border-radius:11px;font-weight:700;cursor:pointer}button:disabled{opacity:.45}#report{overflow-wrap:anywhere}code{font:12px ui-monospace,monospace}</style>
+</head><body><main><small>ISOLATED AUTH STAGING · PUBLIC NON-CREDENTIAL SMOKE TEST</small><h1>N10-A7.4 HTTPS 关闭状态验收</h1>
+<p>本页面只对独立 Staging 发送无真实用户名、无密码、无 JWT 的测试请求。它不会登录、注册、绑定或访问正式 MMHVAULT。</p>
+<p>生产正式站点不会受影响。预期：preflight 报告 disabled；login 和 bind 返回 503，不能签发会话。</p>
+<button id="run" type="button">重新执行关闭状态测试</button><div id="report" aria-live="polite"></div>
+<small id="stamp"></small></main>
+<script>
+(function(){
+  'use strict';
+  const endpoint='https://ldivswlhtgmznzwhzsoi.supabase.co/functions/v1/mmh-n10a6-username';
+  const cases=[
+    {name:'preflight',data:{action:'preflight'},status:200,code:'preflight_ok'},
+    {name:'login-disabled',data:{action:'login',username:'zzzzqa_test',password:'not-a-real-password'},status:503,code:'n10a6_disabled'},
+    {name:'bind-disabled',data:{action:'bind',username:'zzzzqa_test',password:'not-a-real-password'},status:503,code:'n10a6_disabled'}
+  ];
+  const div=document.getElementById('report'),btn=document.getElementById('run');
+  let count=0;
+  async function run(){
+    btn.disabled=true;div.replaceChildren();count=0;
+    for(const test of cases){
+      let status='NETWORK_ERROR',code='';let detail='';
+      try{
+        const ctrl=new AbortController();const timeout=setTimeout(()=>ctrl.abort(),12000);
+        try {
+          const r=await fetch(endpoint,{method:'POST',mode:'cors',cache:'no-store',
+            headers:{'Content-Type':'application/json'},body:JSON.stringify(test.data),signal:ctrl.signal});
+          status=r.status; const data=await r.json();code=String(data?.code||'');
+          const matches=status===test.status && code===test.code &&
+             (test.name!=='preflight'||data.enabled===false && data.registration_enabled===false) &&
+             !('access_token' in data) && !('refresh_token' in data);
+          if(matches)count++;else detail='Unexpected response';
+        }finally{clearTimeout(timeout)}
+      }catch(e){detail=String(e?.name||e)}
+      const section=document.createElement('section');section.className='row';
+      const label=document.createElement('span');label.textContent=test.name;
+      const result=document.createElement('span');result.className=(status===test.status && code===test.code && !detail)?'good':'bad';
+      result.textContent=String(status)+' · '+code+(detail?' ('+detail+')':'');
+      section.append(label,result);div.append(section);
+    }
+    const summary=document.createElement('p');summary.id='n10a74result';summary.className=count===cases.length?'good':'bad';
+    summary.textContent='HTTPS_SMOKE '+count+'/'+cases.length+' '+(count===cases.length?'PASS':'INCOMPLETE');
+    div.prepend(summary);
+    document.getElementById('stamp').textContent='测试页面版本 N10-A7.4 · UTC '+new Date().toISOString();
+    btn.disabled=false;
+  }
+  btn.addEventListener('click',run);run();
+})();
+</script></body></html>

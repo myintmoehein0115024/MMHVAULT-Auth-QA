@@ -96,6 +96,40 @@ footer span:last-child{color:#bba77d}
   .brand-name{font-size:13px}
   .lang button{padding:6px 7px}
 }
+
+/* N10-A7.20.2 clean formal-style authentication UI; all viewports focus on forms */
+.hero{display:none!important}
+.shell{max-width:1100px;padding:20px clamp(14px,3vw,36px)}
+.header-tools .chip{display:none}
+main{display:flex;align-items:flex-start;justify-content:center;min-height:0;padding:23px 0 38px}
+.login-card{width:min(100%,475px);max-width:475px;padding:25px 27px;border-radius:24px;margin:0 auto}
+.card-top{justify-content:center}.card-icon{display:none}
+.login-card h2{text-align:center;margin:12px 0 7px;font-size:27px}
+.card-desc{text-align:center;font-size:12px;margin:0 0 16px}
+.security-note{background:#21544b24;border:1px solid #82c9ae36;border-radius:12px;padding:10px 12px;margin:0 0 16px;color:#b3d6cb;font-size:11px;line-height:1.6}
+.security-note strong{display:block;color:#92e4c5;font-size:12px;margin-bottom:2px}
+.auth-switch{display:grid;grid-template-columns:1fr 1fr;gap:4px;padding:4px;margin-bottom:16px;background:#041220;border:1px solid #9ab5cb30;border-radius:13px}
+.auth-switch button{height:39px;background:transparent;border:0;border-radius:10px;color:#a3b5c2;font-weight:700;font-size:13px}
+.auth-switch button[aria-selected="true"]{background:linear-gradient(120deg,#7e673e66,#d1b26d13);color:#fbe1ae;box-shadow:inset 0 -2px #d8ad61}
+.tabbar{margin-bottom:16px}.tabbar button{padding:10px 8px}
+.field{margin-bottom:12px}.input-wrap{min-height:47px}.input-wrap input{height:47px}
+.row-between{margin:3px 0 16px}.primary{height:47px}.google{height:46px}.divider{margin:17px 0}
+.demo-panel{margin-top:16px;background:#0614243d;border-color:#9ab5cb28;padding:11px}
+.demo-panel summary{font-size:11px;color:#b6c4d0;cursor:pointer}
+.demo-panel[open]{background:#061424a8}
+.demo-panel label{margin-top:10px}
+.field-hint{display:block;color:#849fb0;font-size:11px;line-height:1.45;margin-top:5px}
+.signup-confirm{margin:12px 0 17px;line-height:1.45}.signup-confirm span{flex:1}
+#signup-pane .field label{margin-bottom:7px}
+@media(max-width:600px){
+ .shell{padding:12px 12px 10px}
+ main{display:block;padding:13px 0 26px}
+ .login-card{width:100%;max-width:475px;margin:auto;border-radius:20px;padding:19px 16px}
+ .login-card h2{font-size:24px}.card-desc{margin-bottom:12px}
+ .security-note{margin-bottom:13px}.auth-switch{margin-bottom:13px}
+ .brand-sub{display:none}
+}
+@media(max-width:360px){.shell{padding-inline:9px}.login-card{padding:18px 13px}}
 @media(prefers-reduced-motion:reduce){*,*:before,*:after{transition:none!important;animation:none!important;scroll-behavior:auto!important}}
 </style>
 </head>
@@ -122,6 +156,12 @@ footer span:last-child{color:#bba77d}
   <div class="card-top"><span class="step" data-i18n="step">SECURE ACCESS · PREVIEW</span><span class="card-icon" aria-hidden="true">✦</span></div>
   <h2 id="cardTitle" data-i18n="welcome">欢迎回来</h2>
   <p class="card-desc" data-i18n="subtitle">选择一种登录方式，体验新版 MMHVAULT。</p>
+  <div class="security-note" role="note"><strong data-i18n="securityTitle">安全提示 · 独立演示</strong><span data-i18n="securityText">本页面不连接真实认证系统，请勿填写真实账号或密码。</span></div>
+  <div class="auth-switch" role="tablist" aria-label="登录或注册">
+   <button id="auth-signin" role="tab" aria-selected="true" aria-controls="signin-pane" type="button" data-i18n="signInTab">登录</button>
+   <button id="auth-signup" role="tab" aria-selected="false" aria-controls="signup-pane" type="button" data-i18n="signUpTab">注册</button>
+  </div>
+  <div id="signin-pane" role="tabpanel" aria-labelledby="auth-signin">
   <div class="tabbar" role="tablist" aria-label="登录方式">
    <button id="tab-username" role="tab" aria-selected="true" aria-controls="demo-form" type="button" data-mode="username" data-i18n="usernameTab">用户名登录</button>
    <button id="tab-email" role="tab" aria-selected="false" aria-controls="demo-form" type="button" data-mode="email" data-i18n="emailTab">邮箱登录</button>
@@ -141,9 +181,23 @@ footer span:last-child{color:#bba77d}
   </form>
   <div class="divider" data-i18n="or">或继续使用</div>
   <button class="google" id="google" type="button"><span class="google-symbol" aria-hidden="true">G</span><span data-i18n="google">使用 Google 登录（演示）</span></button>
-  <div class="demo-panel"><strong data-i18n="demoModeTitle">测试结果模拟器 · 不连接服务器</strong><p data-i18n="demoInfo">可切换不同结果来查看反馈样式。输入内容不会提交、保存或传输。</p>
+  <details class="demo-panel"><summary data-i18n="demoModeTitle">测试结果模拟器 · 不连接服务器</summary><p data-i18n="demoInfo">可切换不同结果来查看反馈样式。输入内容不会提交、保存或传输。</p>
    <label for="scenario" data-i18n="scenarioLabel">选择模拟场景</label>
    <select id="scenario"><option value="success" data-i18n="successChoice">正常流程（仅演示）</option><option value="invalid" data-i18n="invalidChoice">账号或密码错误</option><option value="captcha" data-i18n="captchaChoice">验证码失败</option><option value="session" data-i18n="sessionChoice">会话 UID 不一致</option></select>
+
+  </details>
+  </div>
+  <div id="signup-pane" role="tabpanel" aria-labelledby="auth-signup" hidden>
+   <form id="signup-form" autocomplete="off" novalidate>
+    <div class="field"><label for="signupUsername" data-i18n="newUsername">用户名</label><div class="input-wrap"><span class="input-icon" aria-hidden="true">◈</span><input id="signupUsername" type="text" maxlength="20" placeholder="demo_user" autocomplete="off" spellcheck="false"></div><small class="field-hint" data-i18n="usernameHint">4–20 位小写字母、数字或下划线；字母开头</small></div>
+    <div class="field"><label for="signupEmail" data-i18n="recoveryEmail">恢复邮箱（模拟）</label><div class="input-wrap"><span class="input-icon" aria-hidden="true">✉</span><input id="signupEmail" type="email" maxlength="254" placeholder="demo@example.invalid" autocomplete="off" inputmode="email"></div></div>
+    <div class="field"><label for="signupPassword" data-i18n="createPass">设置密码（模拟）</label><div class="input-wrap"><span class="input-icon" aria-hidden="true">◇</span><input id="signupPassword" type="password" maxlength="128" autocomplete="off" placeholder="请勿输入真实密码"><button type="button" id="revealSignup" data-i18n="show">显示</button></div></div>
+    <div class="field"><label for="signupConfirm" data-i18n="confirmPass">确认密码（模拟）</label><div class="input-wrap"><span class="input-icon" aria-hidden="true">◇</span><input id="signupConfirm" type="password" maxlength="128" autocomplete="off" placeholder="再次输入示例密码"><button type="button" id="revealConfirm" data-i18n="show">显示</button></div><small class="field-hint" data-i18n="passwordPolicy">仅供演示，正式密码规则尚待安全验收。</small></div>
+    <label class="check signup-confirm"><input id="signupAcknowledged" type="checkbox"><span data-i18n="demoConsent">我明白这里只是模拟注册，不会创建账号或发送邮件</span></label>
+    <button type="submit" class="primary" data-i18n="demoRegister">体验模拟注册</button>
+   </form>
+   <div class="divider" data-i18n="or">或继续使用</div>
+   <button id="googleSignup" class="google" type="button"><span class="google-symbol" aria-hidden="true">G</span><span data-i18n="googleReg">使用 Google 注册（演示）</span></button>
   </div>
   <div class="status hidden" role="status" aria-live="polite" id="status"></div>
   <p class="fineprint" data-i18n="footerDisclaimer">独立视觉原型 · 不接入 Supabase · 不支持真实账号登录或注册</p>
@@ -209,6 +263,41 @@ footer span:last-child{color:#bba77d}
   passwordPlaceholder:'Never enter a real password',usernamePlaceholder:'demo_user',emailPlaceholder:'demo@example.invalid'
  }
  };
+Object.assign(dict.zh,{
+ signInTab:'🔒 登录',signUpTab:'✦ 注册',registerTitle:'创建账户',
+ registerSubtitle:'体验新版注册流程，不会创建真实账户',
+ securityTitle:'安全提示 · 独立演示',securityText:'本页面不连接真实认证系统，请勿填写真实账号或密码。',
+ newUsername:'用户名',usernameHint:'4–20 位小写字母、数字或下划线；字母开头',
+ recoveryEmail:'恢复邮箱（模拟）',createPass:'设置密码（模拟）',confirmPass:'确认密码（模拟）',
+ passwordPolicy:'仅供演示，正式密码规则尚待安全验收。',
+ demoConsent:'我明白这里只是模拟注册，不会创建账号或发送邮件',demoRegister:'体验模拟注册',
+ googleReg:'使用 Google 注册（演示）',
+ requiredName:'请填写有效的示例用户名（4–20 位）。',
+ requiredEmail:'请使用示例邮箱 demo@example.invalid，不要填写真实邮箱。',
+ requiredPass:'请填写虚构的示例密码和确认密码。',
+ mismatchPass:'两次模拟密码不一致。',
+ requireConsent:'请先确认这只是模拟注册。',
+ registerSuccess:'模拟注册流程成功：没有创建账号、绑定用户名、发送邮件或保存密码。',
+ registerGoogleTitle:'Google 注册预览'
+});
+Object.assign(dict.en,{
+ signInTab:'🔒 Sign In',signUpTab:'✦ Sign Up',registerTitle:'Create Account',
+ registerSubtitle:'Preview registration with no real account creation',
+ securityTitle:'Security notice · Isolated demo',securityText:'UI-only prototype: no Supabase or Google connection. Never enter real credentials.',
+ newUsername:'Username',usernameHint:'4–20 lowercase letters, digits or underscores; start with a letter',
+ recoveryEmail:'Recovery email (demo)',createPass:'Create password (demo)',confirmPass:'Confirm password (demo)',
+ passwordPolicy:'Demo only. The actual password policy is pending security review.',
+ demoConsent:'I understand this is a demo; no account or email will be created',
+ demoRegister:'Try demo registration',googleReg:'Continue with Google (signup demo)',
+ requiredName:'Enter a valid sample username (4–20 characters).',
+ requiredEmail:'Use demo@example.invalid, not a real email address.',
+ requiredPass:'Enter fictional example passwords and confirmation.',
+ mismatchPass:'The sample passwords do not match.',
+ requireConsent:'Please confirm this is a simulated registration.',
+ registerSuccess:'Demo registration completed: no account, username, email or password was created or stored.',
+ registerGoogleTitle:'Google signup preview'
+});
+
  let language='zh',mode='username',activeModal=false,lastFocus=null;
  const $=id=>document.getElementById(id);
  function t(k){return dict[language][k]||k}
@@ -276,6 +365,63 @@ footer span:last-child{color:#bba77d}
  // No persistent storage. This checkbox intentionally changes NO state outside UI.
  $('remember').addEventListener('change',()=>resetStatus());
  localize('zh');
+})();
+</script>
+
+<script>
+(function(){
+ 'use strict';
+ let view='signin';const $=id=>document.getElementById(id);
+ const currentLang=()=>document.documentElement.lang==='en'?'en':'zh';
+ const phrases={
+ zh:{registerTitle:'创建账户',registerSubtitle:'体验新版注册流程，不会创建真实账户',signTitle:'欢迎回来',signSubtitle:'选择一种登录方式，体验新版 MMHVAULT。',requiredName:'请填写有效的示例用户名（4–20 位）。',requiredEmail:'请使用示例邮箱 demo@example.invalid，不要填写真实邮箱。',requiredPass:'请填写虚构的示例密码和确认密码。',mismatchPass:'两次模拟密码不一致。',requireConsent:'请先确认这只是模拟注册。',registerSuccess:'模拟注册流程成功：没有创建账号、绑定用户名、发送邮件或保存密码。',registerGoogleTitle:'Google 注册预览'},
+ en:{registerTitle:'Create Account',registerSubtitle:'Preview registration with no real account creation',signTitle:'Welcome back',signSubtitle:'Choose a sign-in method to preview the new experience.',requiredName:'Enter a valid sample username (4–20 characters).',requiredEmail:'Use demo@example.invalid, not a real email address.',requiredPass:'Enter fictional example passwords and confirmation.',mismatchPass:'The sample passwords do not match.',requireConsent:'Please confirm this is a simulated registration.',registerSuccess:'Demo registration completed: no account, username, email or password was created or stored.',registerGoogleTitle:'Google signup preview'}
+ };
+ const phrase=key=>phrases[currentLang()][key];
+ function clear(){
+  $('demo-form').reset();$('signup-form').reset();
+  for(const id of ['password','signupPassword','signupConfirm'])$(id).value='';
+  $('status').className='status hidden';$('status').textContent='';
+ }
+ function show(viewNext){
+  if(!['signin','signup'].includes(viewNext))return;view=viewNext;
+  clear();
+  $('signin-pane').hidden=view!=='signin';$('signup-pane').hidden=view!=='signup';
+  $('auth-signin').setAttribute('aria-selected',String(view==='signin'));
+  $('auth-signup').setAttribute('aria-selected',String(view==='signup'));
+  renderHeading();
+ }
+ function renderHeading(){
+  $('cardTitle').textContent=phrase(view==='signin'?'signTitle':'registerTitle');
+  document.querySelector('.card-desc').textContent=phrase(view==='signin'?'signSubtitle':'registerSubtitle');
+ }
+ function feedback(key,good=false){
+  $('status').textContent=phrase(key);$('status').className='status '+(good?'ok':'err');
+ }
+ $('auth-signin').addEventListener('click',()=>show('signin'));
+ $('auth-signup').addEventListener('click',()=>show('signup'));
+ for(const btn of ['zh','en'])$(btn).addEventListener('click',()=>{renderHeading();$('status').className='status hidden'});
+ for(const pair of [['revealSignup','signupPassword'],['revealConfirm','signupConfirm']]){
+  const [button,field]=pair;
+  $(button).addEventListener('click',()=>{$(field).type=$(field).type==='password'?'text':'password';$(button).textContent=$(field).type==='password'?(currentLang()==='zh'?'显示':'Show'):(currentLang()==='zh'?'隐藏':'Hide')});
+ }
+ $('signup-form').addEventListener('submit',event=>{
+  event.preventDefault();
+  const name=$('signupUsername').value.trim(),email=$('signupEmail').value.trim().toLowerCase();
+  const a=$('signupPassword').value,b=$('signupConfirm').value,accepted=$('signupAcknowledged').checked;
+  $('signup-form').reset();
+  // No network or persistent storage. Only .invalid fictional email addresses accepted.
+  if(!/^[a-z][a-z0-9_]{3,19}$/.test(name)){feedback('requiredName');return}
+  if(email!=='demo@example.invalid'){feedback('requiredEmail');return}
+  if(!a||!b){feedback('requiredPass');return}
+  if(a!==b){feedback('mismatchPass');return}
+  if(!accepted){feedback('requireConsent');return}
+  feedback('registerSuccess',true);
+ });
+ $('googleSignup').addEventListener('click',()=>{
+  clear();$('google').click();$('dialogTitle').textContent=phrase('registerGoogleTitle');
+ });
+ show('signin');
 })();
 </script>
 </body></html>

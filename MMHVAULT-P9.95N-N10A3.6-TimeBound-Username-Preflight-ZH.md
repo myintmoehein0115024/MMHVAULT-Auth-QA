@@ -91,3 +91,29 @@
 **尚待真实浏览器验证：**用户点击无密码 preflight，确认 `enabled=true`，随后使用账户 B 已绑定用户名及其 Staging 测试密码，检查 UID、本人 QA RLS、续期、退出与旧 JWT 对 QA 表拒绝。
 
 **收口事项：**即使时间截止会自动禁止新登录，也仍须部署回 `CODE_GATE_OPEN=false` 的原版代码，并把 `MMH_N10A3_ENABLED` 恢复成 `false`；若用户未能完成测试，不应延长或重复开窗而未经重新授权。生产 MMHVAULT 继续保持原状。
+
+## N10-A3.7 真实用户名回归 PASS 与服务端立即收口（2026-10-28）
+
+用户在隔离 Staging 14 分钟临时测试窗口开启后，使用账户 B 已绑定用户名及测试密码，在 Mac Chrome 无痕窗口依次完成实际浏览器验收并提交四张截图。
+
+| 验收项目 | 真实浏览器截图 |
+|---|---|
+| 新用户名接口临时开启及无密码 preflight | PASS（仅 Staging B） |
+| Cloudflare Turnstile 验证 | 成功 |
+| Username + Staging B 密码登录 | PASS |
+| 原 Auth UID 72a8d120…cffc 未改变 | PASS |
+| 专用 QA RLS 仅本人记录 | PASS · 1 |
+| Refresh Token 续期后 UID、RLS 保持 | PASS |
+| 退出登录 | PASS |
+| 旧 JWT 被拒绝读取专用 QA 表 | PASS |
+| UID / QA RLS / METHOD 页面卡片清空 | PASS |
+
+这验证三种既定登录方式（邮箱密码、Google OAuth PKCE、用户名密码）在**隔离 Staging 的测试场景**中均完成登录、续期、退出和旧 JWT 对专用 QA 表的拒绝回归。不代表正式财务服务、全部数据库表或所有 JWT 在所有下游服务都已即时失效。
+
+**立即收口与核验：**用户提交验收截图后，已将 `mmh-staging-n10a3-username-login` 从临时开放 **v4** 重新部署回安全关闭 **v5**。复读云端文件确认与 GitHub `staging-review/n10a3-username-login/index.ts` 完全一致：`CODE_GATE_OPEN=false`，开始与结束时间均为 `1970-01-01T00:00:00.000Z`。
+
+旧 N6（v12）、旧 N9（v5）重新读取仍保持代码关闭。只读数据库数量复查为 Auth users 2、username bindings 2、专用 QA owners 2。
+
+**仍需用户完成：**在 Staging Edge Functions Secrets 将 `MMH_N10A3_ENABLED` 从 `true` 改回 `false`。这与代码级关闭形成双保险。无需再次输入或展示任何密码、JWT、Secret 值。完成后可用无密码 preflight 核实浏览器关闭行为。
+
+**生产状态：**正式 MMHVAULT 未修改，N10-A3.7 仅为隔离 Staging 端到端验收 PASS，生产上线仍需独立审查，绝不自动部署。

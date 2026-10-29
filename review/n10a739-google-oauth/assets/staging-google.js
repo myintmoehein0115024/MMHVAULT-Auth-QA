@@ -118,6 +118,10 @@
      await proveOwner(access);
      const loggedOut=await localLogout(access);access=null;
      if(!loggedOut)throw Error('logout_unconfirmed');
+     // Provider and signup restrictions were checked before the OAuth redirect.
+     // This callback does not re-read settings: do not leave misleading CHECKING.
+     $('provider').textContent='PRECHECKED';
+     $('signup').textContent='PRECHECKED';
      $('google-status').textContent='PASS';
      $('owner-status').textContent='PASS';
      display('pass','Google OAuth + 现有账号 UID/RLS 所属关系 + 本地退出：PASS。');

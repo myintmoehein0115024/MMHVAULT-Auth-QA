@@ -1,0 +1,30 @@
+name: N10-A7.39-P2 POST-deploy Access main and version alias read-only HTTPS
+on:
+  push:
+    branches: [n10-a7-3-staging-readonly-review]
+    paths:
+      - 'tests/N10-A7.39-P2-POST-DEPLOY-ACCESS-HTTPS-READONLY.test.cjs'
+      - '.github/workflows/n10-a739-p2-postdeploy-access-https.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  locked-private-qa-anonymous-enforcement:
+    runs-on: ubuntu-latest
+    timeout-minutes: 6
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Verify code has no credentials or auth write tools
+        run: |
+          node --check tests/N10-A7.39-P2-POST-DEPLOY-ACCESS-HTTPS-READONLY.test.cjs
+          grep -q 'const REAL_AUTH_ENABLED=false' review/n10a737-credential-qa-LOCKED/assets/auth-qa.js
+          grep -q 'const REAL_REGISTRATION_ENABLED=false' review/n10a737-credential-qa-LOCKED/assets/auth-qa.js
+          grep -q 'const REAL_RESET_ENABLED=false' review/n10a737-credential-qa-LOCKED/assets/auth-qa.js
+      - name: Anonymous GET/HEAD on main and version alias, index and JS/CSS
+        run: node --test --test-concurrency=1 tests/N10-A7.39-P2-POST-DEPLOY-ACCESS-HTTPS-READONLY.test.cjs
+      - name: No real auth or Cloudflare deployment
+        run: |
+          echo 'Tested only anonymous HTTP GET/HEAD. Access users 0, no Supabase auth.'

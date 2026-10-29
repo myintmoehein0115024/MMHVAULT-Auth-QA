@@ -1,0 +1,99 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <meta name="robots" content="noindex,nofollow,noarchive">
+  <meta name="referrer" content="no-referrer">
+  <title>MMHVAULT AUTH QA · N10-A7.32 · LOCKED</title>
+  <link rel="stylesheet" href="./assets/locked-preview.css">
+  <script defer src="./assets/locked-preview.js"></script>
+</head>
+<body>
+<div class="ambient ambient-one" aria-hidden="true"></div>
+<div class="ambient ambient-two" aria-hidden="true"></div>
+<div class="shell">
+  <header class="topbar">
+    <div class="brand"><span class="brand-mark" aria-hidden="true">M</span><span>MMHVAULT <small>AUTH QA · N10-A7.32</small></span></div>
+    <div class="locale" role="group" aria-label="Language">
+      <button id="zh" type="button" class="active" aria-pressed="true">中文</button>
+      <button id="en" type="button" aria-pressed="false">EN</button>
+    </div>
+  </header>
+  <main>
+    <section class="hero">
+      <span class="eyebrow">INDEPENDENT QA · HOSTING PREVIEW</span>
+      <h1 data-zh="安全托管验收" data-en="Secure hosting review">安全托管验收</h1>
+      <p class="subtitle" data-zh="独立预览：所有认证、用户名绑定、验证码及服务端预检均未接入。" data-en="Independent preview: authentication, username binding, CAPTCHA and server preflight are not connected.">独立预览：所有认证、用户名绑定、验证码及服务端预检均未接入。</p>
+    </section>
+    <section class="glass lock-banner" aria-label="Locked authentication status">
+      <div class="lock-badge" aria-hidden="true">🔒</div>
+      <div class="banner-copy">
+        <strong data-zh="真实身份认证：硬锁关闭" data-en="Real authentication: HARD LOCKED">真实身份认证：硬锁关闭</strong>
+        <span data-zh="这个预览不连接 Supabase，也不存储账号、密码或令牌。" data-en="This preview does not connect to Supabase or store accounts, passwords, or tokens.">这个预览不连接 Supabase，也不存储账号、密码或令牌。</span>
+      </div>
+      <span class="status-pill danger">LOCKED</span>
+    </section>
+    <section class="grid-layout">
+      <div class="left-stack">
+        <article class="glass panel">
+          <div class="panel-top"><div><span class="overline">HOSTING ISOLATION</span><h2 data-zh="服务器安全响应头" data-en="Server security headers">服务器安全响应头</h2></div><span class="status-pill neutral">QA ONLY</span></div>
+          <dl class="specs">
+            <div><dt>CSP</dt><dd data-zh="HTTP 响应级（由托管验证）" data-en="HTTP response level (hosting verification)">HTTP 响应级（由托管验证）</dd></div>
+            <div><dt>NETWORK</dt><dd data-zh="外部连接：禁止" data-en="External connections: blocked">外部连接：禁止</dd></div>
+            <div><dt>STAGING</dt><dd>NOT CONNECTED</dd></div>
+            <div><dt>PRODUCTION</dt><dd data-zh="不连接 / 不修改" data-en="Not connected / unchanged">不连接 / 不修改</dd></div>
+          </dl>
+          <div class="separator"></div>
+          <div class="status-bar"><span class="status-dot" aria-hidden="true"></span><strong id="preview-status" role="status" aria-live="polite">NO AUTH REQUESTS</strong></div>
+          <p class="hint" data-zh="真实测试必须另行完成托管、CORS、Turnstile、密钥与审批核验。" data-en="Real tests require separate hosting, CORS, Turnstile, key and approval verification.">真实测试必须另行完成托管、CORS、Turnstile、密钥与审批核验。</p>
+        </article>
+        <article class="glass panel">
+          <div class="panel-top"><div><span class="overline">CONTROLLED ACCEPTANCE</span><h2 data-zh="验收路径预览" data-en="Acceptance flow preview">验收路径预览</h2></div><span class="status-pill neutral">G10 · G11</span></div>
+          <div class="flow-switch" role="tablist" aria-label="Acceptance mode">
+            <button type="button" role="tab" id="mode-login" aria-selected="true" class="selected" data-zh="G10 · 用户名登录" data-en="G10 · Username login">G10 · 用户名登录</button>
+            <button type="button" role="tab" id="mode-bind" aria-selected="false" data-zh="G11 · 绑定用户名" data-en="G11 · Bind username">G11 · 绑定用户名</button>
+          </div>
+          <div class="flow-detail"><h3 id="flow-heading" data-zh="验证已绑定账号" data-en="Verify linked account">验证已绑定账号</h3>
+            <p id="flow-description" data-zh="邮箱身份基准 → 用户名登录 → 同 UID/RLS → 本地退出。" data-en="Email baseline → Username login → Same UID/RLS → Local sign-out.">邮箱身份基准 → 用户名登录 → 同 UID/RLS → 本地退出。</p>
+          </div>
+          <div class="frozen-control">
+            <label for="locked-identity" data-zh="测试身份：禁用" data-en="Test identity: disabled">测试身份：禁用</label>
+            <input id="locked-identity" type="text" disabled placeholder="LOCKED" autocomplete="off">
+            <label for="locked-password" data-zh="测试密码：禁止输入" data-en="Test password: do not enter">测试密码：禁止输入</label>
+            <input id="locked-password" type="password" disabled placeholder="LOCKED" autocomplete="off">
+            <button id="real-run" type="button" disabled class="btn primary" data-zh="真实验收未授权" data-en="Real acceptance not authorized">真实验收未授权</button>
+            <p class="hint" data-zh="这里没有任何开启真实登录的功能。" data-en="There is no way to enable real sign-in from this preview.">这里没有任何开启真实登录的功能。</p>
+          </div>
+        </article>
+      </div>
+      <div class="right-stack">
+        <article class="glass panel">
+          <div class="panel-top"><div><span class="overline">EVIDENCE</span><h2 data-zh="身份和权限检查" data-en="Identity and permissions">身份和权限检查</h2></div></div>
+          <div class="result-item"><span data-zh="邮箱原账号认证" data-en="Existing email authentication">邮箱原账号认证</span><strong id="result-email">NOT RUN</strong></div>
+          <div class="result-item"><span data-zh="用户名绑定" data-en="Username binding">用户名绑定</span><strong id="result-bind">NOT RUN</strong></div>
+          <div class="result-item"><span data-zh="用户名登录" data-en="Username login">用户名登录</span><strong id="result-login">NOT RUN</strong></div>
+          <div class="result-item"><span data-zh="Auth UID 一致" data-en="Auth UID consistency">Auth UID 一致</span><strong id="result-uid">NOT RUN</strong></div>
+          <div class="result-item"><span data-zh="RLS 所属人检查" data-en="RLS owner validation">RLS 所属人检查</span><strong id="result-rls">NOT RUN</strong></div>
+          <div class="result-item"><span data-zh="最终本地退出" data-en="Final local sign-out">最终本地退出</span><strong id="result-logout">NOT RUN</strong></div>
+          <p class="hint" data-zh="浏览器预览和模拟结果永远不能替代真实 Staging 验收。" data-en="Browser previews and simulations cannot substitute for real Staging acceptance.">浏览器预览和模拟结果永远不能替代真实 Staging 验收。</p>
+        </article>
+        <article class="glass panel demo">
+          <div class="panel-top"><div><span class="overline">OFFLINE ONLY</span><h2 data-zh="安全反馈演示" data-en="Security feedback demo">安全反馈演示</h2></div><span class="status-pill neutral">MOCK</span></div>
+          <label for="scenario" data-zh="合成测试场景" data-en="Synthetic scenario">合成测试场景</label>
+          <select id="scenario">
+            <option value="closed" data-zh="窗口关闭 / 503" data-en="Window closed / 503">窗口关闭 / 503</option>
+            <option value="uid" data-zh="UID 不一致" data-en="UID mismatch">UID 不一致</option>
+            <option value="rls" data-zh="RLS 拒绝" data-en="RLS denied">RLS 拒绝</option>
+            <option value="logout" data-zh="退出清理失败" data-en="Cleanup failed">退出清理失败</option>
+          </select>
+          <button type="button" class="btn secondary" id="simulate" data-zh="运行离线模拟" data-en="Run offline simulation">运行离线模拟</button>
+          <div class="sim-result" role="status" id="sim-result" aria-live="polite" data-zh="尚未运行模拟。" data-en="No simulation run.">尚未运行模拟。</div>
+        </article>
+      </div>
+    </section>
+    <footer><span>MMHVAULT · N10-A7.32</span><span data-zh="独立安全托管预览 · 无真实凭据 · 不影响正式系统" data-en="Secure hosting preview only · No real credentials · Production unaffected">独立安全托管预览 · 无真实凭据 · 不影响正式系统</span></footer>
+  </main>
+</div>
+</body>
+</html>

@@ -1,0 +1,40 @@
+name: N10-A7.39-P8 post-expiry Staging fail-closed check
+on:
+  push:
+    branches: [n10-a7-3-staging-readonly-review]
+    paths:
+      - '.github/workflows/n10-a739-p8-postexpiry-closed.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  postexpiry-no-credentials:
+    runs-on: ubuntu-latest
+    timeout-minutes: 4
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Verify username auth remains disabled after expired UTC window
+        run: |
+          node <<'NODE'
+          const assert=require('node:assert/strict');
+          const url='https://ldivswlhtgmznzwhzsoi.supabase.co/functions/v1/mmh-n10a6-username';
+          const headers={Origin:'https://mmhvault-auth-g10g11-locked.pages.dev','Content-Type':'application/json'};
+          (async()=>{
+            const response=await fetch(url,{method:'POST',headers,
+              body:'{"action":"preflight"}',redirect:'error',
+              signal:AbortSignal.timeout(12000)});
+            assert.equal(response.status,200);
+            const data=await response.json();
+            assert.equal(data.code,'preflight_ok');
+            assert.equal(data.enabled,false);
+            assert.equal(data.registration_enabled,false);
+            assert.equal(data.scope,'isolated_staging_only');
+            console.log('POSTEXPIRY_STAGING_CLOSED '+JSON.stringify({
+              status:response.status,enabled:data.enabled,registration_enabled:data.registration_enabled,
+              noPasswordsOrTokensUsed:true
+            }));
+          })().catch(e=>{console.error('POSTEXPIRY_CHECK_FAILED '+e.message);process.exitCode=1});
+          NODE

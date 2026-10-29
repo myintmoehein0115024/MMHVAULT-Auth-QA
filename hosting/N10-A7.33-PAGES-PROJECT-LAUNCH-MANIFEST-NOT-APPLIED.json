@@ -1,0 +1,65 @@
+{
+  "phase": "N10-A7.33",
+  "kind": "REVIEW_ONLY_NOT_APPLIED",
+  "user_explicit_create_approval": false,
+  "cloud_mutation_allowed": false,
+  "deploy_allowed": false,
+  "accounts_approved_for_login": false,
+  "real_auth_allowed": false,
+  "proposed_project_name": "mmhvault-auth-qa-locked",
+  "host_type": "separate_cloudflare_pages_dev_domain",
+  "custom_domains": [],
+  "allowed_production_domains": [],
+  "cloudflare_account_id": "c864cb8b24ed8eb2def1dfcef2b588ca",
+  "github_repository": "myintmoehein0115024/MMHVAULT-Auth-QA",
+  "github_repository_id": "1433461198",
+  "github_owner_id": "155341280",
+  "github_ref": "n10-a7-3-staging-readonly-review",
+  "build": {
+    "runtime": "Node.js 22",
+    "root_dir": "/",
+    "command": "node hosting/N10-A7.32-build-quarantined-preview.cjs",
+    "output_dir": "qa/n10a732-preview-dist",
+    "no_auth_bundle": true,
+    "no_cloud_api_calls": true,
+    "no_external_connectivity": true
+  },
+  "source_proposal": {
+    "type": "github",
+    "repo_owner": "myintmoehein0115024",
+    "repo_name": "MMHVAULT-Auth-QA",
+    "production_branch": "n10-a7-3-staging-readonly-review",
+    "automatic_production_deployments": false,
+    "preview_deployments": "none",
+    "require_cloudflare_github_app_verification": true
+  },
+  "security_expectations": {
+    "csp_connect_src": "'none'",
+    "csp_frame_ancestors": "'none'",
+    "inputs_disabled": true,
+    "auth_results": "NOT RUN",
+    "g10_g11_status": "PENDING",
+    "staging_edge_origin_must_remain": "https://myintmoehein0115024.github.io",
+    "staging_edge_code_gate": false,
+    "staging_edge_window": "1970-01-01T00:00:00.000Z",
+    "staging_secrets_must_not_be_copied": true,
+    "cloudflare_secret_key_must_not_be_embedded": true,
+    "production_site_must_remain_untouched": true
+  },
+  "next_actions_requires_separate_user_approval": [
+    "create_one_new_cloudflare_pages_project",
+    "connect_qa_github_repository_or_choose_manual_upload",
+    "deploy_only_quarantined_locked_preview",
+    "validate_real_pages_dev_response_headers"
+  ],
+  "outside_scope": [
+    "configure_mmhvault.com",
+    "modify_prod_github_repo",
+    "change_supabase_staging_or_prod",
+    "turn_on_authentication",
+    "grant_real_account_access",
+    "write_cloudflare_turnstile_config",
+    "add_subdomain",
+    "add_real_credentials_or_secrets"
+  ]
+}

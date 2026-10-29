@@ -1,0 +1,15 @@
+{
+  "name": "mmhvault-n10-a728-real-sdk-isolated-qa",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Synthetic-only Supabase Auth SDK isolated QA; never deploy",
+  "scripts": {
+    "test:auth": "node --test --test-concurrency=1 ../../tests/N10-A7.28-real-sdk-isolated.test.cjs"
+  },
+  "dependencies": {
+    "@supabase/supabase-js": "2.118.0"
+  },
+  "engines": {
+    "node": ">=22 <25"
+  }
+}

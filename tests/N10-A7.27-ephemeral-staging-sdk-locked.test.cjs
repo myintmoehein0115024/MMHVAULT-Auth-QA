@@ -215,7 +215,7 @@ test('restricted Edge transport refuses other projects and additional auth actio
 });
 test('facade blocks signOut scope global and all non-Owner data tables',async()=>{
  const h=harness(),r=h.make();
- await assert.rejects(()=>r.client.auth.signOut({scope:'global'}));
+ assert.throws(()=>r.client.auth.signOut({scope:'global'}));
  assert.throws(()=>r.client.from('transactions'));
  assert.throws(()=>r.client.from('mmh_n10a6_username_links'));
  assert.equal(h.events.filter(x=>x.type==='sdk_logout').length,0);

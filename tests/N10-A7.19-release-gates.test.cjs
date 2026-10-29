@@ -25,8 +25,8 @@ test('production and staging refs are distinct and immutable in manifest',()=>{
  assert.notEqual(manifest.scope.production_supabase,manifest.scope.staging_supabase);
 });
 test('actual official login/app SHA baselines frozen',()=>{
- assert.equal(manifest.current_baseline['login.html'],'1183791db8cfad73ff740e96e157785f49a679b3');
- assert.equal(manifest.current_baseline['app.html'],'e4072fca7cc7a4096887be5feff9a78c92fb8346');
+ assert.equal(manifest.current_baseline['login.html'],'69b1ae5eeb621af3fff72d26e71c76ddae9f01a7');
+ assert.equal(manifest.current_baseline['app.html'],'4abf71a70ad3c1f3388de2418e219ab13ba2d330');
 });
 test('small initial release scope only login.html and optional NEW JS/CSS',()=>{
  assert.deepEqual(manifest.candidate_minimal_paths.modify,['login.html']);
@@ -39,7 +39,8 @@ test('financial and PWA sources protected from direct modification',()=>{
 });
 test('staging username main remains code-closed with 1970 expiry',()=>{
  const s=manifest.staging_state;
- assert.equal(s.username_edge_version,11);
+ assert.equal(s.username_edge_version,17);
+ assert.equal(s.closure_sha256,'caddafb86a553f012f601af375d6c89885b88dcf2f708238a839c3d348130b4e');
  assert.equal(s.code_gate_open,false);
  assert.equal(s.window_start,'1970-01-01T00:00:00.000Z');
  assert.equal(s.window_end,'1970-01-01T00:00:00.000Z');
@@ -58,7 +59,8 @@ test('registration and auth-side CAPTCHA remain blocked until actual verified si
  assert.ok(manifest.gates.find(g=>g.id==='G12').name.includes('CAPTCHA'));
 });
 test('production E2E and financial regressions remain required, not inferred from mocks',()=>{
- for(const id of ['G10','G11','G15','G16','G17','G19'])
+ assert.equal(manifest.gates.find(g=>g.id==='G10').status,'pass','real existing-username login was accepted in bounded Staging');
+ for(const id of ['G11','G12','G13','G14','G15','G16','G17','G18','G19'])
   assert.equal(manifest.gates.find(g=>g.id===id).status,'pending');
 });
 test('production deploy R6 requires explicit separate authorization gate G19',()=>{

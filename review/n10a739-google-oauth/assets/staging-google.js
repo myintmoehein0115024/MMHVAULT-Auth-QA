@@ -116,10 +116,10 @@
      if(typeof payload?.access_token!=='string'||payload.access_token.length<30)
        throw Error('no_valid_access_token');
      access=payload.access_token;
-     $('google-status').textContent='PASS';
      await proveOwner(access);
      const loggedOut=await localLogout(access);access=null;
      if(!loggedOut)throw Error('logout_unconfirmed');
+     $('google-status').textContent='PASS';
      $('owner-status').textContent='PASS';
      display('pass','Google OAuth + 现有账号 UID/RLS 所属关系 + 本地退出：PASS。');
    }catch(error){

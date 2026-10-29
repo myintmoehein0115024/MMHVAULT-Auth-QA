@@ -1,0 +1,29 @@
+name: N10-A7.39-P3 real Staging OPTIONS before private host migration
+on:
+  push:
+    branches: [n10-a7-3-staging-readonly-review]
+    paths:
+      - 'tests/N10-A7.39-P3-LIVE-EDGE-OPTIONS-BEFORE-MIGRATION.test.cjs'
+      - '.github/workflows/n10-a739-p3-live-options-before-migration.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  read-only-edge-preflight:
+    runs-on: ubuntu-latest
+    timeout-minutes: 6
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Verify source has no real credential operations
+        run: |
+          node --check tests/N10-A7.39-P3-LIVE-EDGE-OPTIONS-BEFORE-MIGRATION.test.cjs
+          grep -q 'const CODE_GATE_OPEN = false;' review/N10-A7.39-P3-STAGING-EDGE-CORS-SDK-CLOSED-NEVER-DEPLOY.ts
+          grep -q 'const REAL_AUTH_ENABLED=false' review/n10a737-credential-qa-LOCKED/assets/auth-qa.js
+      - name: Test currently deployed Staging with only anonymous OPTIONS
+        run: node --test --test-concurrency=1 tests/N10-A7.39-P3-LIVE-EDGE-OPTIONS-BEFORE-MIGRATION.test.cjs
+      - name: No user operations, no QA deploy
+        run: |
+          echo 'No credentials, no service role key, no POST, no cloud mutations.'

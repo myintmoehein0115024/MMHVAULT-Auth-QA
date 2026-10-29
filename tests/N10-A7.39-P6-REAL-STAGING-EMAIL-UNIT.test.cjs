@@ -60,7 +60,7 @@ function fakeApp({origin=QA,credentialsOK=true,probeOK=true,logoutOK=true,prefli
   document:mockDocument,fetch:fetchNext,AbortController,Promise,
   setTimeout:()=>2,clearTimeout:()=>{}};
  vm.runInNewContext(fs.readFileSync(path.join(root,'assets/staging-auth.js'),'utf8'),globals,{timeout:3000});
- async function submit(form){const fn=handlers[form+':submit];assert.equal(typeof fn,'function');fn({preventDefault(){}});
+ async function submit(form){const fn=handlers[form+':submit'];assert.equal(typeof fn,'function');fn({preventDefault(){}});
   for(let i=0;i<25;i++)await new Promise(resolve=>setImmediate(resolve));
  }
  return{calls,elements,handlers,submit};

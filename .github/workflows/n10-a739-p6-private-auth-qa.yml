@@ -1,0 +1,40 @@
+name: N10-A7.39 P6 private Staging real login integration unit and CSP
+on:
+  push:
+    branches: [n10-a7-3-staging-readonly-review]
+    paths:
+      - 'review/n10a739-live-staging-qa/**'
+      - 'review/N10-A7.39-P6-build-staging-auth-ACCESS-ONLY.cjs'
+      - 'tests/N10-A7.39-P6-REAL-STAGING-EMAIL-UNIT.test.cjs'
+      - '.github/workflows/n10-a739-p6-private-auth-qa.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  live-email-code-isolated-qa:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Check input and preview hardlocks before any deployment
+        run: |
+          node --check review/n10a739-live-staging-qa/assets/staging-auth.js
+          node --check review/N10-A7.39-P6-build-staging-auth-ACCESS-ONLY.cjs
+          node --check tests/N10-A7.39-P6-REAL-STAGING-EMAIL-UNIT.test.cjs
+          grep -q 'const CODE_GATE_OPEN = false;' review/N10-A7.39-P3-STAGING-EDGE-CORS-SDK-CLOSED-NEVER-DEPLOY.ts
+          grep -q 'const REAL_AUTH_ENABLED=false;' review/n10a737-credential-qa-LOCKED/assets/auth-qa.js
+      - name: Test Staging email UID RLS local logout and username disabled
+        run: node --test --test-concurrency=1 tests/N10-A7.39-P6-REAL-STAGING-EMAIL-UNIT.test.cjs
+      - name: Upload ready-to-review static Access QA build only
+        uses: actions/upload-artifact@v4
+        with:
+          name: N10-A7.39-P6-PRIVATE-STAGING-REAL-EMAIL-QA
+          path: qa/n10a737-preview-dist/
+          retention-days: 7
+          if-no-files-found: error
+      - name: No actual passwords were used
+        run: |
+          echo 'Only synthetic credentials and the Staging publishable API key are in this build.'

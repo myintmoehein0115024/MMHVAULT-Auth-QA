@@ -1,0 +1,35 @@
+name: N10-A7.39-P1 empty private Pages & dedicated Turnstile Access guard
+on:
+  push:
+    branches: [n10-a7-3-staging-readonly-review]
+    paths:
+      - 'review/N10-A7.39-P1-*'
+      - 'integration/N10-A7.39-P1-access-guard-NEVER-DEPLOY.cjs'
+      - 'tests/N10-A7.39-P1-access-guard-NEVER-DEPLOY.test.cjs'
+      - '.github/workflows/n10-a739-p1-private-access-locked.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  private-qa-access-blocked:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Enforce no deploy, no real auth and no production
+        run: |
+          grep -q 'const CLOUD_DEPLOYMENT_ALLOWED=false' integration/N10-A7.39-P1-access-guard-NEVER-DEPLOY.cjs
+          grep -q 'const REAL_AUTH_ALLOWED=false' integration/N10-A7.39-P1-access-guard-NEVER-DEPLOY.cjs
+          grep -q 'const STAGING_EDGE_MUTATION_ALLOWED=false' integration/N10-A7.39-P1-access-guard-NEVER-DEPLOY.cjs
+          grep -q 'const TURNSTILE_SECRET_EXPORT_ALLOWED=false' integration/N10-A7.39-P1-access-guard-NEVER-DEPLOY.cjs
+          grep -q 'const PROD_MUTATION_ALLOWED=false' integration/N10-A7.39-P1-access-guard-NEVER-DEPLOY.cjs
+          grep -q 'const CODE_GATE_OPEN = false;' review/N10-A7.39-P1-EDGE-ISOLATED-HOST-CLOSED-NEVER-DEPLOY.ts
+          node --check integration/N10-A7.39-P1-access-guard-NEVER-DEPLOY.cjs
+          node --check tests/N10-A7.39-P1-access-guard-NEVER-DEPLOY.test.cjs
+      - name: Run offline Access activation blocker and isolated-staging tests
+        run: node --test --test-concurrency=1 tests/N10-A7.39-P1-access-guard-NEVER-DEPLOY.test.cjs
+      - name: Never deploy Pages or enable real auth
+        run: echo 'P1: 0 deployed private QA pages; Access is not enabled, all real G10/G11 remains blocked.'

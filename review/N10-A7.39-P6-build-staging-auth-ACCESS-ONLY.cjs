@@ -22,7 +22,7 @@ assert.match(js,/credentials:'omit'/);
 assert.match(js,/redirect:'error'/);
 assert.match(js,/pathAllowed\(path\)/);
 assert.match(js,/signOutLocal\(secret\)/);
-assert.match(js,/data\?\.enabled===true/);
+assert.match(js,/v\?\.enabled===true/);
 assert.doesNotMatch(js,/localStorage|sessionStorage|service_role|sb_secret_|vrypucmyrztxgiqhjspd/);
 assert.doesNotMatch(js,/auth\/v1\/signup|\/auth\/v1\/admin|https:\/\/mmhvault\.com/);
 assert.doesNotMatch(html,/register-submit|resetPasswordForEmail|action="https:\/\/|Google.*<button[^>]*[^ ]disabled=/);

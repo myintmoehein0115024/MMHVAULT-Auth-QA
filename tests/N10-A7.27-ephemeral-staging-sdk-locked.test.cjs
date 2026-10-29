@@ -103,8 +103,9 @@ function harness({logoutError=false,sessionSticks=false,creationError=false,
    }};
   }};
  };
+ let bridgeInstance=null;
  const make=(unlocked=true,overrides={})=>{
-  const bridge=moduleFrom(CODE,'const STAGING_SDK_BOOTSTRAP_ENABLED=false',unlocked);
+  const bridge=bridgeInstance||(bridgeInstance=moduleFrom(CODE,'const STAGING_SDK_BOOTSTRAP_ENABLED=false',unlocked));
   return bridge.createIsolatedStagingSdk({cfg:overrides.cfg||cfg,origin:overrides.origin||ORIGIN,
     createClient,fetcher:transport,randomUUID:()=>fakeUUID});
  };

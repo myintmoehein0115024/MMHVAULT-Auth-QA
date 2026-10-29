@@ -190,8 +190,18 @@
   if(busy)return;
   busy=true;lockInputs(true);
   setState('checking','正在执行隔离的 Staging 测试，不会保存密码或令牌……');
-  try{await task()}catch{
-    setState('blocked','本次 Staging 认证或安全检查未通过；已尝试清理本地会话。不要将其视为成功。');
+  try{await task()}catch(err){
+    // No server response, token, email, password, or raw exception in the UI.
+    const label=String(err?.message||'');
+    let safe='连接或安全校验失败；本次不能标记 PASS。';
+    if(label==='invalid_test_input')safe='请输入正确的 Staging 测试邮箱和测试密码。';
+    else if(label==='staging_email_login_failed')safe='邮箱密码认证未通过；请确认使用的是 Staging 测试密码，而非 Gmail 或正式站密码。';
+    else if(label==='missing_staging_access_token')safe='Staging 已回应，但未取得有效的会话令牌；未执行 UID/RLS 验收。';
+    else if(label==='user_identity_unavailable'||label==='unverified_staging_user')safe='邮箱登录后，Staging 身份资料核验未通过；已尝试本地退出。';
+    else if(label==='owner_rls_unavailable'||label==='uid_rls_mismatch')safe='邮箱登录后，UID/RLS 所属关系核验未通过；已尝试本地退出。';
+    else if(label==='local_logout_unconfirmed')safe='UID/RLS 已检查，但本地退出未确认；请关闭本测试页面，不能标记 PASS。';
+    else if(label==='staging_username_login_failed'||label==='test_window_closed')safe='用户名测试窗口或验证码校验未通过；未完成真实验收。';
+    setState('blocked',safe+'（不会记录密码或令牌。）');
   }finally{busy=false;lockInputs(false)}
  }
  $('email-form').addEventListener('submit',e=>{e.preventDefault();void guarded(emailLogin)});

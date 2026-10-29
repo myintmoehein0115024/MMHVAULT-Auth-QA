@@ -1,0 +1,29 @@
+name: N10-A7.39-P2 Access SameSite Lax post-fix anonymous audit
+on:
+  push:
+    branches: [n10-a7-3-staging-readonly-review]
+    paths:
+      - '.github/workflows/n10-a739-p2-access-samesite-lax-audit.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  test-anonymous-qa-access-after-cookie-fix:
+    runs-on: ubuntu-latest
+    timeout-minutes: 7
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Verify credential UI still hard-locked and CSP blocks Staging network
+        run: |
+          grep -q 'const REAL_AUTH_ENABLED=false' review/n10a737-credential-qa-LOCKED/assets/auth-qa.js
+          grep -q 'const REAL_REGISTRATION_ENABLED=false' review/n10a737-credential-qa-LOCKED/assets/auth-qa.js
+          grep -q 'const REAL_RESET_ENABLED=false' review/n10a737-credential-qa-LOCKED/assets/auth-qa.js
+          grep -q "connect-src 'none'" review/n10a737-credential-qa-LOCKED/_headers
+      - name: Recheck anonymous HTTP Access redirects on QA root and deployment alias
+        run: node --test --test-concurrency=1 tests/N10-A7.39-P2-POST-DEPLOY-ACCESS-HTTPS-READONLY.test.cjs
+      - name: Confirm this test did not authenticate or deploy
+        run: |
+          echo '13 anonymous read-only tests; no tokens, no Supabase auth, no Cloudflare writes.'

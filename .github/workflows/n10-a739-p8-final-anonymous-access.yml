@@ -1,0 +1,42 @@
+name: N10-A7.39-P8 final Google page anonymous Access protection
+on:
+  push:
+    branches: [n10-a7-3-staging-readonly-review]
+    paths:
+      - '.github/workflows/n10-a739-p8-final-anonymous-access.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  verify-google-callback-access:
+    runs-on: ubuntu-latest
+    timeout-minutes: 6
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Verify deployed Google callback and assets remain private
+        run: |
+          node <<'NODE'
+          const assert=require('node:assert/strict');
+          const hosts=['mmhvault-auth-g10g11-locked.pages.dev',
+            '7a725d04.mmhvault-auth-g10g11-locked.pages.dev'];
+          const paths=['/staging-google','/staging-google.html','/assets/staging-google.js'];
+          (async()=>{
+            let count=0;
+            for(const host of hosts)for(const path of paths)for(const method of ['GET','HEAD']){
+              const res=await fetch('https://'+host+path,{method,redirect:'manual',
+                signal:AbortSignal.timeout(10000),
+                headers:{'User-Agent':'MMHVAULT-P8-ANONYMOUS-PROTECTED-QA'}});
+              const location=res.headers.get('location')||'';
+              assert.equal(res.status,302,host+path);
+              const destination=new URL(location,'https://'+host);
+              assert.ok(destination.hostname.endsWith('.cloudflareaccess.com'));
+              assert.ok(destination.pathname.startsWith('/cdn-cgi/access/login/'));
+              count++;
+            }
+            console.log('P8_ACCESS_ANON_VERIFIED '+JSON.stringify({requests:count,
+              allRedirectedToCloudflareAccess:true,noOAuthCredentialsUsed:true}));
+          })().catch(e=>{console.error('P8_ANON_BLOCKER '+e.message);process.exitCode=1});
+          NODE

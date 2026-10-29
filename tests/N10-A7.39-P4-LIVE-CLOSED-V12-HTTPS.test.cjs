@@ -38,7 +38,7 @@ function call(origin,method='OPTIONS',payload,extra={}){
 function secureHeaders(r){
  assert.equal(r.headers['cache-control'],'no-store, private, max-age=0');
  assert.equal(r.headers['x-content-type-options'],'nosniff');
- assert.equal(r.headers['vary'],'Origin');
+ assert.ok(String(r.headers['vary']||'').split(',').map(x=>x.trim().toLowerCase()).includes('origin'),'Vary must include Origin');
  assert.equal(r.headers['access-control-allow-credentials'],undefined);
 }
 test('allowed private QA HTTPS OPTIONS returns 204 with x-client-info',async()=>{

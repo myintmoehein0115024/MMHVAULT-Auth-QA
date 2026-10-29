@@ -5,6 +5,7 @@ on:
     paths:
       - 'qa/n10-a728-real-sdk/package.json'
       - 'tests/N10-A7.28-real-sdk-isolated.test.cjs'
+      - 'tests/N10-A7.28-real-sdk-browser.test.cjs'
       - 'integration/N10-A7.23-real-username-acceptance-LOCKED.cjs'
       - 'integration/N10-A7.24-supabase-browser-adapter-REVIEW-LOCKED.cjs'
       - 'integration/N10-A7.27-staging-ephemeral-sdk-LOCKED.cjs'
@@ -33,10 +34,11 @@ jobs:
         run: |
           node --check integration/N10-A7.27-staging-ephemeral-sdk-LOCKED.cjs
           node --check tests/N10-A7.28-real-sdk-isolated.test.cjs
+          node --check tests/N10-A7.28-real-sdk-browser.test.cjs
           grep -q 'const ALLOW_REAL_OPERATIONS=false' integration/N10-A7.23-real-username-acceptance-LOCKED.cjs
           grep -q 'const STAGING_ADAPTER_ENABLED=false' integration/N10-A7.24-supabase-browser-adapter-REVIEW-LOCKED.cjs
           grep -q 'const STAGING_SDK_BOOTSTRAP_ENABLED=false' integration/N10-A7.27-staging-ephemeral-sdk-LOCKED.cjs
-          node --test --test-concurrency=1 tests/N10-A7.28-real-sdk-isolated.test.cjs
+          node --test --test-concurrency=1 tests/N10-A7.28-real-sdk-isolated.test.cjs tests/N10-A7.28-real-sdk-browser.test.cjs
       - name: Commit exact generated package-lock to isolated QA review branch only
         run: |
           git add qa/n10-a728-real-sdk/package-lock.json

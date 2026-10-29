@@ -268,3 +268,22 @@ test('integration stops if Staging window closes mid-sequence; never binds',asyn
  assert.equal(h.events.filter(e=>e.type==='fetch'&&e.url===EDGE&&JSON.parse(e.body).action==='bind').length,0);
  assert.equal(h.active,false);await bridge.close();
 });
+
+test('N10-A7.27 closed session refuses all further facade and Edge operations',async()=>{
+ const h=harness(),r=h.make();
+ assert.equal((await r.close()).ok,true);
+ assert.throws(()=>r.client.auth.signInWithPassword(USER),/qa_session_closed/);
+ assert.throws(()=>r.client.auth.getUser(),/qa_session_closed/);
+ assert.throws(()=>r.client.auth.getSession(),/qa_session_closed/);
+ assert.throws(()=>r.client.auth.setSession({access_token:'FAKE',refresh_token:'FAKE'}),/qa_session_closed/);
+ assert.throws(()=>r.client.from('mmh_n10a6_auth_owner_probe'),/qa_session_closed/);
+ assert.throws(()=>r.transport(EDGE,{method:'POST',mode:'cors',credentials:'omit',
+  body:'{"action":"login"}'}),/qa_session_closed/);
+});
+test('N10-A7.27 prevents concurrent close from falsely claiming completion',async()=>{
+ const h=harness(),r=h.make();
+ const first=r.close(),second=await r.close();
+ assert.equal(second.ok,false);assert.equal(second.code,'close_in_progress');
+ const completed=await first;assert.equal(completed.ok,true);
+ assert.equal((await r.close()).code,'already_closed');
+});

@@ -6,6 +6,8 @@ on:
       - 'integration/N10-A7.31-host-and-edge-evidence-LOCKED.cjs'
       - 'hosting/N10-A7.31-CLOUDFLARE-PAGES-HEADERS-REVIEW.txt'
       - 'tests/N10-A7.31-host-and-edge-readiness.test.cjs'
+      - 'integration/N10-A7.31-closure-reconciliation-LOCKED.cjs'
+      - 'tests/N10-A7.31-closure-reconciliation.test.cjs'
       - 'tests/N10-A7.31-public-qa-head-READONLY.cjs'
       - '.github/workflows/n10-a731-hosting-evidence-audit.yml'
   workflow_dispatch:
@@ -31,8 +33,11 @@ jobs:
           grep -q 'const ALLOW_REAL_STAGING_SIGNOFF=false' integration/N10-A7.31-host-and-edge-evidence-LOCKED.cjs
           node --check integration/N10-A7.31-host-and-edge-evidence-LOCKED.cjs
           node --check tests/N10-A7.31-host-and-edge-readiness.test.cjs
+          grep -q 'const ALLOW_ROLLBACK_EXECUTION=false' integration/N10-A7.31-closure-reconciliation-LOCKED.cjs
+          node --check integration/N10-A7.31-closure-reconciliation-LOCKED.cjs
+          node --check tests/N10-A7.31-closure-reconciliation.test.cjs
           node --check tests/N10-A7.31-public-qa-head-READONLY.cjs
       - name: Run offline negative cases against hosting CSP and release gate
-        run: node --test --test-concurrency=1 tests/N10-A7.31-host-and-edge-readiness.test.cjs
+        run: node --test --test-concurrency=1 tests/N10-A7.31-host-and-edge-readiness.test.cjs tests/N10-A7.31-closure-reconciliation.test.cjs
       - name: Fetch existing public LOCKED QA page response headers only
         run: node tests/N10-A7.31-public-qa-head-READONLY.cjs

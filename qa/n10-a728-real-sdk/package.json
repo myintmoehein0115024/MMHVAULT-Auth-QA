@@ -4,12 +4,17 @@
   "private": true,
   "description": "Synthetic-only Supabase Auth SDK isolated QA; never deploy",
   "scripts": {
-    "test:auth": "node --test --test-concurrency=1 ../../tests/N10-A7.28-real-sdk-isolated.test.cjs"
+    "test:auth": "node --test --test-concurrency=1 ../../tests/N10-A7.28-real-sdk-isolated.test.cjs",
+    "test:browser": "node --test --test-concurrency=1 ../../tests/N10-A7.28-real-sdk-browser.test.cjs"
   },
   "dependencies": {
     "@supabase/supabase-js": "2.118.0"
   },
   "engines": {
     "node": ">=22 <25"
+  },
+  "devDependencies": {
+    "esbuild": "0.25.12",
+    "playwright-core": "1.56.1"
   }
 }

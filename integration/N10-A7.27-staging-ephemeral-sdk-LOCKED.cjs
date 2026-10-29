@@ -131,7 +131,8 @@ function createIsolatedStagingSdk({cfg,origin,createClient,fetcher,randomUUID}={
   try{
    const logout=await auth.signOut({scope:'local'});
    if(logout?.error)throw Error('logout_rejected');
-   const session=await facade.auth.getSession();
+   // Teardown must bypass public facade's closing guard while verifying SDK state.
+   const session=await auth.getSession();
    if(session?.error||session?.data?.session)throw Error('session_remains');
    confirmed=true;
   }catch{confirmed=false}

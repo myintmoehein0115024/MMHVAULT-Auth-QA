@@ -1,0 +1,36 @@
+name: N10-A7.33 Pages prelaunch manifest security gate (no cloud writes)
+on:
+  push:
+    branches: [n10-a7-3-staging-readonly-review]
+    paths:
+      - 'hosting/N10-A7.33-PAGES-PROJECT-LAUNCH-MANIFEST-NOT-APPLIED.json'
+      - 'hosting/n10a732-preview/**'
+      - 'hosting/N10-A7.32-build-quarantined-preview.cjs'
+      - 'tests/N10-A7.33-pages-prelaunch.test.cjs'
+      - '.github/workflows/n10-a733-pages-prelaunch.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  manifest-isolation-and-locked-static:
+    runs-on: ubuntu-latest
+    timeout-minutes: 6
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Check manifest remains not approved and no Cloudflare deployment capability
+        run: |
+          node --check tests/N10-A7.33-pages-prelaunch.test.cjs
+          node --check hosting/N10-A7.32-build-quarantined-preview.cjs
+          grep -q '"kind": "REVIEW_ONLY_NOT_APPLIED"' hosting/N10-A7.33-PAGES-PROJECT-LAUNCH-MANIFEST-NOT-APPLIED.json
+          grep -q '"user_explicit_create_approval": false' hosting/N10-A7.33-PAGES-PROJECT-LAUNCH-MANIFEST-NOT-APPLIED.json
+          grep -q '"cloud_mutation_allowed": false' hosting/N10-A7.33-PAGES-PROJECT-LAUNCH-MANIFEST-NOT-APPLIED.json
+          grep -q '"deploy_allowed": false' hosting/N10-A7.33-PAGES-PROJECT-LAUNCH-MANIFEST-NOT-APPLIED.json
+      - name: Run release manifest negative tests and exact locked build verification
+        run: node --test --test-concurrency=1 tests/N10-A7.33-pages-prelaunch.test.cjs
+      - name: No Cloudflare deployment is performed
+        run: |
+          echo 'N10-A7.33 project CREATE NOT authorized; no Pages project has been created.'
+          echo 'Cloudflare Pages deployment was NOT invoked. Official mmhvault.com is untouched.'

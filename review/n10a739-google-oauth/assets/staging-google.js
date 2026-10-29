@@ -7,7 +7,7 @@
 (() => {
  const ORIGIN='https://mmhvault-auth-g10g11-locked.pages.dev';
  const BASE='https://ldivswlhtgmznzwhzsoi.supabase.co';
- const CALLBACK=ORIGIN+'/staging-google.html';
+ const CALLBACK=ORIGIN+'/staging-google';
  const EXISTING_EMAIL='haochen05024@gmail.com';
  const PUBLISHABLE='sb_publishable_LxIB8564OZD48HQ8Mfsc0A_apkgERZo';
  const PKCE_SLOT='mmhv-p8-staging-google-pkce-v1';

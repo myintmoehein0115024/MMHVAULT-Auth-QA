@@ -28,6 +28,7 @@ function fixture(opts={}){
    events.push('email_auth');
    if(arg?.email!==USER.email||arg.password!==USER.password||opts.emailFails)return errorFor('bad_password');
    active=true;currentUid=UID;
+   if(opts.emailThrowsAfterSession)throw Error('synthetic_sdk_failure_after_session');
    return {data:{user:{id:UID}}};
   },
   async getUser(){
@@ -78,7 +79,8 @@ function fixture(opts={}){
    preflightCount++;
    const enabled=!(opts.closed||opts.closeOnSecond&&preflightCount>=2||opts.closeOnThird&&preflightCount>=3);
    return {status:200,async json(){return {code:'preflight_ok',enabled,
-    registration_enabled:!!opts.registrationEnabled,scope:'isolated_staging_only'}}};
+    registration_enabled:!!(opts.registrationEnabled||opts.registrationTurnsOnAt===preflightCount),
+    scope:'isolated_staging_only'}}};
   }
   if(data.action==='bind'){
    events.push('bind_edge');
@@ -266,4 +268,21 @@ test('final signOut silently leaves session active: MUST reject PASS and retry c
  assert.ok(![...r.steps].includes('final_local_logout_pass'));
  assert.equal(f.events.filter(x=>x==='sign_out_local').length,3);
  assert.equal(f.active,false);
+});
+
+test('N10-A7.27 registration reopening on second preflight blocks bind',async()=>{
+ const f=fixture({registrationTurnsOnAt:2}),r=await f.build();
+ assert.equal(r.code,'server_window_closed');assert.equal(f.bindUsed,false);
+ assert.equal(f.events.includes('bind_edge'),false);assert.equal(f.active,false);
+});
+test('N10-A7.27 registration reopening after binding blocks username login',async()=>{
+ const f=fixture({registrationTurnsOnAt:3}),r=await f.build();
+ assert.equal(r.code,'server_window_closed');assert.equal(f.bindUsed,true);
+ assert.equal(f.events.includes('username_edge'),false);assert.equal(f.active,false);
+});
+test('N10-A7.27 SDK throws after session creation: clean up despite no success response',async()=>{
+ const f=fixture({emailThrowsAfterSession:true}),r=await f.build();
+ assert.equal(r.ok,false);assert.equal(f.active,false);
+ assert.equal(f.events.includes('sign_out_local'),true);
+ assert.equal(f.events.includes('bind_edge'),false);
 });

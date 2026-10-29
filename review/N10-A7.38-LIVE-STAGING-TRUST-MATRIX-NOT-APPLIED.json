@@ -1,0 +1,95 @@
+{
+  "phase": "N10-A7.38",
+  "kind": "READ_ONLY_LIVE_EVIDENCE_NOT_APPLIED",
+  "observed_at_utc": "2026-10-29",
+  "user_has_approved_real_auth_window": false,
+  "allow_staging_change": false,
+  "allow_cloudflare_turnstile_widget_change": false,
+  "allow_open_registration": false,
+  "allow_real_login": false,
+  "allow_production_deploy": false,
+  "allow_secret_rotation": false,
+  "staging": {
+    "project_id": "ldivswlhtgmznzwhzsoi",
+    "edge_slug": "mmh-n10a6-username",
+    "edge_version": 11,
+    "edge_source_sha256": "0352514a17a62da58fbebea97ac0c570d6cf4bfcc50dc78bb7bdedc3774479e7",
+    "origin": "https://myintmoehein0115024.github.io",
+    "captcha_hostname": "myintmoehein0115024.github.io",
+    "code_gate_open": false,
+    "window_start_utc": "1970-01-01T00:00:00.000Z",
+    "window_end_utc": "1970-01-01T00:00:00.000Z",
+    "enabled_secret_state": "UNKNOWN_NOT_READABLE",
+    "auth_users": 2,
+    "username_aliases": 1,
+    "owner_probe_rows": 2,
+    "throttle_rows": 3
+  },
+  "cloudflare": {
+    "qa_project": "mmhvault-auth-qa-locked",
+    "qa_host": "mmhvault-auth-qa-locked.pages.dev",
+    "qa_origin": "https://mmhvault-auth-qa-locked.pages.dev",
+    "custom_domains": [],
+    "source_repo": "myintmoehein0115024/MMHVAULT-Auth-QA",
+    "production_branch": "n10-a7-3-staging-readonly-review",
+    "deployments_enabled": false,
+    "production_deployments_enabled": false,
+    "preview_deployment_setting": "none",
+    "successful_deployment_commit": "b99e5b10fa0ee68aa02a9f6f8a6b0d1397ba50cc",
+    "last_known_successful_count": 1,
+    "last_known_queued_idle_count": 7
+  },
+  "turnstile": {
+    "widget_name": "MMHVAULT-Username-Staging",
+    "mode": "managed",
+    "sitekey_suffix_for_identification": "AP1TUxjr",
+    "configured_allowed_hostnames": [
+      "myintmoehein0115024.github.io"
+    ],
+    "proposed_host": "mmhvault-auth-qa-locked.pages.dev",
+    "proposed_host_allowed": false,
+    "secret_available_to_client": false,
+    "secret_current_value_status": "NOT_READ",
+    "real_widget_siteverify_test": "NOT_RUN"
+  },
+  "diagnostic": {
+    "function_slug": "mmh-n10a15-siteverify-qa",
+    "version": 2,
+    "verify_jwt": true,
+    "expires_utc": "2026-10-30T17:00:00.000Z",
+    "status": "NOT_RENEWED",
+    "required_for_main_username_login": false
+  },
+  "blockers": [
+    "turnstile_qa_hostname_not_allowed",
+    "staging_edge_qa_origin_not_allowed",
+    "staging_browser_sdk_qa_origin_not_allowed",
+    "credential_qa_html_still_disabled",
+    "credential_qa_csp_disallows_network",
+    "code_and_utc_window_closed",
+    "enabled_secret_unverified",
+    "live_g10_g11_unapproved"
+  ],
+  "do_not_change": [
+    "https://mmhvault.com",
+    "https://www.mmhvault.com",
+    "vrypucmyrztxgiqhjspd",
+    "formal_github_repository",
+    "production_auth_users",
+    "production_financial_data"
+  ],
+  "next_gates": [
+    "separate_turnstile_widget_hostname_approval",
+    "staging_edge_origin_and_hostname_change_approval",
+    "separate_credential_enabled_qa_page_security_review",
+    "window_max_15_minutes_utc_with_named_existing_staging_test_user",
+    "secret_and_roll_back_evidence",
+    "same_uid_rls_and_local_signout_real_checks"
+  ],
+  "acceptance": {
+    "g10": "PENDING",
+    "g11": "PENDING",
+    "release_ready": false,
+    "production": "BLOCKED"
+  }
+}

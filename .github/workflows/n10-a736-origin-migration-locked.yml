@@ -1,0 +1,43 @@
+name: N10-A7.36 Staging Pages origin migration CLOSED candidate CI
+on:
+  push:
+    branches: [n10-a7-3-staging-readonly-review]
+    paths:
+      - 'review/N10-A7.36-staging-edge-pages-origin-CLOSED-REVIEW-ONLY.ts'
+      - 'review/N10-A7.36-build-browser-candidates-LOCKED.cjs'
+      - 'tests/N10-A7.36-origin-migration-locked.test.cjs'
+      - '.github/workflows/n10-a736-origin-migration-locked.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  no-cloud-access-candidate-tests:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Verify original global gates and new candidate generator gate
+        run: |
+          grep -q 'const ALLOW_ORIGIN_PATCH_DEPLOYMENT=false' review/N10-A7.36-build-browser-candidates-LOCKED.cjs
+          grep -q 'const CODE_GATE_OPEN = false;' review/N10-A7.36-staging-edge-pages-origin-CLOSED-REVIEW-ONLY.ts
+          grep -q "const WINDOW_START_UTC = '1970-01-01T00:00:00.000Z';" review/N10-A7.36-staging-edge-pages-origin-CLOSED-REVIEW-ONLY.ts
+          grep -q "const WINDOW_END_UTC = '1970-01-01T00:00:00.000Z';" review/N10-A7.36-staging-edge-pages-origin-CLOSED-REVIEW-ONLY.ts
+          grep -q 'const ALLOW_REAL_OPERATIONS=false' integration/N10-A7.23-real-username-acceptance-LOCKED.cjs
+          grep -q 'const STAGING_SDK_BOOTSTRAP_ENABLED=false' integration/N10-A7.27-staging-ephemeral-sdk-LOCKED.cjs
+          grep -q 'const ALLOW_TURNSTILE_ACTIONS=false' integration/N10-A7.29-turnstile-actions-LOCKED.cjs
+          grep -q 'const ALLOW_BROWSER_ACCEPTANCE=false' integration/N10-A7.30-browser-acceptance-LOCKED.cjs
+          node --check review/N10-A7.36-build-browser-candidates-LOCKED.cjs
+          node --check tests/N10-A7.36-origin-migration-locked.test.cjs
+      - name: Test real Edge source candidate in Node VM with zero external network
+        run: node --test --test-concurrency=1 tests/N10-A7.36-origin-migration-locked.test.cjs
+      - name: Review candidate output only - never deploy or upload to Cloudflare
+        run: |
+          node --check review/N10-A7.36-candidate-browser/browser.cjs
+          node --check review/N10-A7.36-candidate-browser/sdk.cjs
+          node --check review/N10-A7.36-candidate-browser/adapter.cjs
+          node --check review/N10-A7.36-candidate-browser/turnstile.cjs
+          node --check review/N10-A7.36-candidate-browser/controller.cjs
+          echo 'N10-A7.36: no Cloudflare Pages deploy, no Staging Edge deploy, no Secret or real Auth operations.'

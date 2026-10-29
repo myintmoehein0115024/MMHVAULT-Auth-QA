@@ -14,7 +14,8 @@ const ACCEPT_CODES=Object.freeze(new Set([
  'server_window_closed','email_login_failed','unverified_owner','uid_mismatch',
  'rls_owner_mismatch','captcha_bind_unavailable','captcha_login_unavailable',
  'bind_not_accepted','rate_limited_stop','username_login_failed',
- 'session_install_failed','local_logout_failed','test_unavailable'
+ 'session_install_failed','local_logout_failed','test_unavailable',
+ 'unsupported_test_mode','missing_test_dependencies','session_cleanup_unconfirmed'
 ]));
 function contextAllowed(cfg,origin){
  return origin===ORIGIN&&cfg?.project===PROJECT&&cfg?.base===BASE&&
@@ -50,22 +51,23 @@ function createReviewBrowserAcceptance({cfg,origin,createSdk,createAdapter,creat
   let sdk=null,captcha=null;
   let output={ok:false,code:'test_unavailable',steps:[]};
   try{
-   if(now()>=deadline){output={ok:false,code:'server_window_closed'};return sanitized(output)}
-   if(mode!=='bind_then_login'&&mode!=='login_existing_alias'){
-    output={ok:false,code:'unsupported_test_mode'};return sanitized(output)
-   }
-   if(typeof credentials?.email!=='string'||typeof credentials?.password!=='string'||
+   if(now()>=deadline){
+    output={ok:false,code:'server_window_closed',steps:[]};
+   }else if(mode!=='bind_then_login'&&mode!=='login_existing_alias'){
+    output={ok:false,code:'unsupported_test_mode',steps:[]};
+   }else if(typeof credentials?.email!=='string'||typeof credentials?.password!=='string'||
       typeof credentials?.username!=='string'){
-    output={ok:false,code:'missing_test_dependencies'};return sanitized(output)
+    output={ok:false,code:'missing_test_dependencies',steps:[]};
+   }else{
+    sdk=createSdk();
+    if(!sdk?.enabled||!sdk.client||typeof sdk.close!=='function')throw Error('sdk_unavailable');
+    const adapter=createAdapter(sdk);
+    if(!adapter?.enabled)throw Error('adapter_unavailable');
+    captcha=createCaptcha();
+    if(!captcha?.enabled||typeof captcha.take!=='function'||typeof captcha.close!=='function')
+     throw Error('captcha_unavailable');
+    output=sanitized(await runController({cfg,api:adapter,captcha,credentials,options:{mode}}));
    }
-   sdk=createSdk();
-   if(!sdk?.enabled||!sdk.client||typeof sdk.close!=='function')throw Error('sdk_unavailable');
-   const adapter=createAdapter(sdk);
-   if(!adapter?.enabled)throw Error('adapter_unavailable');
-   captcha=createCaptcha();
-   if(!captcha?.enabled||typeof captcha.take!=='function'||typeof captcha.close!=='function')
-    throw Error('captcha_unavailable');
-   output=sanitized(await runController({cfg,api:adapter,captcha,credentials,options:{mode}}));
   }catch{
    output={ok:false,code:'test_unavailable',steps:[]};
   }finally{
@@ -76,7 +78,7 @@ function createReviewBrowserAcceptance({cfg,origin,createSdk,createAdapter,creat
      if(cleanup?.ok!==true)output={ok:false,code:'session_cleanup_unconfirmed',steps:[]}
     }catch{output={ok:false,code:'session_cleanup_unconfirmed',steps:[]}}
    }
-   if(now()>=deadline)output={ok:false,code:'server_window_closed',steps:[]};
+   if(now()>=deadline&&output.code!=='session_cleanup_unconfirmed')output={ok:false,code:'server_window_closed',steps:[]};
    busy=false;
   }
   // Never reveal credentials, JWT, UID, CAPTCHA or SDK errors in caller response.

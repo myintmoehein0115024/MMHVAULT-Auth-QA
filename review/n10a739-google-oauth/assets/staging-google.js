@@ -8,7 +8,6 @@
  const ORIGIN='https://mmhvault-auth-g10g11-locked.pages.dev';
  const BASE='https://ldivswlhtgmznzwhzsoi.supabase.co';
  const CALLBACK=ORIGIN+'/staging-google';
- const EXISTING_EMAIL='haochen05024@gmail.com';
  const PUBLISHABLE='sb_publishable_LxIB8564OZD48HQ8Mfsc0A_apkgERZo';
  const PKCE_SLOT='mmhv-p8-staging-google-pkce-v1';
  const MAX_AGE=300000;
@@ -62,7 +61,7 @@
    const userResponse=await read('/auth/v1/user',{method:'GET'},access);
    if(!userResponse.ok)throw Error('google_user_lookup_failed');
    const user=await userResponse.json();
-   if(!validId(user?.id)||user?.email?.toLowerCase()!==EXISTING_EMAIL||
+   if(!validId(user?.id)||typeof user?.email!=='string'||
       !user.email_confirmed_at||user.is_anonymous===true ||
       !user?.app_metadata?.providers?.includes('google'))
       throw Error('google_existing_identity_mismatch');

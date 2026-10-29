@@ -7,7 +7,7 @@ const ORIGIN='https://myintmoehein0115024.github.io';
 const ACTIONS=Object.freeze(['mmh_n10a6_login','mmh_n10a6_bind']);
 function validConfig({origin,sitekey,turnstile,makeContainer,timeoutMs}={}){
  return origin===ORIGIN&&typeof sitekey==='string'&&
-  /^[A-Za-z0-9_-]{20,90}$/.test(sitekey)&&
+  /^[A-Za-z0-9_-]{20,90}$/.test(sitekey)&&!/^sb_(secret|publishable)_/i.test(sitekey)&&
   typeof turnstile?.render==='function'&&typeof turnstile?.execute==='function'&&
   typeof turnstile?.remove==='function'&&typeof makeContainer==='function'&&
   Number.isInteger(timeoutMs)&&timeoutMs>=1000&&timeoutMs<=120000;

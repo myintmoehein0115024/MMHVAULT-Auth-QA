@@ -1,0 +1,46 @@
+name: N10-A7.28 genuine pinned Supabase SDK synthetic security acceptance
+on:
+  push:
+    branches: [n10-a7-3-staging-readonly-review]
+    paths:
+      - 'qa/n10-a728-real-sdk/package.json'
+      - 'tests/N10-A7.28-real-sdk-isolated.test.cjs'
+      - 'integration/N10-A7.23-real-username-acceptance-LOCKED.cjs'
+      - 'integration/N10-A7.24-supabase-browser-adapter-REVIEW-LOCKED.cjs'
+      - 'integration/N10-A7.27-staging-ephemeral-sdk-LOCKED.cjs'
+      - '.github/workflows/n10-a728-real-sdk-synthetic.yml'
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  real-sdk-isolation:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: true
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Generate npm lock from exact stable SDK version
+        working-directory: qa/n10-a728-real-sdk
+        run: npm install --package-lock-only --ignore-scripts --no-audit --no-fund
+      - name: Install using generated locked transitive dependency tree
+        working-directory: qa/n10-a728-real-sdk
+        run: npm ci --ignore-scripts --no-audit --no-fund
+      - name: Real SDK / review-only bridge syntax and synthetic suite
+        run: |
+          node --check integration/N10-A7.27-staging-ephemeral-sdk-LOCKED.cjs
+          node --check tests/N10-A7.28-real-sdk-isolated.test.cjs
+          grep -q 'const ALLOW_REAL_OPERATIONS=false' integration/N10-A7.23-real-username-acceptance-LOCKED.cjs
+          grep -q 'const STAGING_ADAPTER_ENABLED=false' integration/N10-A7.24-supabase-browser-adapter-REVIEW-LOCKED.cjs
+          grep -q 'const STAGING_SDK_BOOTSTRAP_ENABLED=false' integration/N10-A7.27-staging-ephemeral-sdk-LOCKED.cjs
+          node --test --test-concurrency=1 tests/N10-A7.28-real-sdk-isolated.test.cjs
+      - name: Commit exact generated package-lock to isolated QA review branch only
+        run: |
+          git add qa/n10-a728-real-sdk/package-lock.json
+          if ! git diff --cached --quiet; then
+            git -c user.name='github-actions[bot]' -c user.email='41898282+github-actions[bot]@users.noreply.github.com' commit -m 'N10-A7.28: persist verified pinned SDK dependency lockfile'
+            git push origin HEAD:n10-a7-3-staging-readonly-review
+          fi

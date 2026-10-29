@@ -32,4 +32,5 @@ jobs:
       - name: Run offline Access activation blocker and isolated-staging tests
         run: node --test --test-concurrency=1 tests/N10-A7.39-P1-access-guard-NEVER-DEPLOY.test.cjs
       - name: Never deploy Pages or enable real auth
-        run: echo 'P1: 0 deployed private QA pages; Access is not enabled, all real G10/G11 remains blocked.'
+        run: |
+          echo 'P1: 0 deployed private QA pages; Access is not enabled, all real G10/G11 remains blocked.'

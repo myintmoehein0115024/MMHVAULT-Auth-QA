@@ -32,6 +32,10 @@ async function verifiedSession(api,expected){
  if(!Array.isArray(rows)||rows.length!==1||rows[0]?.user_id!==owner)throw Error('rls_owner_mismatch');
  return owner;
 }
+function strictWindowOpen(state){
+ return state?.status===200&&state.code==='preflight_ok'&&state.enabled===true&&
+  state.registration_enabled===false&&state.scope==='isolated_staging_only';
+}
 async function runControlledAcceptance({cfg,api,captcha,credentials,options={}}){
  // Most important property: code-level false means zero calls, even preflight.
  if(!ALLOW_REAL_OPERATIONS)return result(false,'test_window_locked');
@@ -47,12 +51,13 @@ async function runControlledAcceptance({cfg,api,captcha,credentials,options={}})
  let sessionTouched=false;
  try{
   const state=await api.preflight();
-  if(state?.status!==200||state.code!=='preflight_ok'||state.enabled!==true||
-   state.registration_enabled!==false||state.scope!=='isolated_staging_only')
+  if(!strictWindowOpen(state))
    return result(false,'server_window_closed',steps);
   record('server_open_staging_only');
   let expectedUid;
   if(mode==='bind_then_login'){
+   // Arm cleanup before SDK call: even an SDK exception after creating a session must clean up.
+   sessionTouched=true;
    const signed=await api.signInWithPassword(credentials);
    if(signed?.error||!signed?.data?.user?.id)throw Error('email_login_failed');
    sessionTouched=true;
@@ -61,7 +66,7 @@ async function runControlledAcceptance({cfg,api,captcha,credentials,options={}})
    const bindToken=await captcha.take(EXPECTED_ACTIONS.bind);
    if(typeof bindToken!=='string'||bindToken.length<20)throw Error('captcha_bind_unavailable');
    const state2=await api.preflight();
-   if(state2?.enabled!==true)throw Error('server_window_closed');
+   if(!strictWindowOpen(state2))throw Error('server_window_closed');
    const bind=await api.bindUsername({
     username, password:credentials.password, captcha_token:bindToken,
     action:'bind'
@@ -75,6 +80,8 @@ async function runControlledAcceptance({cfg,api,captcha,credentials,options={}})
    sessionTouched=false;
    record('local_signout_pass');
   }else{
+   // Arm cleanup before SDK call: even an SDK exception after creating a session must clean up.
+   sessionTouched=true;
    const signed=await api.signInWithPassword(credentials);
    if(signed?.error||!signed?.data?.user?.id)throw Error('email_login_failed');
    sessionTouched=true;
@@ -89,7 +96,7 @@ async function runControlledAcceptance({cfg,api,captcha,credentials,options={}})
   const loginToken=await captcha.take(EXPECTED_ACTIONS.login);
   if(typeof loginToken!=='string'||loginToken.length<20)throw Error('captcha_login_unavailable');
   const state3=await api.preflight();
-  if(state3?.enabled!==true)throw Error('server_window_closed');
+  if(!strictWindowOpen(state3))throw Error('server_window_closed');
   const login=await api.loginUsername({
    username,password:credentials.password,captcha_token:loginToken,action:'login'
   });

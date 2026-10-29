@@ -1,0 +1,47 @@
+name: N10-A7.32 isolated locked Cloudflare Pages preview HTTPS CI
+on:
+  push:
+    branches: [n10-a7-3-staging-readonly-review]
+    paths:
+      - 'hosting/n10a732-preview/**'
+      - 'hosting/N10-A7.32-build-quarantined-preview.cjs'
+      - 'tests/N10-A7.32-real-https-locked-preview.test.cjs'
+      - '.github/workflows/n10-a732-locked-hosting-https.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  locked-https-preview:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Install pinned Playwright tooling without running package scripts
+        working-directory: qa/n10-a728-real-sdk
+        run: npm ci --ignore-scripts --no-audit --no-fund
+      - name: Check default Staging/approval hard-locks and preview source
+        run: |
+          grep -q 'const ALLOW_REAL_OPERATIONS=false' integration/N10-A7.23-real-username-acceptance-LOCKED.cjs
+          grep -q 'const STAGING_ADAPTER_ENABLED=false' integration/N10-A7.24-supabase-browser-adapter-REVIEW-LOCKED.cjs
+          grep -q 'const STAGING_SDK_BOOTSTRAP_ENABLED=false' integration/N10-A7.27-staging-ephemeral-sdk-LOCKED.cjs
+          grep -q 'const ALLOW_TURNSTILE_ACTIONS=false' integration/N10-A7.29-turnstile-actions-LOCKED.cjs
+          grep -q 'const ALLOW_BROWSER_ACCEPTANCE=false' integration/N10-A7.30-browser-acceptance-LOCKED.cjs
+          grep -q 'const ALLOW_REAL_STAGING_SIGNOFF=false' integration/N10-A7.31-host-and-edge-evidence-LOCKED.cjs
+          grep -q 'const ALLOW_ROLLBACK_EXECUTION=false' integration/N10-A7.31-closure-reconciliation-LOCKED.cjs
+          node --check hosting/N10-A7.32-build-quarantined-preview.cjs
+          node --check hosting/n10a732-preview/locked-preview.js
+          node --check tests/N10-A7.32-real-https-locked-preview.test.cjs
+      - name: Build static Cloudflare Pages preview without any deployment
+        run: node hosting/N10-A7.32-build-quarantined-preview.cjs
+      - name: Test real ephemeral HTTPS headers, browser CSP, 7 responsive sizes
+        run: node --test --test-concurrency=1 tests/N10-A7.32-real-https-locked-preview.test.cjs
+      - name: Keep quarantined static Pages bundle as downloadable QA artifact only
+        uses: actions/upload-artifact@v4
+        with:
+          name: N10-A7.32-LOCKED-QA-PAGES-PREVIEW-NEVER-DEPLOYED
+          path: qa/n10a732-preview-dist/
+          retention-days: 7
+          if-no-files-found: error

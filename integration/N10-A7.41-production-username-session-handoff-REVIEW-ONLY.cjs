@@ -30,7 +30,7 @@ async function verifySessionAndHandoff({db,grant,verifiedRedirect,clientUrl}){
     clientUrl!==PRODUCTION_SUPABASE_URL||db.supabaseUrl!==PRODUCTION_SUPABASE_URL)
     return result(false,'prod_project_or_client_invalid');
  if(!validGrant(grant))return result(false,'unverified_grant');
- let installed=false,uid='';
+ let installed=false,accepted=false,uid='';
  try {
    // Reject cross-user replacement of an existing session. Never revoke a prior
    // device or reuse a second user's financial state.
@@ -40,9 +40,9 @@ async function verifySessionAndHandoff({db,grant,verifiedRedirect,clientUrl}){
    const installedResult=await db.auth.setSession({
      access_token:grant.access_token,refresh_token:grant.refresh_token
    });
+   installed=true; // A partial setSession may still need local cleanup.
    if(installedResult?.error||!installedResult?.data?.session)
      return result(false,'session_install_failed');
-   installed=true;
    const info=await db.auth.getUser();
    const current=await db.auth.getSession();
    const user=info?.data?.user,session=current?.data?.session;
@@ -54,11 +54,12 @@ async function verifySessionAndHandoff({db,grant,verifiedRedirect,clientUrl}){
    uid=user.id;
    const redirected=await verifiedRedirect(uid);
    if(redirected!==true)throw Error('verified_redirect_rejected');
+   accepted=true;
    return result(true,'verified_same_uid_redirected',uid);
  } catch {
    return result(false,'uid_or_redirect_check_failed');
  } finally {
-   if(installed&&(!uid||typeof verifiedRedirect!=='function')){
+   if(installed&&!accepted){
      try{await db.auth.signOut({scope:'local'})}catch{}
    }
  }

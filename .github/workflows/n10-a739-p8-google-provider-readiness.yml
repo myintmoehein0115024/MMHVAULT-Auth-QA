@@ -1,0 +1,43 @@
+name: N10-A7.39-P8 Staging Google provider read-only readiness
+on:
+  push:
+    branches: [n10-a7-3-staging-readonly-review]
+    paths:
+      - '.github/workflows/n10-a739-p8-google-provider-readiness.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  provider-check-without-oauth-login:
+    runs-on: ubuntu-latest
+    timeout-minutes: 4
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Inspect public Staging Google provider status with no identities or OAuth redirects
+        run: |
+          node <<'NODE'
+          const assert=require('node:assert/strict'),fs=require('node:fs');
+          const src=fs.readFileSync('review/n10a739-live-staging-qa/assets/staging-auth.js','utf8');
+          const match=src.match(/const PUBLISHABLE='(sb_publishable_[A-Za-z0-9_-]+)'/);
+          assert.ok(match,'Staging publishable key is not found');
+          const base='https://ldivswlhtgmznzwhzsoi.supabase.co';
+          (async()=>{
+            const r=await fetch(base+'/auth/v1/settings',{
+              method:'GET',headers:{apikey:match[1]},redirect:'error',
+              signal:AbortSignal.timeout(12000)});
+            const body=await r.json();
+            const enabled=body?.external?.google===true;
+            console.log('GOOGLE_READINESS '+JSON.stringify({
+              status:r.status,googleProviderEnabled:enabled,
+              signupDisabled:body?.disable_signup===true,
+              signupPolicyVisible:typeof body?.disable_signup==='boolean',
+              credentialsRequested:false,
+              oauthRedirectStarted:false,accountsCreated:0
+            }));
+            assert.equal(r.status,200,'Staging Auth settings are not publicly readable');
+            assert.equal(enabled,true,'Staging Google provider is not enabled');
+          })().catch(e=>{console.error('READINESS_BLOCKER '+e.message);process.exitCode=1});
+          NODE

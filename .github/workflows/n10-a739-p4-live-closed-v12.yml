@@ -1,0 +1,30 @@
+name: N10-A7.39-P4 live CLOSED Edge v12 post-deployment HTTPS acceptance
+on:
+  push:
+    branches: [n10-a7-3-staging-readonly-review]
+    paths:
+      - 'tests/N10-A7.39-P4-LIVE-CLOSED-V12-HTTPS.test.cjs'
+      - '.github/workflows/n10-a739-p4-live-closed-v12.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  live-closed-staging-acceptance:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Confirm tests use synthetic data and Edge is locked in review
+        run: |
+          node --check tests/N10-A7.39-P4-LIVE-CLOSED-V12-HTTPS.test.cjs
+          grep -q 'const CODE_GATE_OPEN = false;' review/N10-A7.39-P3-STAGING-EDGE-CORS-SDK-CLOSED-NEVER-DEPLOY.ts
+          grep -q "const WINDOW_END_UTC = '1970-01-01T00:00:00.000Z';" review/N10-A7.39-P3-STAGING-EDGE-CORS-SDK-CLOSED-NEVER-DEPLOY.ts
+          grep -q 'const REAL_AUTH_ENABLED=false' review/n10a737-credential-qa-LOCKED/assets/auth-qa.js
+      - name: Verify actual deployed Edge via real OPTIONS and synthetic closed-state requests
+        run: node --test --test-concurrency=1 tests/N10-A7.39-P4-LIVE-CLOSED-V12-HTTPS.test.cjs
+      - name: No credentials, no real auth and no cloud mutations
+        run: |
+          echo 'Live Edge is already deployed; test only. No secrets, real account operations or writes.'

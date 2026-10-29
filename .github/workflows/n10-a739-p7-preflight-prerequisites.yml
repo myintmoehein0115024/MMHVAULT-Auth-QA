@@ -1,0 +1,40 @@
+name: N10-A7.39-P7 Real Staging preflight prerequisites read only
+on:
+  push:
+    branches: [n10-a7-3-staging-readonly-review]
+    paths:
+      - '.github/workflows/n10-a739-p7-preflight-prerequisites.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  staging-readonly-configuration:
+    runs-on: ubuntu-latest
+    timeout-minutes: 4
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Verify new Staging Turnstile prerequisite without fetching secrets
+        run: |
+          node <<'NODE'
+          const assert=require('node:assert/strict');
+          (async()=>{
+            const response=await fetch('https://ldivswlhtgmznzwhzsoi.supabase.co/functions/v1/mmh-n10a6-username',{
+              method:'POST',headers:{Origin:'https://mmhvault-auth-g10g11-locked.pages.dev','Content-Type':'application/json'},
+              body:'{"action":"preflight"}',redirect:'error',signal:AbortSignal.timeout(13000)});
+            assert.equal(response.status,200);
+            const body=await response.json();
+            assert.equal(body.code,'preflight_ok');
+            assert.equal(body.scope,'isolated_staging_only');
+            assert.equal(body.enabled,false);
+            assert.equal(body.registration_enabled,false);
+            console.log('CLOSED_STAGING_PREFLIGHT '+JSON.stringify({
+              result:body.code,enabled:body.enabled,registration_enabled:body.registration_enabled,
+              prerequisites_present:body.prerequisites_present,scope:body.scope
+            }));
+            assert.equal(body.prerequisites_present,true,
+              'Staging Edge prerequisite secrets are not all present. Do not open login window.');
+          })().catch(e=>{console.error('BLOCKING_PREFLIGHT '+e.message);process.exitCode=1});
+          NODE

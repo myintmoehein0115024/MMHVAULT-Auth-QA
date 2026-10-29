@@ -1,0 +1,30 @@
+name: N10-A7.39-P5 POST-deploy real anonymous Access proof
+on:
+  push:
+    branches: [n10-a7-3-staging-readonly-review]
+    paths:
+      - 'tests/N10-A7.39-P5-POSTDEPLOY-ACCESS-ANON.test.cjs'
+      - '.github/workflows/n10-a739-p5-postdeploy-anonymous.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  private-qa-root-and-health-access:
+    runs-on: ubuntu-latest
+    timeout-minutes: 7
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Verify P5 credential and real auth hardlocks
+        run: |
+          grep -q "const REAL_AUTH_ENABLED = false;" review/n10a739p5-connectivity-LOCKED/assets/staging-health.js
+          grep -q "const STAGING_WRITES_ALLOWED = false;" review/n10a739p5-connectivity-LOCKED/assets/staging-health.js
+          grep -q 'const REAL_AUTH_ENABLED=false;' review/n10a737-credential-qa-LOCKED/assets/auth-qa.js
+          node --check tests/N10-A7.39-P5-POSTDEPLOY-ACCESS-ANON.test.cjs
+      - name: Real anonymous HTTPS HEAD and GET test for main and version alias
+        run: node --test --test-concurrency=1 tests/N10-A7.39-P5-POSTDEPLOY-ACCESS-ANON.test.cjs
+      - name: No Cloudflare write or Staging account action
+        run: |
+          echo 'Read-only anonymous checks. No cookies, no passwords, no Supabase SDK.'

@@ -1,0 +1,35 @@
+name: N10-A7.38 Turnstile hostname and live Staging OPTIONS preflight read-only
+on:
+  push:
+    branches: [n10-a7-3-staging-readonly-review]
+    paths:
+      - 'review/N10-A7.38-LIVE-STAGING-TRUST-MATRIX-NOT-APPLIED.json'
+      - 'integration/N10-A7.38-live-staging-trust-gate-LOCKED.cjs'
+      - 'tests/N10-A7.38-staging-cors-and-trust-READONLY.test.cjs'
+      - '.github/workflows/n10-a738-staging-trust-preflight.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  real-options-readonly:
+    runs-on: ubuntu-latest
+    timeout-minutes: 9
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Assert no modifications or real Staging Auth gates
+        run: |
+          grep -q 'const ALLOW_TURNSTILE_MUTATION=false' integration/N10-A7.38-live-staging-trust-gate-LOCKED.cjs
+          grep -q 'const ALLOW_STAGING_EDGE_MUTATION=false' integration/N10-A7.38-live-staging-trust-gate-LOCKED.cjs
+          grep -q 'const ALLOW_REAL_ACCOUNT_OPERATIONS=false' integration/N10-A7.38-live-staging-trust-gate-LOCKED.cjs
+          grep -q 'const ALLOW_PROD_RELEASE=false' integration/N10-A7.38-live-staging-trust-gate-LOCKED.cjs
+          grep -q 'const REAL_AUTH_ENABLED=false' review/n10a737-credential-qa-LOCKED/assets/auth-qa.js
+          grep -q 'const ALLOW_REAL_OPERATIONS=false' integration/N10-A7.23-real-username-acceptance-LOCKED.cjs
+          node --check integration/N10-A7.38-live-staging-trust-gate-LOCKED.cjs
+          node --check tests/N10-A7.38-staging-cors-and-trust-READONLY.test.cjs
+      - name: Evaluate live evidence and perform only unauthenticated OPTIONS requests
+        run: node --test --test-concurrency=1 tests/N10-A7.38-staging-cors-and-trust-READONLY.test.cjs
+      - name: Confirm no real account operations or cloud mutations
+        run: echo 'N10-A7.38 reviewed OPTIONS response metadata only; no POST, no JWT, no passwords, no Cloudflare writes.'

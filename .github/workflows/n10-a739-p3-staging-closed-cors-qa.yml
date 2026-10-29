@@ -1,0 +1,33 @@
+name: N10-A7.39-P3 closed Staging Edge CORS and SDK origin QA
+on:
+  push:
+    branches: [n10-a7-3-staging-readonly-review]
+    paths:
+      - 'review/N10-A7.39-P3-STAGING-EDGE-CORS-SDK-CLOSED-NEVER-DEPLOY.ts'
+      - 'tests/N10-A7.39-P3-CLOSED-CORS-SDK-HOST.test.cjs'
+      - '.github/workflows/n10-a739-p3-staging-closed-cors-qa.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  never-deploy-closed-qa-candidate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Hard-lock invariants for Staging and credential UI
+        run: |
+          grep -q "const CODE_GATE_OPEN = false;" review/N10-A7.39-P3-STAGING-EDGE-CORS-SDK-CLOSED-NEVER-DEPLOY.ts
+          grep -q "const WINDOW_END_UTC = '1970-01-01T00:00:00.000Z';" review/N10-A7.39-P3-STAGING-EDGE-CORS-SDK-CLOSED-NEVER-DEPLOY.ts
+          grep -q "const ALLOW_REAL_OPERATIONS=false" integration/N10-A7.23-real-username-acceptance-LOCKED.cjs
+          grep -q "const STAGING_SDK_BOOTSTRAP_ENABLED=false" integration/N10-A7.27-staging-ephemeral-sdk-LOCKED.cjs
+          grep -q "const REAL_AUTH_ENABLED=false" review/n10a737-credential-qa-LOCKED/assets/auth-qa.js
+          node --check tests/N10-A7.39-P3-CLOSED-CORS-SDK-HOST.test.cjs
+      - name: Run hermetic Edge VM CORS, anti-replay and no-real-login regressions
+        run: node --test --test-concurrency=1 tests/N10-A7.39-P3-CLOSED-CORS-SDK-HOST.test.cjs
+      - name: No Cloudflare or Supabase mutation
+        run: |
+          echo 'N10-A7.39-P3 remains a locked staging code candidate; G10/G11 not run, Production BLOCKED.'

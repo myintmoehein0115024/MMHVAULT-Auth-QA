@@ -1,0 +1,24 @@
+name: N10-A7.26 deployed QA Pages zero-auth smoke
+on:
+  push:
+    branches: [n10-a7-3-staging-readonly-review]
+    paths:
+      - 'tests/N10-A7.26-pages-live-smoke.test.cjs'
+      - '.github/workflows/n10-a726-public-pages-smoke.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  pages-smoke:
+    runs-on: ubuntu-latest
+    timeout-minutes: 9
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install pinned Playwright test driver
+        run: npm install --no-save --ignore-scripts --no-audit --no-fund playwright-core@1.56.1
+      - name: Test deployed public QA page without credentials
+        env:
+          CHROME_BINARY: /usr/bin/google-chrome
+        run: |
+          node --check tests/N10-A7.26-pages-live-smoke.test.cjs
+          node --test --test-concurrency=1 tests/N10-A7.26-pages-live-smoke.test.cjs

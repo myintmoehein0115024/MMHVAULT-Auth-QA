@@ -1,0 +1,22 @@
+name: N10-A7.15 private Siteverify staging test security gate
+on:
+  push:
+    branches: [n10-a7-3-staging-readonly-review]
+    paths:
+      - 'tests/N10-A7.15-siteverify-private-mock.test.cjs'
+      - '.github/workflows/n10-a715-private-siteverify.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  security:
+    runs-on: ubuntu-latest
+    timeout-minutes: 4
+    steps:
+      - uses: actions/checkout@v4
+      - name: JS syntax and exact source check
+        run: |
+          node --check tests/N10-A7.15-siteverify-private-mock.test.cjs
+          node --check edge/N10-A7.15-staging-siteverify-qa-only.ts
+      - name: Mock Siteverify, replay, JWT/RLS owner, rate limit, expiration
+        run: node --test tests/N10-A7.15-siteverify-private-mock.test.cjs

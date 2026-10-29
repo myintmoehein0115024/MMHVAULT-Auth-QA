@@ -1,0 +1,24 @@
+name: N10-A7.19 release gate freeze and rollback contract
+on:
+  push:
+    branches: [n10-a7-3-staging-readonly-review]
+    paths:
+      - 'tests/N10-A7.19-release-gates.test.cjs'
+      - 'release/N10-A7.19-release-gates.json'
+      - '.github/workflows/n10-a719-release-gates.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  release-is-blocked:
+    runs-on: ubuntu-latest
+    timeout-minutes: 4
+    steps:
+      - uses: actions/checkout@v4
+      - name: Confirm manifest release_ready=false and no secrets
+        run: |
+          node --check tests/N10-A7.19-release-gates.test.cjs
+          node --test tests/N10-A7.19-release-gates.test.cjs
+      - name: Summarize actual status without green-lighting production
+        run: |
+          node -e "const m=require('./release/N10-A7.19-release-gates.json'); console.log('N10_A719_RELEASE_DECISION',m.decision);console.log('N10_A719_GATE_SUMMARY',m.gates.filter(x=>x.status==='pass').length,'PASS;',m.gates.filter(x=>x.status!=='pass').length,'PENDING/FAIL');if(m.release_ready)process.exit(1)"

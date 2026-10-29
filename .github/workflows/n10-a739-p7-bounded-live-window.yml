@@ -1,0 +1,55 @@
+name: N10-A7.39-P7 bounded username Staging window real HTTPS checks
+on:
+  push:
+    branches: [n10-a7-3-staging-readonly-review]
+    paths:
+      - '.github/workflows/n10-a739-p7-bounded-live-window.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  one-shot-anonymous-window-preflight:
+    runs-on: ubuntu-latest
+    timeout-minutes: 4
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Real live Staging preflight plus synthetic bind disabled, no password or CAPTCHA
+        run: |
+          node <<'NODE'
+          const assert=require('node:assert/strict');
+          const url='https://ldivswlhtgmznzwhzsoi.supabase.co/functions/v1/mmh-n10a6-username';
+          const origin='https://mmhvault-auth-g10g11-locked.pages.dev';
+          const deadline=Date.parse('2026-10-29T12:27:30Z');
+          (async()=>{
+            const now=Date.now();
+            assert.ok(now<deadline,'The bounded window has expired: no requests needed');
+            const headers={Origin:origin,'Content-Type':'application/json'};
+            const request=body=>fetch(url,{
+              method:'POST',headers,body:JSON.stringify(body),
+              redirect:'error',cache:'no-store',signal:AbortSignal.timeout(11000)});
+            const response=await request({action:'preflight'});
+            assert.equal(response.status,200);
+            const data=await response.json();
+            assert.equal(data.code,'preflight_ok');
+            assert.equal(data.enabled,true,'Staging window secret or hardgate not active');
+            assert.equal(data.registration_enabled,false);
+            assert.equal(data.prerequisites_present,true);
+            assert.equal(data.scope,'isolated_staging_only');
+            const bind=await request({action:'bind'});
+            const bindBody=await bind.json();
+            assert.equal(bind.status,503);
+            assert.equal(bindBody.code,'username_binding_disabled_for_test');
+            const prod=await fetch(url,{
+              method:'OPTIONS',headers:{Origin:'https://mmhvault.com',
+               'Access-Control-Request-Method':'POST'},redirect:'error',signal:AbortSignal.timeout(11000)});
+            assert.equal(prod.status,403);
+            console.log('P7_WINDOW_VERIFIED '+JSON.stringify({
+              preflight:'OPEN_BOUNDED',registration:false,bind:'BLOCKED_503',
+              productionOrigin:'REJECTED_403',expires_utc:'2026-10-29T12:27:30Z',
+              noPasswordsOrTokensUsed:true
+            }));
+          })().catch(e=>{console.error('P7_BLOCKED '+e.message);process.exitCode=1});
+          NODE

@@ -1,0 +1,49 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="referrer" content="no-referrer"><meta name="robots" content="noindex,nofollow,noarchive">
+<title>MMHVAULT · Staging 真实认证 QA</title>
+<link rel="stylesheet" href="/assets/staging-health.css"><link rel="stylesheet" href="/assets/staging-auth.css">
+<script defer src="/assets/staging-auth.js"></script>
+</head>
+<body><div class="ambient top" aria-hidden="true"></div><div class="shell">
+<header class="navigation"><div class="brand"><span class="logo" aria-hidden="true">M</span><span><strong>MMHVAULT</strong><small>STAGING AUTH QA · ACCESS PROTECTED</small></span></div><a class="back" href="/">返回锁定首页</a></header>
+<main>
+<p class="eyebrow">N10-A7.39 · ISOLATED STAGING ONLY</p>
+<h1>真实登录联调</h1>
+<p class="lead">仅限 Supabase Staging 的已有测试账号。不要输入正式 MMHVAULT 账号密码，除非它也是您单独设置的 Staging 测试账号。没有注册、生产数据或全局退出。</p>
+<div class="layout">
+<section class="glass card">
+<div class="head"><div><p class="eyebrow">VERIFIED USER ACCEPTANCE</p><h2>账户安全验收</h2></div><span class="pill">STAGING ONLY</span></div>
+<div class="notice"><span aria-hidden="true">🔒</span><div><strong>真实登录，仅针对 Staging</strong><p>邮箱登录后会比对服务端 UID 与用户专属 RLS 记录，随即发起本地退出。账号密码和令牌不会被写入浏览器存储或发送到此聊天。</p></div></div>
+<nav class="auth-tabs" role="group" aria-label="选择登录方式"><button type="button" id="tab-email" class="selected">邮箱 + 密码</button><button type="button" id="tab-username">用户名 + 密码</button><button type="button" id="tab-google" disabled>Google · 待配置</button></nav>
+<div id="email-panel">
+<form id="email-form" autocomplete="off" novalidate>
+<label for="email">Staging 测试邮箱</label><input id="email" name="email" type="email" required maxlength="254" autocomplete="off" placeholder="仅限 Staging 账号">
+<label for="password">Staging 测试密码</label><input id="password" name="password" type="password" required autocomplete="off" placeholder="仅限 Staging 密码">
+<button type="submit" id="email-submit">真实邮箱登录 + UID/RLS + 退出</button>
+</form>
+</div>
+<div id="username-panel" hidden>
+<form id="username-form" autocomplete="off" novalidate>
+<label for="username">已绑定的用户名</label><input id="username" type="text" maxlength="20" pattern="[a-z][a-z0-9_]{3,19}" placeholder="4–20 位英文 / 数字 / 下划线">
+<label for="username-password">Staging 密码</label><input id="username-password" type="password" autocomplete="off">
+<div id="turnstile-container" aria-label="Turnstile security verification"></div>
+<button type="submit" id="username-submit">检测限时窗口并登录</button>
+</form>
+<p class="footnote">用户名登录必须通过独立 Turnstile 验证和服务器端限时开关；窗口关闭时不会提交密码或验证码。</p>
+</div>
+<div id="result" role="status" aria-live="polite" class="status neutral" data-state="not-run">还未执行任何真实账号测试。</div>
+<p class="footnote">即使邮箱登录 PASS，也不代表用户名、Google、注册或重置密码已经通过。若登录失败，不会返回具体账号是否存在的信息。</p>
+</section>
+<aside class="glass card side"><p class="eyebrow">ACCEPTANCE CONTROL</p><h2>验收进度</h2>
+<div class="rows"><div><span>Access 私有保护</span><strong>REQUIRED</strong></div>
+<div><span>邮箱登录 + UID/RLS</span><strong id="email-check">NOT RUN</strong></div>
+<div><span>用户名登录 + CAPTCHA</span><strong id="username-check">NOT RUN</strong></div>
+<div><span>Google OAuth</span><strong>NOT RUN</strong></div>
+<div><span>注册 / 密码重置</span><strong>NOT RUN</strong></div>
+<div><span>生产数据</span><strong>UNTOUCHED</strong></div></div>
+<p class="footnote">所有会话凭据只存在当前页面的内存中；本地退出失败会显示警告。关闭页面不会结束其他设备的会话。</p>
+<a href="/staging-health.html" class="back">查看已通过的关闭状态检查</a></aside>
+</div></main><footer>MMHVAULT · AUTH QA <span>STAGING ONLY · NO PRODUCTION</span></footer></div></body></html>

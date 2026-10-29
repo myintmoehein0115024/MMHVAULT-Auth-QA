@@ -1,0 +1,305 @@
+{
+  "schema_version": "N10-A7.19/1",
+  "release_ready": false,
+  "decision": "BLOCKED",
+  "timezone": "Asia/Bangkok",
+  "scope": {
+    "production_repository": "myintmoehein0115024/MMHVAULT",
+    "production_supabase": "vrypucmyrztxgiqhjspd",
+    "staging_supabase": "ldivswlhtgmznzwhzsoi",
+    "qa_repository": "myintmoehein0115024/MMHVAULT-Auth-QA"
+  },
+  "current_baseline": {
+    "login.html": "69b1ae5eeb621af3fff72d26e71c76ddae9f01a7",
+    "app.html": "4abf71a70ad3c1f3388de2418e219ab13ba2d330"
+  },
+  "protected_paths": [
+    "app.html",
+    "business.html",
+    "ai-chat.html",
+    "admin.html",
+    "mmh-push-sw.js",
+    "js/mmhvault-life-planner-v1.js"
+  ],
+  "candidate_minimal_paths": {
+    "new": [
+      "js/mmh-username-login-v1.js",
+      "css/mmh-username-login-v1.css"
+    ],
+    "modify": [
+      "login.html"
+    ],
+    "optional_later": [
+      "app.html"
+    ],
+    "note": "Do NOT create these files in production until separate approved cutover. All paths are proposed; no production files modified."
+  },
+  "staging_state": {
+    "username_edge": "mmh-n10a6-username",
+    "username_edge_version": 17,
+    "code_gate_open": false,
+    "window_start": "1970-01-01T00:00:00.000Z",
+    "window_end": "1970-01-01T00:00:00.000Z",
+    "captcha_qa_edge": "mmh-n10a15-siteverify-qa",
+    "captcha_qa_edge_version": 2,
+    "captcha_qa_expiry": "2026-10-30T17:00:00.000Z",
+    "closure_sha256": "caddafb86a553f012f601af375d6c89885b88dcf2f708238a839c3d348130b4e",
+    "closed_source_matches": "review/N10-A7.39-P7-ROLLBACK-REAL-STAGING-EDGE-v14-CLOSED.ts"
+  },
+  "gates": [
+    {
+      "id": "G01",
+      "name": "Existing email + Google JWT and distinct UID",
+      "status": "pass",
+      "evidence": "N10-A7.7 user screenshot: two auth users, RLS and refresh PASS",
+      "blocking": true
+    },
+    {
+      "id": "G02",
+      "name": "Turnstile browser login and bind challenges",
+      "status": "pass",
+      "evidence": "N10-A7.14 user screenshots Cloudflare green checks",
+      "blocking": true
+    },
+    {
+      "id": "G03",
+      "name": "Cloudflare initial real Siteverify success",
+      "status": "pass",
+      "evidence": "N10-A7.15 user screenshot 200/siteverify_pass",
+      "blocking": true
+    },
+    {
+      "id": "G04",
+      "name": "Atomic replay rejected in live v2 QA via 403 token_replayed",
+      "status": "pass",
+      "evidence": "2026-10-28 18:37 UTC screenshot: first genuine Siteverify HTTP 200 siteverify_pass; second reuse rejected HTTP 403 token_replayed by Staging atomic guard; independent Staging Edge logs recorded 200 and 403 in the corresponding period.",
+      "blocking": true
+    },
+    {
+      "id": "G05",
+      "name": "Staging main Edge CLOSED with expired windows and no unapproved origin",
+      "status": "pass",
+      "evidence": "Supabase Staging v17 readback exact to saved closed source, 2026-10-29; + https://github.com/myintmoehein0115024/MMHVAULT-Auth-QA/actions/runs/40879879256",
+      "blocking": true
+    },
+    {
+      "id": "G06",
+      "name": "Main v11 replay and cross-route concurrency mock",
+      "status": "pass",
+      "evidence": "https://github.com/myintmoehein0115024/MMHVAULT-Auth-QA/actions/runs/40740172071",
+      "blocking": true
+    },
+    {
+      "id": "G07",
+      "name": "Production auth and data UID contract read-only",
+      "status": "pass",
+      "evidence": "2026-10-29 fresh GitHub login SHA 69b1ae5eeb621af3fff72d26e71c76ddae9f01a7, app SHA 4abf71a70ad3c1f3388de2418e219ab13ba2d330; read-only source + DB RLS policy review",
+      "blocking": true
+    },
+    {
+      "id": "G08",
+      "name": "Username session handoff isolated mocks",
+      "status": "pass",
+      "evidence": "https://github.com/myintmoehein0115024/MMHVAULT-Auth-QA/actions/runs/40741716633",
+      "blocking": true
+    },
+    {
+      "id": "G09",
+      "name": "QA tables RLS and least-privilege privileges",
+      "status": "pass",
+      "evidence": "N10-A7.19 Staging read-only PostgreSQL catalog inspection",
+      "blocking": true
+    },
+    {
+      "id": "G10",
+      "name": "Real Staging username password login UID/RLS within <=15min window",
+      "status": "pass",
+      "evidence": "2026-10-29 browser screenshot: real username+password+Turnstile -> original Staging UID/RLS and local logout PASS; 14-min bounded Edge v15; v17 restored hard-closed.",
+      "blocking": true
+    },
+    {
+      "id": "G11",
+      "name": "Real Staging existing UID username bind and logout test",
+      "status": "pending",
+      "evidence": "Existing username mapped (1), real username sign-in PASS but actual NEW bind was explicitly 503 username_binding_disabled_for_test; bind concurrency/uniqueness E2E NOT RUN.",
+      "blocking": true
+    },
+    {
+      "id": "G12",
+      "name": "Username registration with verified recovery email and Auth-side CAPTCHA",
+      "status": "pending",
+      "evidence": "Production email signup already exists; Staging signup_disabled=true; NEW verified-email username registration & Auth-side CAPTCHA NOT RUN.",
+      "blocking": true
+    },
+    {
+      "id": "G13",
+      "name": "Password create/reset/update validation aligned without invalidating existing credentials",
+      "status": "pending",
+      "evidence": "Existing production recovery implementation present; 2026-10-29 Staging password reset/update not re-run; password rules 6/8/10 still inconsistent.",
+      "blocking": true
+    },
+    {
+      "id": "G14",
+      "name": "Leaked password protection and edge abuse/rate limit security decision",
+      "status": "pending",
+      "evidence": "Production Security Advisor 2026-10-29 WARN for leaked password protection and authenticated SECURITY DEFINER wallet deletion function; no automatic privilege changes; requires targeted review.",
+      "blocking": true
+    },
+    {
+      "id": "G15",
+      "name": "Production financial data regression read-only baselines and two-user isolation",
+      "status": "pending",
+      "evidence": "Production read-only: 35 relevant tables RLS enabled with policies; sampled 40/40 core policies check auth.uid; real cross-UID negative finance tests not run.",
+      "blocking": true
+    },
+    {
+      "id": "G16",
+      "name": "iPhone Safari, Android Chrome, tablet and desktop bilingual flows",
+      "status": "pending",
+      "evidence": "No human mobile regression performed",
+      "blocking": true
+    },
+    {
+      "id": "G17",
+      "name": "Device authorization and recovery flows do not bypass existing trust model",
+      "status": "pending",
+      "evidence": "Not fully validated in actual iPhone and Android browsers",
+      "blocking": true
+    },
+    {
+      "id": "G18",
+      "name": "Production branch SHAs snapshotted and tested rollback procedure",
+      "status": "pending",
+      "evidence": "Current login/app Git blob SHA recorded, Staging v17 code restored; production rollback simulation has NOT run.",
+      "blocking": true
+    },
+    {
+      "id": "G19",
+      "name": "Formal site release explicitly authorized, once all other blocking checks pass",
+      "status": "pending",
+      "evidence": "No production cutover approved for this phase",
+      "blocking": true
+    }
+  ],
+  "stages": [
+    {
+      "id": "R0",
+      "name": "Freeze immutable SHAs, validate existing Finance/Auth and rollback",
+      "environment": "read-only",
+      "requires": [
+        "G07",
+        "G09"
+      ]
+    },
+    {
+      "id": "R1",
+      "name": "Finish genuine QA Siteverify replay after throttling window",
+      "environment": "Staging",
+      "requires": [
+        "G04"
+      ]
+    },
+    {
+      "id": "R2",
+      "name": "Controlled <=15 minute username login/bind in independent Staging",
+      "environment": "Staging",
+      "requires": [
+        "G04",
+        "G10",
+        "G11"
+      ]
+    },
+    {
+      "id": "R3",
+      "name": "Private isolated username login UI and session handoff; finance data unchanged",
+      "environment": "QA repo",
+      "requires": [
+        "G07",
+        "G08",
+        "G10",
+        "G11"
+      ]
+    },
+    {
+      "id": "R4",
+      "name": "Verify new username registration + email reset in Staging",
+      "environment": "Staging",
+      "requires": [
+        "G12",
+        "G13",
+        "G14"
+      ]
+    },
+    {
+      "id": "R5",
+      "name": "Test mobile/bilingual/device/financial cross-account, repeat fail-closed",
+      "environment": "QA repo + production read-only",
+      "requires": [
+        "G15",
+        "G16",
+        "G17",
+        "G18"
+      ]
+    },
+    {
+      "id": "R6",
+      "name": "Deploy approved minimal changes to original repository",
+      "environment": "Production",
+      "requires": [
+        "G04",
+        "G10",
+        "G11",
+        "G12",
+        "G13",
+        "G14",
+        "G15",
+        "G16",
+        "G17",
+        "G18",
+        "G19"
+      ]
+    }
+  ],
+  "rollback": {
+    "priority": "restore production login.html and added independent assets; keep financial app and DB untouched",
+    "procedure": [
+      "Disable any newly activated username integration/QA gates before rollback",
+      "Confirm current production SHA and preserve any new unrelated commits; do not blindly force-push",
+      "Restore only changed login paths to recorded last-known-good blobs in reviewed commit",
+      "Do NOT delete username tables/accounts or alter RLS, finance data, or OAuth callback settings",
+      "Confirm email+Google login, recovery, signed-out state, app UID owner mask and accounts read-only baseline",
+      "Revoke any compromised credentials through secure separate workflow if indicated"
+    ],
+    "forbidden": [
+      "automatic production deploy",
+      "service-role secret in frontend",
+      "Staging JWT in production Auth client",
+      "skip getUser + getSession UID verification",
+      "force push / overwrite unrelated commits",
+      "switch financial record owner from auth.uid to email"
+    ]
+  },
+  "staging_real_acceptance": {
+    "email_password": "PASS: browser screenshot 2026-10-29, same UID / owner probe / local logout",
+    "username_password": "PASS: browser screenshot 2026-10-29, real Turnstile, same UID / owner probe / local logout",
+    "google_oauth_pkce": "PASS: browser screenshot 2026-10-29, linked identity / owner probe / local logout",
+    "username_existing_account_bind": "NOT_RUN: existing alias was already mapped and binding explicitly blocked in bounded window",
+    "username_new_registration": "NOT_RUN: Staging signup disabled",
+    "password_reset_update_current_staging": "NOT_RUN: no new password reset was performed during N10-A7.39",
+    "production_login_cutover": "BLOCKED"
+  },
+  "production_readonly_audit": {
+    "code_source": "myintmoehein0115024/MMHVAULT main (read-only)",
+    "auth_settings": "Email, Google and signup enabled (GET only, 2026-10-29)",
+    "finance_rls": "35 relevant tables RLS enabled, no zero-policy tables; sampled 40 owner-scoped policies in 10 core tables; live cross-user negative test pending",
+    "security_advisors": [
+      "authenticated_security_definer_function_executable WARN: public.mmh_delete_crypto_wallet_movement_v4(uuid), authenticated EXECUTE; static body includes auth.uid ownership checks; detailed negative tests pending",
+      "auth_leaked_password_protection WARN: disabled"
+    ],
+    "formal_entrypoints": [
+      "login.html has email/password, Google, email signup, reset and recovery",
+      "app.html has legacy auth path; cannot simply deploy QA HTML as production app"
+    ],
+    "production_data_writes": 0
+  }
+}

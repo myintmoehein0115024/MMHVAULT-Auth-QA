@@ -1,0 +1,29 @@
+name: N10-A7.41 production UID handoff candidate OFFLINE ONLY
+on:
+  push:
+    branches: [n10-a7-3-staging-readonly-review]
+    paths:
+      - 'integration/N10-A7.41-production-username-session-handoff-REVIEW-ONLY.cjs'
+      - 'tests/N10-A7.41-production-username-handoff-contract.test.cjs'
+      - '.github/workflows/n10-a741-prod-username-handoff-offline.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  strictly-offline-session-qa:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Verify release remains blocked and execute isolated session mocks
+        run: |
+          grep -q 'const ENABLE_PRODUCTION_USERNAME_LOGIN=false;' integration/N10-A7.41-production-username-session-handoff-REVIEW-ONLY.cjs
+          grep -q '"release_ready": false' release/N10-A7.19-release-gates.json
+          node --check integration/N10-A7.41-production-username-session-handoff-REVIEW-ONLY.cjs
+          node --check tests/N10-A7.41-production-username-handoff-contract.test.cjs
+          node --test --test-concurrency=1 tests/N10-A7.41-production-username-handoff-contract.test.cjs
+      - name: Production untouched
+        run: echo 'No Supabase or GitHub production mutations in the tests.'

@@ -1,0 +1,56 @@
+name: N10-A7.40 Staging closed and production Auth settings READ ONLY
+on:
+  push:
+    branches: [n10-a7-3-staging-readonly-review]
+    paths:
+      - '.github/workflows/n10-a740-production-preflight-readonly.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  staging-closure-and-production-auth-config:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: GET production public auth settings and POST only Staging closed preflight
+        run: |
+          node <<'NODE'
+          const assert=require('node:assert/strict');
+          const prod='https://vrypucmyrztxgiqhjspd.supabase.co';
+          const staging='https://ldivswlhtgmznzwhzsoi.supabase.co';
+          (async()=>{
+            const src=await fetch('https://raw.githubusercontent.com/myintmoehein0115024/MMHVAULT/main/login.html',{redirect:'error',signal:AbortSignal.timeout(12000)});
+            assert.equal(src.status,200,'could_not_read_production_login_source');
+            const text=await src.text();
+            const prodUrl=text.match(/const SUPABASE_URL='([^']+)'/)?.[1];
+            const key=text.match(/const SUPABASE_KEY='(sb_publishable_[A-Za-z0-9_-]+)'/)?.[1];
+            assert.equal(prodUrl,prod,'production_project_mismatch');
+            assert.ok(key,'production_login_must_use_publishable_key');
+            const [config,preflight]=await Promise.all([
+              fetch(prod+'/auth/v1/settings',{headers:{apikey:key},redirect:'error',signal:AbortSignal.timeout(12000)}),
+              fetch(staging+'/functions/v1/mmh-n10a6-username',{
+                method:'POST',headers:{Origin:'https://mmhvault-auth-g10g11-locked.pages.dev','Content-Type':'application/json'},
+                body:'{"action":"preflight"}',redirect:'error',signal:AbortSignal.timeout(12000)})
+            ]);
+            assert.equal(config.status,200,'production_auth_settings_unavailable');
+            assert.equal(preflight.status,200,'staging_closed_preflight_unavailable');
+            const p=await config.json(),s=await preflight.json();
+            assert.equal(s.code,'preflight_ok');
+            assert.equal(s.enabled,false,'CRITICAL_Staging_Auth_Is_Open');
+            assert.equal(s.registration_enabled,false);
+            assert.equal(s.scope,'isolated_staging_only');
+            console.log('N10A740_READONLY_VERIFIED '+JSON.stringify({
+              production:{emailProviderEnabled:p?.external?.email===true,
+                googleProviderEnabled:p?.external?.google===true,
+                signupDisabled:p?.disable_signup===true,
+                passwordSignupMayBeEnabled:p?.disable_signup===false},
+              staging:{loginEnabled:s.enabled,registrationEnabled:s.registration_enabled,
+                scope:s.scope},
+              credentialsSubmitted:false,productionMutation:false,financeDataAccess:false
+            }));
+          })().catch(e=>{console.error('N10A740_BLOCKER '+e.message);process.exitCode=1});
+          NODE

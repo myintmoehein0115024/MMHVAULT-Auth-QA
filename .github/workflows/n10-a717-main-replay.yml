@@ -1,0 +1,22 @@
+name: N10-A7.17 closed main CAPTCHA shared replay regression
+on:
+  push:
+    branches: [n10-a7-3-staging-readonly-review]
+    paths:
+      - 'tests/N10-A7.17-main-closed-captcha-replay.test.cjs'
+      - '.github/workflows/n10-a717-main-replay.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  synthetic:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - name: Verify source/test JavaScript syntax (no secrets or credentials)
+        run: |
+          node --check edge/N10-A7.17-closed-main-captcha-replay-v11.js
+          node --check tests/N10-A7.17-main-closed-captcha-replay.test.cjs
+      - name: Test fail-closed gate, atomic and cross-route replays, bind/logout
+        run: node --test tests/N10-A7.17-main-closed-captcha-replay.test.cjs

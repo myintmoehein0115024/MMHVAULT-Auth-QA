@@ -1,0 +1,42 @@
+name: N10-A7.39-P5 locked private QA browser preflight overlay build and tests
+on:
+  push:
+    branches: [n10-a7-3-staging-readonly-review]
+    paths:
+      - 'review/n10a739p5-connectivity-LOCKED/**'
+      - 'review/N10-A7.39-P5-build-locked-staging-health.cjs'
+      - 'tests/N10-A7.39-P5-staging-health-LOCKED.test.cjs'
+      - '.github/workflows/n10-a739-p5-closed-staging-health.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  closed-preflight-no-credential:
+    runs-on: ubuntu-latest
+    timeout-minutes: 6
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Require source safety invariants
+        run: |
+          grep -q "const REAL_AUTH_ENABLED = false;" review/n10a739p5-connectivity-LOCKED/assets/staging-health.js
+          grep -q "const STAGING_WRITES_ALLOWED = false;" review/n10a739p5-connectivity-LOCKED/assets/staging-health.js
+          grep -q 'const CODE_GATE_OPEN = false;' review/N10-A7.39-P3-STAGING-EDGE-CORS-SDK-CLOSED-NEVER-DEPLOY.ts
+          grep -q 'const REAL_AUTH_ENABLED=false;' review/n10a737-credential-qa-LOCKED/assets/auth-qa.js
+          node --check review/N10-A7.39-P5-build-locked-staging-health.cjs
+          node --check review/n10a739p5-connectivity-LOCKED/assets/staging-health.js
+          node --check tests/N10-A7.39-P5-staging-health-LOCKED.test.cjs
+      - name: Run isolated 18+ exact CSP and no-identity Node tests
+        run: node --test --test-concurrency=1 tests/N10-A7.39-P5-staging-health-LOCKED.test.cjs
+      - name: Upload reviewed Pages output - not an automatic deployment
+        uses: actions/upload-artifact@v4
+        with:
+          name: N10-A7.39-P5-LOCKED-STAGING-HEALTH-REVIEW
+          path: qa/n10a737-preview-dist/
+          retention-days: 7
+          if-no-files-found: error
+      - name: Nothing allowed to log in
+        run: |
+          echo 'Review-only build, no account/password, no Supabase login or production data.'

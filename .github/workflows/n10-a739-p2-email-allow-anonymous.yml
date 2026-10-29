@@ -1,0 +1,28 @@
+name: N10-A7.39-P2 exact-email Allow policy postchange anonymous regression
+on:
+  push:
+    branches: [n10-a7-3-staging-readonly-review]
+    paths:
+      - '.github/workflows/n10-a739-p2-email-allow-anonymous.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  anonymous-should-still-require-cloudflare-access:
+    runs-on: ubuntu-latest
+    timeout-minutes: 6
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Assert locked credential page remains unchanged
+        run: |
+          grep -q 'const REAL_AUTH_ENABLED=false' review/n10a737-credential-qa-LOCKED/assets/auth-qa.js
+          grep -q 'const REAL_REGISTRATION_ENABLED=false' review/n10a737-credential-qa-LOCKED/assets/auth-qa.js
+          grep -q "connect-src 'none'" review/n10a737-credential-qa-LOCKED/_headers
+      - name: Anonymous HTTPS GET and HEAD must redirect on main and deployment alias
+        run: node --test --test-concurrency=1 tests/N10-A7.39-P2-POST-DEPLOY-ACCESS-HTTPS-READONLY.test.cjs
+      - name: Confirm no credentials or Cloudflare API mutations
+        run: |
+          echo 'No tester email, tokens, passwords, secrets or real Supabase auth used in this job.'

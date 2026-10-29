@@ -1,0 +1,39 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="referrer" content="no-referrer"><meta name="robots" content="noindex,nofollow,noarchive">
+<title>MMHVAULT · Staging Google OAuth 验收</title>
+<link rel="stylesheet" href="/assets/staging-health.css"><link rel="stylesheet" href="/assets/staging-auth.css">
+<script defer src="/assets/staging-google.js"></script>
+</head>
+<body><div class="ambient top" aria-hidden="true"></div><div class="shell">
+<header class="navigation"><div class="brand"><span class="logo" aria-hidden="true">M</span><span><strong>MMHVAULT</strong><small>PRIVATE GOOGLE OAUTH · STAGING ONLY</small></span></div><a class="back" href="/staging-auth.html">返回登录验收</a></header>
+<main><p class="eyebrow">N10-A7.39-P8 · EXISTING USER ONLY</p>
+<h1>Google OAuth 真实验收</h1>
+<p class="lead">在已受 Cloudflare Access 保护的独立测试环境中，验证 Google 登录、服务器 UID/RLS 所属关系与本地退出。不新增用户，不触及正式 MMHVAULT。</p>
+<div class="layout">
+<section class="glass card">
+<div class="head"><div><p class="eyebrow">SECURE PKCE · ONE TIME</p><h2>Google 身份验证</h2></div><span class="pill">STAGING ONLY</span></div>
+<div class="notice"><span aria-hidden="true">🔒</span><div><strong>只使用已经关联 Google 的测试账号</strong><p>请在 Google 选择此前已绑定到 Staging 的测试账号。系统将验证 Google 身份、UID/RLS 所属关系并尝试本地退出。</p></div></div>
+<div class="rows">
+<div><span>Google 提供商</span><strong id="provider">CHECKING</strong></div>
+<div><span>新用户注册</span><strong id="signup">CHECKING</strong></div>
+<div><span>Google 授权</span><strong id="google-status">NOT RUN</strong></div>
+<div><span>UID / RLS 与本地退出</span><strong id="owner-status">NOT RUN</strong></div>
+</div>
+<button id="google-login" type="button" disabled>使用 Google 进行 Staging 验收</button>
+<div id="oauth-result" class="status neutral" role="status" aria-live="polite" data-state="not-run">正在检查安全前置条件……</div>
+<p class="footnote">登录流程使用 PKCE，临时随机验证器只存在当前标签页的会话存储中，成功或失败后会清理。访问令牌不写入本地存储、日志或聊天记录。Google OAuth 与正式网站登录相互隔离。</p>
+</section>
+<aside class="glass card side"><p class="eyebrow">ACCEPTANCE CRITERIA</p><h2>安全要求</h2>
+<div class="rows">
+<div><span>Cloudflare Access</span><strong>REQUIRED</strong></div>
+<div><span>限定回调地址</span><strong>EXACT URL</strong></div>
+<div><span>已有 Google 用户</span><strong>ONLY</strong></div>
+<div><span>新账户创建</span><strong>DISABLED</strong></div>
+<div><span>生产环境</span><strong>UNTOUCHED</strong></div>
+</div>
+<p class="footnote">若登录后跳转到其他网站、显示未知错误或没有显示 PASS，请立即停止测试，并发送不含验证码、授权码或令牌的截图。</p>
+</aside></div></main><footer>MMHVAULT · N10-A7.39-P8 <span>STAGING GOOGLE · PRIVATE QA</span></footer></div>
+</body></html>

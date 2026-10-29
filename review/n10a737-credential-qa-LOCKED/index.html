@@ -1,0 +1,152 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <meta name="referrer" content="no-referrer">
+  <meta name="robots" content="noindex,nofollow,noarchive">
+  <title>MMHVAULT · N10-A7.37 · LOCKED Auth UI</title>
+  <link rel="stylesheet" href="./assets/auth-qa.css">
+  <script defer src="./assets/auth-qa.js"></script>
+</head>
+<body>
+  <div class="ambient a" aria-hidden="true"></div>
+  <div class="ambient b" aria-hidden="true"></div>
+  <div class="page">
+    <header class="navigation">
+      <div class="wordmark">
+        <div class="mark" aria-hidden="true">M</div>
+        <div class="brand-copy"><strong>MMHVAULT</strong><span>PERSONAL FINANCE & WEALTH</span></div>
+      </div>
+      <div class="tools">
+        <span class="environment">AUTH QA <span class="dot"></span> LOCKED</span>
+        <div class="lang" role="group" aria-label="Language">
+          <button type="button" id="lang-zh" aria-pressed="true" class="active">中</button>
+          <button type="button" id="lang-en" aria-pressed="false">EN</button>
+        </div>
+      </div>
+    </header>
+    <main>
+      <div class="intro">
+        <p class="eyebrow">N10-A7.37 / AUTHENTICATION DESIGN REVIEW</p>
+        <h1 data-zh="欢迎来到 MMHVAULT" data-en="Welcome to MMHVAULT">欢迎来到 MMHVAULT</h1>
+        <p data-zh="为您的财富、账户和未来提供安全、从容的入口。" data-en="A secure, effortless entry point for your finances and future.">为您的财富、账户和未来提供安全、从容的入口。</p>
+      </div>
+      <div class="layout">
+        <section class="glass auth-panel" aria-labelledby="auth-title">
+          <div class="panel-head">
+            <div>
+              <p class="eyebrow">SECURE ACCOUNT ACCESS</p>
+              <h2 id="auth-title" data-zh="账户安全中心" data-en="Account security center">账户安全中心</h2>
+            </div>
+            <span class="lock-pill"><span aria-hidden="true">●</span> DEMO ONLY</span>
+          </div>
+          <div class="notice" role="note">
+            <span class="lock-symbol" aria-hidden="true">🔒</span>
+            <div>
+              <strong data-zh="真实登录与注册仍未开放" data-en="Real authentication and registration are disabled">真实登录与注册仍未开放</strong>
+              <small data-zh="此页面仅供视觉与流程验收。请勿输入真实账号或密码。" data-en="Visual and flow review only. Do not enter real credentials.">此页面仅供视觉与流程验收。请勿输入真实账号或密码。</small>
+            </div>
+          </div>
+          <div class="views" role="tablist" aria-label="Account access views">
+            <button type="button" id="view-login" class="selected" role="tab" aria-selected="true" data-zh="登录" data-en="Sign in">登录</button>
+            <button type="button" id="view-register" role="tab" aria-selected="false" data-zh="注册账号" data-en="Create account">注册账号</button>
+            <button type="button" id="view-recovery" role="tab" aria-selected="false" data-zh="忘记密码" data-en="Reset password">忘记密码</button>
+          </div>
+          <div id="login-content" class="form-panel">
+            <p class="subheading" data-zh="选择您的登录方式" data-en="Choose how to sign in">选择您的登录方式</p>
+            <div class="methods" role="tablist" aria-label="Login methods">
+              <button id="method-username" role="tab" aria-selected="true" class="selected" type="button" data-zh="用户名" data-en="Username">用户名</button>
+              <button id="method-email" role="tab" aria-selected="false" type="button" data-zh="邮箱" data-en="Email">邮箱</button>
+              <button id="method-google" role="tab" aria-selected="false" type="button">Google</button>
+            </div>
+            <div id="login-fields" class="field-stack">
+              <div class="field">
+                <label id="login-identity-label" for="login-identity" data-zh="用户名" data-en="Username">用户名</label>
+                <input type="text" id="login-identity" disabled aria-disabled="true" autocomplete="off" placeholder="LOCKED" maxlength="20">
+              </div>
+              <div class="field">
+                <label for="login-password" data-zh="密码" data-en="Password">密码</label>
+                <input type="password" id="login-password" disabled aria-disabled="true" autocomplete="off" placeholder="••••••••" minlength="6" maxlength="20">
+              </div>
+            </div>
+            <div id="google-fields" hidden class="google-message">
+              <div class="google-g" aria-hidden="true">G</div>
+              <p data-zh="Google 登录仅用于界面预览；OAuth 回调尚未连接。" data-en="Google sign-in is a visual preview. OAuth callbacks are not connected.">Google 登录仅用于界面预览；OAuth 回调尚未连接。</p>
+            </div>
+            <button id="login-submit" type="button" class="primary-action" disabled data-zh="安全登录（未开放）" data-en="Secure sign in (unavailable)">安全登录（未开放）</button>
+          </div>
+          <div id="register-content" class="form-panel" hidden>
+            <p class="subheading" data-zh="新账号注册预览" data-en="New account registration preview">新账号注册预览</p>
+            <div class="field-stack">
+              <div class="field">
+                <label for="register-username" data-zh="用户名（4–20 位）" data-en="Username (4–20 characters)">用户名（4–20 位）</label>
+                <input id="register-username" type="text" maxlength="20" autocomplete="off" placeholder="LOCKED" disabled aria-disabled="true">
+              </div>
+              <div class="field">
+                <label for="register-email" data-zh="邮箱地址" data-en="Email address">邮箱地址</label>
+                <input id="register-email" type="email" autocomplete="off" placeholder="LOCKED" disabled aria-disabled="true">
+              </div>
+              <div class="field">
+                <label for="register-password" data-zh="密码（6–20 位）" data-en="Password (6–20 characters)">密码（6–20 位）</label>
+                <input id="register-password" type="password" minlength="6" maxlength="20" autocomplete="off" placeholder="••••••••" disabled aria-disabled="true">
+              </div>
+              <div class="field">
+                <label for="register-confirm" data-zh="确认密码" data-en="Confirm password">确认密码</label>
+                <input id="register-confirm" type="password" minlength="6" maxlength="20" autocomplete="off" placeholder="••••••••" disabled aria-disabled="true">
+              </div>
+            </div>
+            <p class="form-help" data-zh="用户名需以字母开头，仅允许小写字母、数字和下划线。重复用户名必须更换。注册验证目前不执行。" data-en="Username must start with a letter and contain lowercase letters, digits or underscores. Duplicate names must be changed. No registration is performed.">用户名需以字母开头，仅允许小写字母、数字和下划线。重复用户名必须更换。注册验证目前不执行。</p>
+            <button id="register-submit" type="button" class="primary-action" disabled data-zh="创建账号（未开放）" data-en="Create account (unavailable)">创建账号（未开放）</button>
+          </div>
+          <div id="recovery-content" class="form-panel" hidden>
+            <p class="subheading" data-zh="通过邮箱重置密码" data-en="Reset password using email">通过邮箱重置密码</p>
+            <div class="field-stack">
+              <div class="field">
+                <label for="recovery-email" data-zh="注册邮箱地址" data-en="Registered email address">注册邮箱地址</label>
+                <input id="recovery-email" type="email" autocomplete="off" placeholder="LOCKED" disabled aria-disabled="true">
+              </div>
+            </div>
+            <p class="form-help" data-zh="邮件重置流程不会在这份锁定界面触发。" data-en="No password reset email will be sent from this locked preview.">邮件重置流程不会在这份锁定界面触发。</p>
+            <button id="recovery-submit" type="button" class="primary-action" disabled data-zh="发送重置邮件（未开放）" data-en="Send reset email (unavailable)">发送重置邮件（未开放）</button>
+          </div>
+          <p class="footnote" data-zh="本预览不连接 Supabase、不写入账号、不保存密码或会话。" data-en="This preview does not connect to Supabase, create accounts, or store passwords or sessions.">本预览不连接 Supabase、不写入账号、不保存密码或会话。</p>
+        </section>
+        <aside class="side-stack">
+          <section class="glass side-panel">
+            <p class="eyebrow">SECURITY ACCEPTANCE</p>
+            <h2 data-zh="三登录系统验证" data-en="Three-login acceptance">三登录系统验证</h2>
+            <p class="muted" data-zh="真实验收必须比较同一个身份 UID 和 RLS 所属关系，且完成本地退出清理。" data-en="Real acceptance must compare the same account UID and RLS ownership, then verify local sign-out.">真实验收必须比较同一个身份 UID 和 RLS 所属关系，且完成本地退出清理。</p>
+            <div class="checklist">
+              <div><span data-zh="用户名＋密码" data-en="Username + password">用户名＋密码</span><strong>NOT RUN</strong></div>
+              <div><span data-zh="邮箱＋密码" data-en="Email + password">邮箱＋密码</span><strong>NOT RUN</strong></div>
+              <div><span>Google OAuth</span><strong>NOT RUN</strong></div>
+              <div><span data-zh="注册 / 密码重置" data-en="Registration / reset">注册 / 密码重置</span><strong>NOT RUN</strong></div>
+              <div><span>UID · RLS · Logout</span><strong>NOT RUN</strong></div>
+            </div>
+          </section>
+          <section class="glass side-panel simulation">
+            <div class="flexhead"><div><p class="eyebrow">OFFLINE MOCK ONLY</p><h2 data-zh="异常流程演示" data-en="Failure flow demo">异常流程演示</h2></div><span class="mocktag">MOCK</span></div>
+            <label for="mock-case" data-zh="选择预设测试场景" data-en="Choose a synthetic scenario">选择预设测试场景</label>
+            <select id="mock-case">
+              <option value="duplicate" data-zh="重复用户名" data-en="Duplicate username">重复用户名</option>
+              <option value="weak_password" data-zh="密码长度不符合" data-en="Invalid password length">密码长度不符合</option>
+              <option value="uid" data-zh="UID 不一致" data-en="UID mismatch">UID 不一致</option>
+              <option value="rls" data-zh="RLS 所属检查失败" data-en="RLS ownership rejected">RLS 所属检查失败</option>
+              <option value="captcha" data-zh="Turnstile 验证失败" data-en="Turnstile rejected">Turnstile 验证失败</option>
+              <option value="reset" data-zh="密码重置链接过期" data-en="Reset link expired">密码重置链接过期</option>
+            </select>
+            <button id="mock-run" class="mock-button" type="button" data-zh="运行离线模拟" data-en="Run offline simulation">运行离线模拟</button>
+            <div id="mock-result" role="status" aria-live="polite" data-zh="尚未运行。所有真实认证仍为 NOT RUN。" data-en="Not run yet. All real authentication results remain NOT RUN.">尚未运行。所有真实认证仍为 NOT RUN。</div>
+          </section>
+          <section class="privacy">
+            <span class="privacy-dot" aria-hidden="true"></span>
+            <p data-zh="独立 QA · 默认禁止网络请求 · 无真实凭据 · 不影响 MMHVAULT 正式资产" data-en="Isolated QA · Network denied by default · No credentials · Production finance unaffected">独立 QA · 默认禁止网络请求 · 无真实凭据 · 不影响 MMHVAULT 正式资产</p>
+          </section>
+        </aside>
+      </div>
+    </main>
+    <footer><span>© MMHVAULT · N10-A7.37</span><span>REVIEW · NOT DEPLOYED</span></footer>
+  </div>
+</body>
+</html>

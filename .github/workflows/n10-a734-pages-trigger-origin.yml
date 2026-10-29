@@ -1,0 +1,35 @@
+name: N10-A7.34 Pages trigger and Staging origin read-only audit
+on:
+  push:
+    branches: [n10-a7-3-staging-readonly-review]
+    paths:
+      - 'integration/N10-A7.34-pages-trigger-and-origin-LOCKED.cjs'
+      - 'tests/N10-A7.34-pages-trigger-and-origin.test.cjs'
+      - '.github/workflows/n10-a734-pages-trigger-origin.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  offline-lineage-and-origin-review:
+    runs-on: ubuntu-latest
+    timeout-minutes: 7
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Enforce code-level blockers against Staging and production access
+        run: |
+          grep -q 'const ALLOW_CLOUDFLARE_MUTATION=false' integration/N10-A7.34-pages-trigger-and-origin-LOCKED.cjs
+          grep -q 'const ALLOW_STAGING_ORIGIN_MIGRATION=false' integration/N10-A7.34-pages-trigger-and-origin-LOCKED.cjs
+          grep -q 'const ALLOW_REAL_G10_G11=false' integration/N10-A7.34-pages-trigger-and-origin-LOCKED.cjs
+          grep -q 'const STAGING_SDK_BOOTSTRAP_ENABLED=false' integration/N10-A7.27-staging-ephemeral-sdk-LOCKED.cjs
+          grep -q 'const ALLOW_REAL_OPERATIONS=false' integration/N10-A7.23-real-username-acceptance-LOCKED.cjs
+          node --check integration/N10-A7.34-pages-trigger-and-origin-LOCKED.cjs
+          node --check tests/N10-A7.34-pages-trigger-and-origin.test.cjs
+      - name: Run lineage and Origin review-only regression
+        run: node --test --test-concurrency=1 tests/N10-A7.34-pages-trigger-and-origin.test.cjs
+      - name: Confirm there are zero cloud modification operations
+        run: |
+          echo 'N10-A7.34 did NOT change Cloudflare source settings or trigger deployment.'
+          echo 'No Supabase Origin, Turnstile, Secret or real login changes.'

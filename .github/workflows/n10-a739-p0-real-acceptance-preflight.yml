@@ -1,0 +1,36 @@
+name: N10-A7.39-P0 REAL G10 G11 preflight contract & rollback simulation LOCKED
+on:
+  push:
+    branches: [n10-a7-3-staging-readonly-review]
+    paths:
+      - 'review/N10-A7.39-REAL-ACCEPTANCE-PREFLIGHT-LOCKED.json'
+      - 'integration/N10-A7.39-P0-acceptance-preflight-LOCKED.cjs'
+      - 'tests/N10-A7.39-P0-acceptance-preflight-LOCKED.test.cjs'
+      - '.github/workflows/n10-a739-p0-real-acceptance-preflight.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  preflight-before-real-auth:
+    runs-on: ubuntu-latest
+    timeout-minutes: 6
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Require all live auth and cloud mutations locked
+        run: |
+          grep -q 'const REAL_AUTH_EXECUTION_ALLOWED=false' integration/N10-A7.39-P0-acceptance-preflight-LOCKED.cjs
+          grep -q 'const CLOUD_MUTATIONS_ALLOWED=false' integration/N10-A7.39-P0-acceptance-preflight-LOCKED.cjs
+          grep -q 'const PRODUCTION_MUTATIONS_ALLOWED=false' integration/N10-A7.39-P0-acceptance-preflight-LOCKED.cjs
+          grep -q 'const ALLOW_REAL_OPERATIONS=false' integration/N10-A7.23-real-username-acceptance-LOCKED.cjs
+          grep -q 'const STAGING_SDK_BOOTSTRAP_ENABLED=false' integration/N10-A7.27-staging-ephemeral-sdk-LOCKED.cjs
+          grep -q 'const ALLOW_TURNSTILE_ACTIONS=false' integration/N10-A7.29-turnstile-actions-LOCKED.cjs
+          grep -q 'const CODE_GATE_OPEN = false;' review/N10-A7.36-staging-edge-pages-origin-CLOSED-REVIEW-ONLY.ts
+          node --check integration/N10-A7.39-P0-acceptance-preflight-LOCKED.cjs
+          node --check tests/N10-A7.39-P0-acceptance-preflight-LOCKED.test.cjs
+      - name: Exercise exact UTC window, cloud drift and closure negative tests
+        run: node --test --test-concurrency=1 tests/N10-A7.39-P0-acceptance-preflight-LOCKED.test.cjs
+      - name: Assert zero live account, cloud or production changes
+        run: echo 'N10-A7.39-P0 only. No Supabase login/bind, cloud deploy or user/secret changes. G10/G11 PENDING.'

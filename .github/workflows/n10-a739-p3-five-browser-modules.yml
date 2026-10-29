@@ -1,0 +1,42 @@
+name: N10-A7.39-P3 five browser modules isolated host dry-run
+on:
+  push:
+    branches: [n10-a7-3-staging-readonly-review]
+    paths:
+      - 'review/N10-A7.39-P3-build-locked-browser-modules.cjs'
+      - 'tests/N10-A7.39-P3-locked-browser-modules.test.cjs'
+      - '.github/workflows/n10-a739-p3-five-browser-modules.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  never-deploy-staging-browser-client:
+    runs-on: ubuntu-latest
+    timeout-minutes: 7
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Strictly preserve all five real-auth client hardlocks
+        run: |
+          grep -q 'const ALLOW_DEPLOYMENT=false,ALLOW_REAL_AUTH=false' review/N10-A7.39-P3-build-locked-browser-modules.cjs
+          grep -q 'const ALLOW_REAL_OPERATIONS=false' integration/N10-A7.23-real-username-acceptance-LOCKED.cjs
+          grep -q 'const STAGING_ADAPTER_ENABLED=false' integration/N10-A7.24-supabase-browser-adapter-REVIEW-LOCKED.cjs
+          grep -q 'const STAGING_SDK_BOOTSTRAP_ENABLED=false' integration/N10-A7.27-staging-ephemeral-sdk-LOCKED.cjs
+          grep -q 'const ALLOW_TURNSTILE_ACTIONS=false' integration/N10-A7.29-turnstile-actions-LOCKED.cjs
+          grep -q 'const ALLOW_BROWSER_ACCEPTANCE=false' integration/N10-A7.30-browser-acceptance-LOCKED.cjs
+          node --check review/N10-A7.39-P3-build-locked-browser-modules.cjs
+          node --check tests/N10-A7.39-P3-locked-browser-modules.test.cjs
+      - name: Generate and run five review-only modules with zero real SDK calls
+        run: node --test --test-concurrency=1 tests/N10-A7.39-P3-locked-browser-modules.test.cjs
+      - name: Collect nondeployable QA code artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: N10-A7.39-P3-PRIVATE-ORIGIN-CLIENT-REVIEW-ONLY
+          path: qa/n10a739p3-locked-browser-review/
+          retention-days: 7
+          if-no-files-found: error
+      - name: Staging Edge, passwords, real Auth and production untouched
+        run: |
+          echo 'N10-A7.39-P3 client candidates are locked, offline and not deployed.'

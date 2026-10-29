@@ -1,0 +1,36 @@
+name: N10-A7.33 LIVE Cloudflare Pages HTTPS read-only security acceptance
+on:
+  push:
+    branches: [n10-a7-3-staging-readonly-review]
+    paths:
+      - 'tests/N10-A7.33-cloudflare-public-https-READONLY.test.cjs'
+      - '.github/workflows/n10-a733-cloudflare-public-https.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  real-pages-hosted-response-audit:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Install pinned Chromium tooling without build scripts
+        working-directory: qa/n10-a728-real-sdk
+        run: npm ci --ignore-scripts --no-audit --no-fund
+      - name: Verify all cloud auth/approval gates remain false
+        run: |
+          grep -q 'const ALLOW_REAL_OPERATIONS=false' integration/N10-A7.23-real-username-acceptance-LOCKED.cjs
+          grep -q 'const STAGING_ADAPTER_ENABLED=false' integration/N10-A7.24-supabase-browser-adapter-REVIEW-LOCKED.cjs
+          grep -q 'const STAGING_SDK_BOOTSTRAP_ENABLED=false' integration/N10-A7.27-staging-ephemeral-sdk-LOCKED.cjs
+          grep -q 'const ALLOW_TURNSTILE_ACTIONS=false' integration/N10-A7.29-turnstile-actions-LOCKED.cjs
+          grep -q 'const ALLOW_BROWSER_ACCEPTANCE=false' integration/N10-A7.30-browser-acceptance-LOCKED.cjs
+          grep -q 'const ALLOW_REAL_STAGING_SIGNOFF=false' integration/N10-A7.31-host-and-edge-evidence-LOCKED.cjs
+          grep -q 'const ALLOW_ROLLBACK_EXECUTION=false' integration/N10-A7.31-closure-reconciliation-LOCKED.cjs
+          node --check tests/N10-A7.33-cloudflare-public-https-READONLY.test.cjs
+      - name: Real public HTTPS HEAD and Chromium CSP/mobile (GET/HEAD only)
+        run: node --test --test-concurrency=1 tests/N10-A7.33-cloudflare-public-https-READONLY.test.cjs
+      - name: No deployment, Secret, Supabase or Cloudflare mutations
+        run: echo 'Read-only public pages.dev evidence only; G10/G11 not executed.'

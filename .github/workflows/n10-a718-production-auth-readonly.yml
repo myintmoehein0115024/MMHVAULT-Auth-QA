@@ -1,0 +1,20 @@
+name: N10-A7.18 production auth integration contract read-only
+on:
+  push:
+    branches: [n10-a7-3-staging-readonly-review]
+    paths:
+      - 'tests/N10-A7.18-production-auth-contract.readonly.test.cjs'
+      - '.github/workflows/n10-a718-production-auth-readonly.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  production-audit:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - name: Check Node audit script syntax
+        run: node --check tests/N10-A7.18-production-auth-contract.readonly.test.cjs
+      - name: Inspect immutable production login/app source; NO WRITE PERMISSIONS
+        run: node --test tests/N10-A7.18-production-auth-contract.readonly.test.cjs

@@ -1,0 +1,27 @@
+name: N10-A7.26 staging acceptance public HARD-LOCK browser QA
+on:
+  push:
+    branches: [n10-a7-3-staging-readonly-review]
+    paths:
+      - 'n10a726-staging-acceptance-LOCKED.html'
+      - 'n10a726/**'
+      - 'tests/N10-A7.26-staging-locked-browser.test.cjs'
+      - '.github/workflows/n10-a726-locked-staging-browser.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  locked-browser:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install pinned Chromium test driver
+        run: npm install --no-save --ignore-scripts --no-audit --no-fund playwright-core@1.56.1
+      - name: Verify isolated live-auth gate and offline Chromium responsive tests
+        env:
+          CHROME_BINARY: /usr/bin/google-chrome
+        run: |
+          node --check n10a726/staging-locked.js
+          node --check tests/N10-A7.26-staging-locked-browser.test.cjs
+          node --test --test-concurrency=1 tests/N10-A7.26-staging-locked-browser.test.cjs

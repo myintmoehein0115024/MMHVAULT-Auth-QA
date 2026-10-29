@@ -1,0 +1,33 @@
+name: N10-A7.27 ephemeral Staging SDK triple-lock simulated E2E
+on:
+  push:
+    branches: [n10-a7-3-staging-readonly-review]
+    paths:
+      - 'integration/N10-A7.23-real-username-acceptance-LOCKED.cjs'
+      - 'integration/N10-A7.24-supabase-browser-adapter-REVIEW-LOCKED.cjs'
+      - 'integration/N10-A7.27-staging-ephemeral-sdk-LOCKED.cjs'
+      - 'tests/N10-A7.25-integrated-locked-username-e2e.test.cjs'
+      - 'tests/N10-A7.27-ephemeral-staging-sdk-locked.test.cjs'
+      - '.github/workflows/n10-a727-ephemeral-staging-sdk.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  bridge-isolation:
+    runs-on: ubuntu-latest
+    timeout-minutes: 7
+    steps:
+      - uses: actions/checkout@v4
+      - name: Check committed triple-lock safety and syntax
+        run: |
+          node --check integration/N10-A7.23-real-username-acceptance-LOCKED.cjs
+          node --check integration/N10-A7.24-supabase-browser-adapter-REVIEW-LOCKED.cjs
+          node --check integration/N10-A7.27-staging-ephemeral-sdk-LOCKED.cjs
+          node --check tests/N10-A7.25-integrated-locked-username-e2e.test.cjs
+          node --check tests/N10-A7.27-ephemeral-staging-sdk-locked.test.cjs
+          grep -q 'const ALLOW_REAL_OPERATIONS=false' integration/N10-A7.23-real-username-acceptance-LOCKED.cjs
+          grep -q 'const STAGING_ADAPTER_ENABLED=false' integration/N10-A7.24-supabase-browser-adapter-REVIEW-LOCKED.cjs
+          grep -q 'const STAGING_SDK_BOOTSTRAP_ENABLED=false' integration/N10-A7.27-staging-ephemeral-sdk-LOCKED.cjs
+      - name: Run fully synthetic three-module session and security regressions
+        run: |
+          node --test --test-concurrency=1 tests/N10-A7.25-integrated-locked-username-e2e.test.cjs tests/N10-A7.27-ephemeral-staging-sdk-locked.test.cjs

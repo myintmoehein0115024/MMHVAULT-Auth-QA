@@ -1,0 +1,31 @@
+name: N10-A7.39-P2 anonymous Access deny-only HTTPS audit
+on:
+  push:
+    branches: [n10-a7-3-staging-readonly-review]
+    paths:
+      - 'review/N10-A7.39-P2-ACCESS-DENY-ALL-NO-DEPLOY.json'
+      - 'tests/N10-A7.39-P2-ACCESS-ANONYMOUS-READONLY.test.cjs'
+      - '.github/workflows/n10-a739-p2-access-anonymous-readonly.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  access-deny-anonymous:
+    runs-on: ubuntu-latest
+    timeout-minutes: 6
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Enforce zero permissions to auth and deploy
+        run: |
+          grep -q '"allowProdDeploy": false' review/N10-A7.39-P2-ACCESS-DENY-ALL-NO-DEPLOY.json
+          grep -q '"allowRealAuth": false' review/N10-A7.39-P2-ACCESS-DENY-ALL-NO-DEPLOY.json
+          grep -q '"allowCloudflarePageDeploy": false' review/N10-A7.39-P2-ACCESS-DENY-ALL-NO-DEPLOY.json
+          node --check tests/N10-A7.39-P2-ACCESS-ANONYMOUS-READONLY.test.cjs
+      - name: Request anonymous HEAD/GET only; deny or Access redirect required
+        run: node --test --test-concurrency=1 tests/N10-A7.39-P2-ACCESS-ANONYMOUS-READONLY.test.cjs
+      - name: No Pages deployment or credential login performed
+        run: |
+          echo 'N10-A7.39-P2: Read-only, Access no Allow users, zero credential input.'

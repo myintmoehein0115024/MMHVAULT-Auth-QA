@@ -1,0 +1,84 @@
+{
+  "phase": "N10-A7.39-P1",
+  "kind": "NONEXECUTABLE_CLOUD_EVIDENCE_AND_FAIL_CLOSED_ROLLOUT",
+  "authorized_scope": "separate_nonproduction_pages_project_and_dedicated_turnstile_only",
+  "observed_at_utc_date": "2026-10-29",
+  "pages_project": {
+    "name": "mmhvault-auth-g10g11-locked",
+    "hostname": "mmhvault-auth-g10g11-locked.pages.dev",
+    "source_repo": "myintmoehein0115024/MMHVAULT-Auth-QA",
+    "source_branch": "n10-a7-3-staging-readonly-review",
+    "build_command": "node review/N10-A7.37-build-credential-ui-LOCKED.cjs",
+    "build_output": "qa/n10a737-preview-dist",
+    "deploy_legacy_enabled": false,
+    "deploy_production_enabled": false,
+    "deploy_preview_setting": "none",
+    "confirmed_total_deployments": 0,
+    "confirmed_successful_deployments": 0,
+    "public_login_page_exists": false,
+    "access_protected_credential_page_exists": false,
+    "secrets_deployed": false
+  },
+  "access": {
+    "enabled": false,
+    "read_error": "HTTP_403_9999_access.api.error.not_enabled",
+    "requires_user_dashboard_activation": true,
+    "connected_app_has_access_scopes": true,
+    "access_application_installed": false,
+    "policy_exists": false,
+    "exact_domain_covered": false,
+    "bypass_routes_reviewed": false,
+    "unauthorized_guest_403_verified": false,
+    "permitted_identity": "UNSET",
+    "oauth_idp": "UNSET"
+  },
+  "turnstile": {
+    "dedicated_widget_created": true,
+    "name": "MMHVAULT-G10G11-Independent-Staging",
+    "mode": "managed",
+    "permitted_hostnames": [
+      "mmhvault-auth-g10g11-locked.pages.dev"
+    ],
+    "sitekey_suffix_for_widget_verification": "6zasvyxh",
+    "backend_secret_deployed": false,
+    "original_widget_unchanged": true,
+    "original_widget_name": "MMHVAULT-Username-Staging",
+    "original_widget_domains": [
+      "myintmoehein0115024.github.io"
+    ]
+  },
+  "staging": {
+    "project_id": "ldivswlhtgmznzwhzsoi",
+    "edge_slug": "mmh-n10a6-username",
+    "edge_version": 11,
+    "live_origin": "https://myintmoehein0115024.github.io",
+    "proposed_new_origin": "https://mmhvault-auth-g10g11-locked.pages.dev",
+    "live_edge_code_gate_open": false,
+    "live_utc_window_start": "1970-01-01T00:00:00.000Z",
+    "live_utc_window_end": "1970-01-01T00:00:00.000Z",
+    "live_enabled_secret": "UNKNOWN",
+    "edge_deploy_permitted": false,
+    "real_account_operations_permitted": false
+  },
+  "explicitly_excluded": [
+    "mmhvault.com",
+    "www.mmhvault.com",
+    "vrypucmyrztxgiqhjspd",
+    "production_github_repository",
+    "prod_auth_users",
+    "production_finance_data"
+  ],
+  "requirements_before_any_credential_enabled_page_deployment": [
+    "Cloudflare Access must be enabled via first-party account dashboard",
+    "Access application and narrowly scoped allow policy must cover exact QA Pages subdomain",
+    "Unauthorized guest requests to every QA URL must be blocked at edge",
+    "Review bypass for unique deployment aliases and preview URLs",
+    "Host-level HTTP CSP and audit log redaction must be verified",
+    "Staging-specific Edge Origin and Turnstile hostname revision reviewed in CLOSED state",
+    "Staging Turnstile secret securely set without copying to GitHub or assistant output",
+    "Standalone real auth staging test window separately approved <=15 mins UTC"
+  ],
+  "g10": "NOT_RUN",
+  "g11": "NOT_RUN",
+  "release_ready": false
+}

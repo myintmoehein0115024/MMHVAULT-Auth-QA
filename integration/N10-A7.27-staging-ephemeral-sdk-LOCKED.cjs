@@ -101,43 +101,48 @@ function createIsolatedStagingSdk({cfg,origin,createClient,fetcher,randomUUID}={
   active=false;storage.clear();
   return {enabled:false,code:'sdk_creation_failed'};
  }
- let closed=false;
+ let closed=false,closing=false;
  const auth=client.auth;
+ function requireActive(){if(closed||closing)throw Error('qa_session_closed')}
  const facade=Object.freeze({
   auth:Object.freeze({
-   signInWithPassword:credentials=>auth.signInWithPassword(credentials),
-   getUser:()=>auth.getUser(),
-   getSession:()=>auth.getSession(),
-   setSession:tokens=>auth.setSession(tokens),
+   signInWithPassword:credentials=>{requireActive();return auth.signInWithPassword(credentials)},
+   getUser:()=>{requireActive();return auth.getUser()},
+   getSession:()=>{requireActive();return auth.getSession()},
+   setSession:tokens=>{requireActive();return auth.setSession(tokens)},
    // The only signout is the current QA local session, never global/device-wide.
    signOut:arg=>{
+    requireActive();
     if(arg?.scope!=='local')throw Error('global_signout_forbidden');
     return auth.signOut({scope:'local'});
    }
   }),
   from:table=>{
+   requireActive();
    if(table!==PROBE)throw Error('non_owner_table_forbidden');
    return client.from(PROBE);
   }
  });
  async function close(){
   if(closed)return {ok:true,code:'already_closed'};
+  if(closing)return {ok:false,code:'close_in_progress'};
+  closing=true;
   let confirmed=false;
   try{
-   const logout=await facade.auth.signOut({scope:'local'});
+   const logout=await auth.signOut({scope:'local'});
    if(logout?.error)throw Error('logout_rejected');
    const session=await facade.auth.getSession();
    if(session?.error||session?.data?.session)throw Error('session_remains');
    confirmed=true;
   }catch{confirmed=false}
   try{await auth.dispose?.()}catch{}
-  storage.clear();closed=true;active=false;
+  storage.clear();closed=true;closing=false;active=false;
   return {ok:confirmed,code:confirmed?'local_session_cleared':'session_cleanup_unconfirmed'};
  }
  return Object.freeze({
   enabled:true,code:'isolated_staging_sdk_review',
   // Review adapter receives only the restricted facade and Edge transport.
-  client:facade,transport:edgeFetch,close
+  client:facade,transport:(url,options)=>{requireActive();return edgeFetch(url,options)},close
  });
 }
 module.exports={

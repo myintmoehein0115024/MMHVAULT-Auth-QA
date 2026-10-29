@@ -74,7 +74,7 @@ for(const [label,edit,error] of [
 }
 test('local CORS decoder validates exact origins with no credentials',()=>{
  const get=(origin,acao)=>v.inspectOptions({status:204,
-  headers:{'Access-Control-Allow-Origin':acao,'Vary':'Origin'}},origin);
+  headers:{...(acao===undefined?{}:{'Access-Control-Allow-Origin':acao}),'Vary':'Origin'}},origin);
  assert.equal(get(OLD,OLD).ok,true);
  assert.equal(get(NEW,undefined).ok,true);
  assert.equal(get(PROD,undefined).ok,true);

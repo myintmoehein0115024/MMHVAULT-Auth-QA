@@ -8,7 +8,7 @@ const BASE='https://ldivswlhtgmznzwhzsoi.supabase.co';
 const SLOT='mmhv-p8-staging-google-pkce-v1';
 const USER='123e4567-e89b-42d3-a456-426614174000';
 test.before(()=>cp.execFileSync(process.execPath,['review/N10-A7.39-P8-build-private-google-oauth.cjs'],{timeout:16000}));
-function mock({url=ORIGIN+'/staging-google.html',google=true,signupDisabled=true,authUserEmail='haochen05024@gmail.com',probeValid=true,logoutOk=true,stored=null,now=Date.now(),tokenOk=true}={}){
+function mock({url=ORIGIN+'/staging-google.html',google=true,signupDisabled=true,authUserEmail='existing-google@example.test',googleLinked=true,probeValid=true,logoutOk=true,stored=null,now=Date.now(),tokenOk=true}={}){
  const calls=[],handlers={},values={},store=new Map(stored?[[SLOT,JSON.stringify(stored)]]:[]);
  const dom=new Map();
  const byId=id=>{
@@ -23,7 +23,7 @@ function mock({url=ORIGIN+'/staging-google.html',google=true,signupDisabled=true
   function result(j,ok=true){return{ok,json:async()=>j}}
   if(path==='/auth/v1/settings')return result({external:{google},disable_signup:signupDisabled});
   if(path==='/auth/v1/token?grant_type=pkce')return result(tokenOk?{access_token:'a'.repeat(72)}:{error:'invalid_grant'},tokenOk);
-  if(path==='/auth/v1/user')return result({id:USER,email:authUserEmail,email_confirmed_at:'2026-10-27T12:00:00Z',is_anonymous:false,app_metadata:{providers:['google']}});
+  if(path==='/auth/v1/user')return result({id:USER,email:authUserEmail,email_confirmed_at:'2026-10-27T12:00:00Z',is_anonymous:false,app_metadata:{providers:googleLinked?['google']:['email']}});
   if(path==='/rest/v1/mmh_n10a6_auth_owner_probe?select=user_id&limit=2')return result(probeValid?[{user_id:USER}]:[]);
   if(path==='/auth/v1/logout?scope=local')return result(null,logoutOk);
   throw Error('unapproved_network:'+path);
@@ -103,7 +103,7 @@ test('Google callback with linked existing identity checks UID/RLS and signs out
  assert.equal(m.byId('owner-status').textContent,'PASS');
 });
 for(const bad of [
- {label:'wrong Google email',opts:{authUserEmail:'other@example.com'}},
+ {label:'unlinked Google identity',opts:{googleLinked:false}},
  {label:'RLS failure',opts:{probeValid:false}},
  {label:'logout failed',opts:{logoutOk:false}},
  {label:'PKCE exchange failed',opts:{tokenOk:false}}

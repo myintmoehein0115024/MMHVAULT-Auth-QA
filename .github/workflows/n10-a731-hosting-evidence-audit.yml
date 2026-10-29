@@ -1,0 +1,38 @@
+name: N10-A7.31 locked response headers and Staging evidence audit
+on:
+  push:
+    branches: [n10-a7-3-staging-readonly-review]
+    paths:
+      - 'integration/N10-A7.31-host-and-edge-evidence-LOCKED.cjs'
+      - 'hosting/N10-A7.31-CLOUDFLARE-PAGES-HEADERS-REVIEW.txt'
+      - 'tests/N10-A7.31-host-and-edge-readiness.test.cjs'
+      - 'tests/N10-A7.31-public-qa-head-READONLY.cjs'
+      - '.github/workflows/n10-a731-hosting-evidence-audit.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  offline-and-public-readonly-audit:
+    runs-on: ubuntu-latest
+    timeout-minutes: 7
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Verify original and additional review gates stay closed
+        run: |
+          grep -q 'const ALLOW_REAL_OPERATIONS=false' integration/N10-A7.23-real-username-acceptance-LOCKED.cjs
+          grep -q 'const STAGING_ADAPTER_ENABLED=false' integration/N10-A7.24-supabase-browser-adapter-REVIEW-LOCKED.cjs
+          grep -q 'const STAGING_SDK_BOOTSTRAP_ENABLED=false' integration/N10-A7.27-staging-ephemeral-sdk-LOCKED.cjs
+          grep -q 'const ALLOW_TURNSTILE_ACTIONS=false' integration/N10-A7.29-turnstile-actions-LOCKED.cjs
+          grep -q 'const ALLOW_CLOUD_WINDOW_MUTATION=false' integration/N10-A7.29-window-approval-LOCKED.cjs
+          grep -q 'const ALLOW_BROWSER_ACCEPTANCE=false' integration/N10-A7.30-browser-acceptance-LOCKED.cjs
+          grep -q 'const ALLOW_REAL_STAGING_SIGNOFF=false' integration/N10-A7.31-host-and-edge-evidence-LOCKED.cjs
+          node --check integration/N10-A7.31-host-and-edge-evidence-LOCKED.cjs
+          node --check tests/N10-A7.31-host-and-edge-readiness.test.cjs
+          node --check tests/N10-A7.31-public-qa-head-READONLY.cjs
+      - name: Run offline negative cases against hosting CSP and release gate
+        run: node --test --test-concurrency=1 tests/N10-A7.31-host-and-edge-readiness.test.cjs
+      - name: Fetch existing public LOCKED QA page response headers only
+        run: node tests/N10-A7.31-public-qa-head-READONLY.cjs

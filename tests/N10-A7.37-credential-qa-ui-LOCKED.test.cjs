@@ -254,3 +254,18 @@ test('cloud live Pages build remains isolated and never imports A7.37 review UI'
  assert.ok(build.includes('hosting/n10a732-preview'));
  assert.ok(!fs.existsSync('hosting/n10a732-preview/qa-login.html'));
 });
+
+test('capture mobile 390px and desktop 1440px screenshots of disabled QA UI',async()=>{
+ const dest='qa/n10a737-review-screenshots';
+ fs.mkdirSync(dest,{recursive:true});
+ for(const width of [390,1440]){
+  const a=await pageFor(width);
+  try{
+   assert.equal(await a.p.locator('#login-submit').isDisabled(),true);
+   await a.p.screenshot({path:path.join(dest,'locked-login-'+width+'px.png'),fullPage:true});
+   await a.p.locator('#view-register').click();
+   await a.p.screenshot({path:path.join(dest,'locked-register-'+width+'px.png'),fullPage:true});
+   assert.deepEqual(a.errors,[]);assert.deepEqual(a.external,[]);
+  }finally{await a.p.close()}
+ }
+});

@@ -76,7 +76,9 @@ test('other origin disables OAuth without network',async()=>{
  assert.equal(m.calls.length,0);assert.equal(m.byId('google-login').disabled,true);
 });
 test('direct initial click generates PKCE S256 and exact callback, never stores tokens',async()=>{
- const m=mock();await m.settle();m.handlers['google-login:click']();await m.settle();
+ const m=mock();await m.settle();m.handlers['google-login:click']();
+ for(let n=0;n<70&&!m.values.redirect;n++){await new Promise(r=>setTimeout(r,20));await m.settle();}
+ assert.ok(m.values.redirect,'S256 digest and redirect must settle');
  const u=new URL(m.values.redirect);
  assert.equal(u.origin,BASE);assert.equal(u.pathname,'/auth/v1/authorize');
  assert.equal(u.searchParams.get('provider'),'google');

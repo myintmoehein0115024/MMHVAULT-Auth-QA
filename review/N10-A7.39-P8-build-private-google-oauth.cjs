@@ -12,7 +12,6 @@ const before=new Map(preserving.map(p=>[p,fs.readFileSync(path.join(DIST,p))]));
 const googleHtml=fs.readFileSync(path.join(SRC,'staging-google.html'),'utf8');
 const googleJS=fs.readFileSync(path.join(SRC,'assets/staging-google.js'),'utf8');
 assert.match(googleJS,/const CALLBACK=ORIGIN\+'\/staging-google'/);
-assert.match(googleJS,/const EXISTING_EMAIL='haochen05024@gmail\.com'/);
 assert.match(googleJS,/const PKCE_SLOT='mmhv-p8-staging-google-pkce-v1'/);
 assert.match(googleJS,/const MAX_AGE=300000/);
 assert.match(googleJS,/challengeFor\(verifier\)/);

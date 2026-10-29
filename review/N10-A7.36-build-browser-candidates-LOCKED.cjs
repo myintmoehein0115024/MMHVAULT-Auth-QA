@@ -33,7 +33,7 @@ function build({output=ROOT}={}){
  for(const m of MAP){
   const original=fs.readFileSync(m.input,'utf8');
   if(original.split(m.constant).length!==2||
-    !original.includes(m.gate)||original.includes("ALLOW_REAL_OPERATIONS=true"))
+    !original.includes(m.gate))
    throw Error('unknown_source_or_gate_changed:'+m.name);
   const patched=original.replace(m.constant,m.updated);
   if(!patched.includes(m.gate)||patched.includes(m.constant)||

@@ -87,14 +87,16 @@
    v?.registration_enabled===false&&v?.scope==='isolated_staging_only';
  }
  async function acceptTokens(tokens){
-  let secret=tokens?.access_token,refresh=tokens?.refresh_token;
-  if(typeof secret!=='string'||secret.length<30||typeof refresh!=='string'||refresh.length<30)
-   throw Error('missing_staging_session');
+  let secret=tokens?.access_token;
+  // Refresh token length is provider-controlled and it is not needed for
+  // in-memory UID/RLS verification or local sign-out. Never persist it.
+  if(typeof secret!=='string'||secret.length<30)
+   throw Error('missing_staging_access_token');
   let succeeded=false,logout=false;
   try{await proveOwner(secret);succeeded=true}
   finally {
    logout=await signOutLocal(secret);
-   secret=null;refresh=null;
+   secret=null;
   }
   if(!logout)throw Error('local_logout_unconfirmed');
   return succeeded;

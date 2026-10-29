@@ -125,6 +125,6 @@ test('injected OAuth code without verifier is rejected before network',async()=>
 });
 test('failure redirect cleared without network or secret output',async()=>{
  const m=mock({url:ORIGIN+'/staging-google.html?error=access_denied'});await m.settle();
- assert.equal(m.calls.length,0);assert.equal(m.values.cleaned,ORIGIN+'/staging-google.html');
+ assert.equal(m.calls.length,0);assert.equal(m.values.cleaned,ORIGIN+'/staging-google');
  assert.equal(m.byId('oauth-result').dataset.state,'blocked');
 });

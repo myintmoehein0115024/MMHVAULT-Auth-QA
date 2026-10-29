@@ -55,11 +55,10 @@ function fakeApp({origin=QA,credentialsOK=true,probeOK=true,logoutOK=true,prefli
   if(path==='/functions/v1/mmh-n10a6-username')return json({code:'preflight_ok',enabled:preflightEnabled,registration_enabled:false,scope:'isolated_staging_only'});
   throw Error('unapproved_fetch_path:'+path);
  };
- let timeoutFn;
+ const mockDocument={getElementById:el,createElement:()=>({}),head:{appendChild:()=>{throw Error('widget_forbidden')}}};
  const globals={location:{origin},window:{isSecureContext:true,addEventListener:()=>{}},
-  document:{getElementById:el,createElement:()=>({}),head:{appendChild(){throw Error('should_not_use_widget')}}},
-  fetch:(url,options)=>fetchNext(url,options),AbortController,Promise,
-  setTimeout:(f)=>{timeoutFn=f;return 2},clearTimeout:()=>{}};
+  document:mockDocument,fetch:fetchNext,AbortController,Promise,
+  setTimeout:()=>2,clearTimeout:()=>{}};
  vm.runInNewContext(fs.readFileSync(path.join(root,'assets/staging-auth.js'),'utf8'),globals,{timeout:3000});
  async function submit(form){const fn=handlers[form+':submit];assert.equal(typeof fn,'function');fn({preventDefault(){}});
   for(let i=0;i<25;i++)await new Promise(resolve=>setImmediate(resolve));

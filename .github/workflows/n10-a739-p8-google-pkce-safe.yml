@@ -1,0 +1,37 @@
+name: N10-A7.39-P8 Private Google PKCE existing identity safe QA
+on:
+  push:
+    branches: [n10-a7-3-staging-readonly-review]
+    paths:
+      - 'review/n10a739-google-oauth/**'
+      - 'review/N10-A7.39-P8-build-private-google-oauth.cjs'
+      - 'tests/N10-A7.39-P8-google-oauth-pkce-PRIVATE.test.cjs'
+      - '.github/workflows/n10-a739-p8-google-pkce-safe.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  google-pkce-local-qa:
+    runs-on: ubuntu-latest
+    timeout-minutes: 7
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Run private OAuth callback strict no-credential tests
+        run: |
+          node --check review/n10a739-google-oauth/assets/staging-google.js
+          node --check review/N10-A7.39-P8-build-private-google-oauth.cjs
+          node --check tests/N10-A7.39-P8-google-oauth-pkce-PRIVATE.test.cjs
+          node --test --test-concurrency=1 tests/N10-A7.39-P8-google-oauth-pkce-PRIVATE.test.cjs
+      - name: Review-only private QA output, not deployed automatically
+        uses: actions/upload-artifact@v4
+        with:
+          name: N10-A7.39-P8-PRIVATE-GOOGLE-PKCE-REVIEW
+          path: qa/n10a737-preview-dist/
+          retention-days: 7
+          if-no-files-found: error
+      - name: No Google user accounts or live OAuth invoked by tests
+        run: |
+          echo 'No OAuth tokens, credentials or real accounts touched. Staging signup remains closed.'

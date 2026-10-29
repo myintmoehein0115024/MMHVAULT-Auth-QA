@@ -48,7 +48,7 @@ function fakeApp({origin=QA,credentialsOK=true,probeOK=true,logoutOK=true,prefli
   calls.push({path,method:options.method,credentials:options.credentials,body:options.body});
   function json(v,ok=true){return {ok,json:async()=>v}}
   if(path==='/auth/v1/token?grant_type=password')
-   return json(credentialsOK?{access_token:'A'.repeat(60),refresh_token:'R'.repeat(60)}:{code:'invalid_credentials'},credentialsOK);
+   return json(credentialsOK?{access_token:'A'.repeat(60),refresh_token:'short'}:{code:'invalid_credentials'},credentialsOK);
   if(path==='/auth/v1/user')return json(fakeUser);
   if(path==='/rest/v1/mmh_n10a6_auth_owner_probe?select=user_id&limit=2')return json(probeOK?[{user_id:uid}]:[]);
   if(path==='/auth/v1/logout?scope=local')return json(null,logoutOK);
@@ -78,6 +78,7 @@ test('real Staging email login mock fetch proves remote UID owner and local logo
  assert.equal((s.elements['email-check']?.textContent||''),'PASS');
  assert.equal(s.elements['result'].dataset.state,'pass');
  assert.equal(s.elements['password'].value,'');
+ assert.equal(s.calls[0].method,'POST');
 });
 test('failed email password never passes and never triggers owner probe',async()=>{
  const s=fakeApp({credentialsOK:false});await s.submit('email-form');

@@ -79,7 +79,11 @@ function fixture(opts={}){
     state.bindings++;
     return json({code:opts.bindConflict?'username_unavailable':'bind_success'},opts.bindConflict?409:200);
    }
-   if(payload.action==='login')return json({code:'login_success',access_token:access,refresh_token:refresh});
+   if(payload.action==='login'){
+    // A new username grant creates a new server-side session after prior local logout.
+    state.signedIn=true;state.owner=UID;
+    return json({code:'login_success',access_token:access,refresh_token:refresh});
+   }
   }
   return badNetwork();
  }

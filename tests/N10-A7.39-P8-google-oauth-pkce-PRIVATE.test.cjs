@@ -80,7 +80,7 @@ test('direct initial click generates PKCE S256 and exact callback, never stores 
  const u=new URL(m.values.redirect);
  assert.equal(u.origin,BASE);assert.equal(u.pathname,'/auth/v1/authorize');
  assert.equal(u.searchParams.get('provider'),'google');
- assert.equal(u.searchParams.get('redirect_to'),ORIGIN+'/staging-google.html');
+ assert.equal(u.searchParams.get('redirect_to'),ORIGIN+'/staging-google');
  assert.equal(u.searchParams.get('code_challenge_method'),'s256');
  assert.match(u.searchParams.get('code_challenge'),/^[a-zA-Z0-9_-]{43}$/);
  const stored=JSON.parse(m.store.get(SLOT));
@@ -89,7 +89,7 @@ test('direct initial click generates PKCE S256 and exact callback, never stores 
 });
 test('Google callback with linked existing identity checks UID/RLS and signs out',async()=>{
  const m=mock({url:ORIGIN+'/staging-google.html?code=ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456',stored:{verifier:'A'.repeat(43),started:Date.now()}});await m.settle();
- assert.equal(m.values.cleaned,ORIGIN+'/staging-google.html');
+ assert.equal(m.values.cleaned,ORIGIN+'/staging-google');
  assert.equal(m.store.has(SLOT),false);
  assert.deepEqual(m.calls.map(x=>x.path),[
   '/auth/v1/token?grant_type=pkce','/auth/v1/user',

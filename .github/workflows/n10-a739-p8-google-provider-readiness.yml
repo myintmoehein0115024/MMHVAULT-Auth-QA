@@ -32,6 +32,8 @@ jobs:
             const enabled=body?.external?.google===true;
             console.log('GOOGLE_READINESS '+JSON.stringify({
               status:r.status,googleProviderEnabled:enabled,
+              signupDisabled:body?.disable_signup===true,
+              signupPolicyVisible:typeof body?.disable_signup==='boolean',
               credentialsRequested:false,
               oauthRedirectStarted:false,accountsCreated:0
             }));

@@ -101,6 +101,8 @@ test('Google callback with linked existing identity checks UID/RLS and signs out
  assert.equal(m.byId('oauth-result').dataset.state,'pass');
  assert.equal(m.byId('google-status').textContent,'PASS');
  assert.equal(m.byId('owner-status').textContent,'PASS');
+ assert.equal(m.byId('provider').textContent,'PRECHECKED');
+ assert.equal(m.byId('signup').textContent,'PRECHECKED');
 });
 for(const bad of [
  {label:'unlinked Google identity',opts:{googleLinked:false}},

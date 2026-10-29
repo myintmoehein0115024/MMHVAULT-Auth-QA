@@ -1,0 +1,48 @@
+{
+  "phase": "N10-A7.39-P2",
+  "createdAtUtc": "2026-10-29",
+  "kind": "DENY_ALL_ACCESS_CREATED_ACCOUNT_STILL_BLOCKED",
+  "access": {
+    "appId": "e0debc2e-8637-4db0-ac4a-c25beabde850",
+    "appName": "MMHVAULT G10G11 Private QA - DENY ALL",
+    "type": "self_hosted",
+    "domain": "mmhvault-auth-g10g11-locked.pages.dev",
+    "policyCount": 0,
+    "allowPolicyCount": 0,
+    "approvedUserCount": 0,
+    "sessionDuration": "15m",
+    "optionsPreflightBypass": false,
+    "appLauncherVisible": false,
+    "guestHttpVerified": false,
+    "firstRealUserEmail": "NOT_PROVIDED"
+  },
+  "pages": {
+    "name": "mmhvault-auth-g10g11-locked",
+    "deployCount": 0,
+    "successfulDeploymentCount": 0,
+    "automaticDeploymentsEnabled": false,
+    "credentialPageDeployed": false
+  },
+  "turnstile": {
+    "name": "MMHVAULT-G10G11-Independent-Staging",
+    "domains": [
+      "mmhvault-auth-g10g11-locked.pages.dev"
+    ],
+    "secretTransferredToStaging": false
+  },
+  "operations": {
+    "allowProdDeploy": false,
+    "allowRealAuth": false,
+    "allowEdgeGateOpen": false,
+    "allowCredentialsInput": false,
+    "allowStagingSecretChange": false,
+    "allowCloudflarePageDeploy": false
+  },
+  "next": [
+    "Verify denied response to anonymous HTTPS request before deployment",
+    "Get exact permitted identity email before allowlisting",
+    "Verify Access application root hostname and unique deployment aliases",
+    "Publish only reviewed locked preview after Access proof",
+    "Verify guest deny and authorized identity login before any credential-enabled page"
+  ]
+}

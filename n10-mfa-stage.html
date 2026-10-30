@@ -89,7 +89,7 @@ const u=await api('/user');const f=Array.isArray(u.factors)?u.factors:[];const f
 factorId=found?.id||'';verifiedFactors=f.filter(x=>x.factor_type==='totp'&&x.status==='verified').length;
 status('factorStatus',found?'已有 Authenticator。输入6位验证码升级为 AAL2。':'未绑定 Authenticator；可点击首次绑定。',found?'warn':'');
 await showResult();
-}catch(e){by('password').value='';if(!uid)forget();status('authStatus','❌ '+String(e.message||'Login failed'),'error');}
+}catch(e){by('password').value='';forget();status('authStatus','❌ '+String(e.message||'Login failed'),'error');}
 finally{busy=false;buttons();}
 });
 inspect.addEventListener('click',async()=>{if(busy||!accessToken)return;busy=true;buttons();try{const u=await api('/user');if(u?.id!==uid)throw Error('UID mismatch');const f=Array.isArray(u.factors)?u.factors:[];const verified=f.filter(x=>x.factor_type==='totp'&&x.status==='verified');factorId=verified[0]?.id||factorId;verifiedFactors=verified.length;status('factorStatus',verified.length?'✅ 检测到已验证的 TOTP；输入6位码。':'当前未绑定已验证的 TOTP。',verified.length?'pass':'warn');await showResult();}catch(e){status('factorStatus',String(e.message),'error')}finally{busy=false;buttons();}});

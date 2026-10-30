@@ -1,0 +1,115 @@
+<!doctype html>
+<html lang="zh-CN"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="robots" content="noindex,nofollow,noarchive"><meta name="referrer" content="no-referrer">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; connect-src https://ldivswlhtgmznzwhzsoi.supabase.co; img-src data: blob:; script-src 'unsafe-inline'; style-src 'unsafe-inline'; base-uri 'none'; form-action 'none'; object-src 'none'">
+<title>MMHVAULT N10 · Staging MFA JWT QA</title>
+<style>
+:root{color-scheme:dark;--gold:#efd095;--line:#466078;--muted:#aebdcd;--bg:#04111c}
+*{box-sizing:border-box}html{background:var(--bg)}body{margin:0;min-height:100dvh;font:15px/1.6 -apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;color:#f4f2ec;background:radial-gradient(ellipse at 75% 3%,#183b59 0,transparent 49%),radial-gradient(ellipse at 10% 92%,#29302e 0,transparent 48%),#04111c}
+main{width:min(700px,calc(100% - 24px));margin:auto;padding:28px 0 55px}header{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;border-bottom:1px solid #71809244;padding-bottom:18px}
+.brand{font:bold 23px Georgia,serif;color:var(--gold);letter-spacing:.07em}.tag{border:1px solid #b3915688;border-radius:20px;padding:6px 12px;font-size:11px;color:var(--gold)}
+h1{font-size:clamp(26px,5vw,35px);letter-spacing:-.035em;margin:25px 0 7px}p{color:var(--muted);margin:7px 0 14px}
+.notice{margin:17px 0;padding:13px 15px;border:1px solid #a88858a3;background:#33291780;color:#f3dbaf;border-radius:13px;font-size:12px}
+.panel{background:linear-gradient(135deg,#112f48eb,#061827ee);border:1px solid #45617a91;border-radius:19px;padding:22px;margin:15px 0;box-shadow:0 20px 45px #0004}
+h2{font-size:16px;color:#ffdea5;margin:0 0 8px}.sub{font-size:12px;margin:0 0 14px}
+label{display:block;font-size:13px;color:#d0deeb;margin:11px 0 5px;font-weight:650}
+input{background:#061626;border:1px solid #53748d;border-radius:11px;width:100%;height:48px;color:white;font:inherit;font-size:16px;padding:10px 12px;outline-offset:2px}
+button{cursor:pointer;border:0;border-radius:11px;padding:11px 15px;min-height:43px;font:750 13px/1.3 inherit;background:linear-gradient(125deg,#f3d9a2,#d5ab63);color:#102033}
+button.secondary{background:#17394e;color:#e0ebf7;border:1px solid #57748b}
+button:disabled{opacity:.45;cursor:not-allowed}.row{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin-top:15px}
+.status{border-left:3px solid #728ca0;background:#09253b;border-radius:6px 11px 11px 6px;min-height:40px;padding:10px 13px;font-size:12px;margin:12px 0 0;overflow-wrap:anywhere}
+.status.pass{border-color:#80d9b6;color:#a6ebc9}.status.error{border-color:#eb9e94;color:#f2b5aa}.status.warn{border-color:#efbd74;color:#f5d9a2}
+#privateQr{display:block;background:white;border-radius:12px;max-width:min(260px,100%);padding:10px;margin:10px auto}
+.secret{padding:12px;border:1px solid #567083;border-radius:10px;overflow-wrap:anywhere;font:12px ui-monospace,monospace;color:#ffe5af;background:#061624}
+[hidden]{display:none!important}footer{font-size:11px;color:#92a6b6;margin:18px 0;line-height:1.7}
+@media(max-width:500px){main{padding-top:15px}.panel{padding:17px;border-radius:15px}.row button{flex:1 1 130px}}
+</style></head>
+<body><main><header><div class="brand">MMHVAULT</div><span class="tag">N10 · AUTH STAGING ONLY</span></header>
+<h1>真实 MFA / JWT 验收</h1><p>只检查独立 Staging 的测试账号，不连接正式财务系统。</p>
+<div class="notice"><b>安全边界：</b>请只使用您已有的 <b>Staging 测试账号</b>，绝对不要输入 mmhvault.com 正式账户的密码。此页面不注册用户，不保存密码、验证码、令牌或恢复词。绑定二维码和密钥属于私密凭证，<b>请勿截图或发给任何人</b>。</div>
+<section class="panel"><h2>01 · 登录 Staging 测试账号</h2>
+<p class="sub">输入测试邮箱和测试密码，验证 Supabase Auth 真实签发的 AAL1 访问令牌。没有保存会话功能。</p>
+<label for="email">Staging 测试邮箱</label><input type="email" id="email" autocomplete="off" spellcheck="false" placeholder="test@example.com">
+<label for="password">Staging 测试密码</label><input type="password" id="password" autocomplete="off" placeholder="仅限测试密码">
+<div class="row"><button id="login">验证测试账号</button><button class="secondary" id="logout" disabled>安全退出本页测试会话</button></div>
+<div id="authStatus" class="status" role="status">尚未登录。/ Not signed in.</div></section>
+<section class="panel"><h2>02 · Authenticator 绑定与验证</h2><p class="sub">已绑定的测试账号直接进行挑战验证；未绑定的测试账号可自愿首次绑定。绑定操作只发生在 Staging。</p>
+<div class="row"><button class="secondary" id="inspect" disabled>检查验证器状态</button><button id="enroll" disabled>首次绑定 Authenticator</button></div>
+<div id="setup" hidden>
+<div class="row"><button class="secondary" id="reveal">显示私密二维码 / 密钥</button><button class="secondary" id="conceal" hidden>立即隐藏</button></div>
+<div id="private" hidden><img id="privateQr" alt="Staging Authenticator 绑定二维码" hidden><div class="secret" id="privateSecret" hidden></div></div>
+</div>
+<label for="otp">身份验证器显示的 6 位动态码</label><input id="otp" inputmode="numeric" autocomplete="one-time-code" maxlength="6" pattern="[0-9]{6}" placeholder="000000">
+<div class="row"><button id="verify" disabled>验证动态码 / 升级至 AAL2</button></div>
+<div id="factorStatus" class="status" role="status">等待测试账号登录。/ Sign in first.</div></section>
+<section class="panel"><h2>03 · 真实 JWT 验收结果</h2><p class="sub">对 Auth 服务器验证过的访问令牌检查 AAL 和 UID，不显示任何原始令牌。此结果不代表 Storage / 生产 RLS 已通过。</p>
+<div class="row"><button id="check" class="secondary" disabled>重新核验 Auth 签发的 JWT</button></div>
+<div id="result" class="status" role="status">尚未认证。/ Not checked.</div></section>
+<footer>项目：<code>ldivswlhtgmznzwhzsoi</code> · 只连 Auth Staging，不连接生产环境。网页只传输凭证至该项目的 Auth API；页面关闭时清除内存中的令牌。实际财务表、Storage、特权 RPC 尚需独立服务器验收。</footer>
+</main>
+<script>
+(()=>{'use strict';
+const PROJECT='ldivswlhtgmznzwhzsoi';
+const BASE='https://'+PROJECT+'.supabase.co';
+const KEY='sb_publishable_LxIB8564OZD48HQ8Mfsc0A_apkgERZo'; // Public staging publishable key, NEVER service role.
+const EXPECTED_ORIGIN='https://myintmoehein0115024.github.io';
+const by=id=>document.getElementById(id);
+const login=by('login'),logout=by('logout'),inspect=by('inspect'),enroll=by('enroll'),verify=by('verify'),check=by('check');
+let accessToken='',uid='',factorId='',qrSecret='',qrSvg='',qrObjectUrl='',busy=false,verifiedFactors=0;
+function status(id,msg,kind=''){const el=by(id);el.textContent=msg;el.className='status '+kind;}
+function clearPrivate(){by('private').hidden=true;by('privateQr').hidden=true;by('privateQr').removeAttribute('src');by('privateSecret').textContent='';by('privateSecret').hidden=true;by('reveal').hidden=false;by('conceal').hidden=true;if(qrObjectUrl){URL.revokeObjectURL(qrObjectUrl);qrObjectUrl='';}qrSvg='';qrSecret='';}
+function buttons(){login.disabled=busy||!!accessToken;logout.disabled=busy||!accessToken;inspect.disabled=busy||!accessToken;enroll.disabled=busy||!accessToken||!!factorId||verifiedFactors>0;verify.disabled=busy||!accessToken||!factorId;check.disabled=busy||!accessToken;}
+function forget(){accessToken='';uid='';factorId='';verifiedFactors=0;by('password').value='';by('email').value='';by('otp').value='';by('setup').hidden=true;clearPrivate();buttons();}
+function requireSite(){if(location.origin!==EXPECTED_ORIGIN)throw Error('仅可在已发布的 Auth-QA GitHub Pages 页面执行。');}
+function decode(token){try{const p=token.split('.')[1];const raw=atob(p.replace(/-/g,'+').replace(/_/g,'/')+'='.repeat((4-p.length%4)%4));return JSON.parse(new TextDecoder().decode(Uint8Array.from(raw,c=>c.charCodeAt(0))));}catch{return null;}}
+async function api(path,method='GET',payload,token=accessToken){
+ requireSite();const ctrl=new AbortController(),timeout=setTimeout(()=>ctrl.abort(),15000);
+ try{const headers={'apikey':KEY};if(token)headers.Authorization='Bearer '+token;if(payload!==undefined)headers['Content-Type']='application/json';
+ const res=await fetch(BASE+'/auth/v1'+path,{method,headers,mode:'cors',credentials:'omit',referrerPolicy:'no-referrer',cache:'no-store',signal:ctrl.signal,...(payload!==undefined?{body:JSON.stringify(payload)}:{})});
+ let data={};try{data=await res.json()}catch{}
+ if(!res.ok)throw Error(typeof data?.error_code==='string'?data.error_code:typeof data?.msg==='string'?data.msg:'HTTP '+res.status);
+ return data;
+ }finally{clearTimeout(timeout);}
+}
+async function validatedToken(token=accessToken){if(!token||!uid)throw Error('请先登录');const u=await api('/user','GET',undefined,token);if(u?.id!==uid)throw Error('Auth UID mismatch');const j=decode(token);if(j?.sub!==uid||j?.exp<Math.floor(Date.now()/1000)||!String(j?.iss||'').includes(PROJECT))throw Error('Auth JWT identity invalid');return {aal:j.aal||null,user:u};}
+async function showResult(){const {aal,user}=await validatedToken();const factors=Array.isArray(user.factors)?user.factors:[];verifiedFactors=factors.filter(f=>f.factor_type==='totp'&&f.status==='verified').length;
+if(aal==='aal2'&&verifiedFactors>0){status('result','✅ PASS · Auth 签发的 JWT 为 AAL2，UID 匹配，服务器证实已绑定验证器。/ Auth-issued AAL2 verified.','pass');}
+else if(aal==='aal1'||aal===null){status('result','当前 AAL1 · UID 已验证'+(verifiedFactors?'，该账户仍需 TOTP 二次验证。':'，此测试账号尚未启用 MFA。'),'warn');}
+else{status('result','❌ 未识别的 Auth 认证级别，禁止判定通过。','error');}
+buttons();
+}
+login.addEventListener('click',async()=>{if(busy||accessToken)return;busy=true;buttons();const email=by('email').value.trim(),password=by('password').value;
+try{if(!/^\S+@\S+\.\S+$/.test(email)||!password)throw Error('请输入 Staging 测试邮箱和测试密码。');
+const d=await api('/token?grant_type=password','POST',{email,password},'');
+by('password').value='';if(!d.access_token||!d.user?.id)throw Error('No Auth session');
+accessToken=d.access_token;uid=d.user.id;
+await validatedToken();by('email').value='';status('authStatus','✅ Staging Auth 真实登录成功（未显示任何令牌）。','pass');
+const u=await api('/user');const f=Array.isArray(u.factors)?u.factors:[];const found=f.find(x=>x.factor_type==='totp'&&x.status==='verified');
+factorId=found?.id||'';verifiedFactors=f.filter(x=>x.factor_type==='totp'&&x.status==='verified').length;
+status('factorStatus',found?'已有 Authenticator。输入6位验证码升级为 AAL2。':'未绑定 Authenticator；可点击首次绑定。',found?'warn':'');
+await showResult();
+}catch(e){by('password').value='';if(!uid)forget();status('authStatus','❌ '+String(e.message||'Login failed'),'error');}
+finally{busy=false;buttons();}
+});
+inspect.addEventListener('click',async()=>{if(busy||!accessToken)return;busy=true;buttons();try{const u=await api('/user');if(u?.id!==uid)throw Error('UID mismatch');const f=Array.isArray(u.factors)?u.factors:[];const verified=f.filter(x=>x.factor_type==='totp'&&x.status==='verified');factorId=verified[0]?.id||factorId;verifiedFactors=verified.length;status('factorStatus',verified.length?'✅ 检测到已验证的 TOTP；输入6位码。':'当前未绑定已验证的 TOTP。',verified.length?'pass':'warn');await showResult();}catch(e){status('factorStatus',String(e.message),'error')}finally{busy=false;buttons();}});
+enroll.addEventListener('click',async()=>{if(busy||!accessToken||factorId||verifiedFactors)return;busy=true;buttons();try{const u=await api('/user');if(u.id!==uid||(u.factors||[]).some(x=>x.factor_type==='totp'&&x.status==='verified'))throw Error('当前账号已有 TOTP 或 UID 已变化');const e=await api('/factors','POST',{factor_type:'totp',friendly_name:'MMHVAULT N10 Staging QA'});if(!e.id||!e.totp?.secret)throw Error('invalid_factor_response');factorId=e.id;qrSecret=e.totp.secret;qrSvg=e.totp.qr_code||'';by('setup').hidden=false;status('factorStatus','已建立 Staging 绑定，请点击显示二维码，在 Authenticator 中扫码，再输入6位码。','warn');}catch(e){status('factorStatus','无法绑定：'+String(e.message),'error')}finally{busy=false;buttons();}});
+by('reveal').addEventListener('click',()=>{if(!qrSecret)return;by('private').hidden=false;by('privateSecret').hidden=false;by('privateSecret').textContent='Staging only · '+qrSecret;const img=by('privateQr');
+if(qrSvg.startsWith('data:image/svg+xml;base64,')&&qrSvg.length<90000){img.src=qrSvg;img.hidden=false;}else if(qrSvg.startsWith('<svg')&&qrSvg.length<90000){qrObjectUrl=URL.createObjectURL(new Blob([qrSvg],{type:'image/svg+xml'}));img.src=qrObjectUrl;img.hidden=false;}
+by('reveal').hidden=true;by('conceal').hidden=false;});
+by('conceal').addEventListener('click',()=>{by('private').hidden=true;by('privateQr').hidden=true;by('privateQr').removeAttribute('src');by('privateSecret').textContent='';by('privateSecret').hidden=true;by('reveal').hidden=false;by('conceal').hidden=true;if(qrObjectUrl){URL.revokeObjectURL(qrObjectUrl);qrObjectUrl='';}});
+verify.addEventListener('click',async()=>{if(busy||!accessToken||!factorId)return;busy=true;buttons();const code=by('otp').value.trim();by('otp').value='';
+try{if(!/^[0-9]{6}$/.test(code))throw Error('请输入6位动态码。');
+const ch=await api('/factors/'+encodeURIComponent(factorId)+'/challenge','POST',{});
+if(!ch?.id)throw Error('Challenge unavailable');
+const v=await api('/factors/'+encodeURIComponent(factorId)+'/verify','POST',{challenge_id:ch.id,code});
+const token=v?.session?.access_token||v?.access_token;
+if(!token)throw Error('Auth did not issue elevated JWT');
+await validatedToken(token);accessToken=token;by('setup').hidden=true;clearPrivate();status('factorStatus','✅ TOTP 验证完成，已获取新的 Auth 会话。','pass');await showResult();
+}catch(e){status('factorStatus','❌ 动态码或会话验证失败：'+String(e.message),'error')}finally{busy=false;buttons();}
+});
+check.addEventListener('click',async()=>{if(busy||!accessToken)return;busy=true;buttons();try{await showResult()}catch(e){status('result','❌ '+String(e.message),'error')}finally{busy=false;buttons()}});
+logout.addEventListener('click',async()=>{if(busy||!accessToken)return;busy=true;buttons();try{await api('/logout?scope=local','POST',{});forget();status('authStatus','已退出 Staging 测试会话。','pass');status('result','已退出。','');status('factorStatus','已清除本页会话。','');}catch(e){status('authStatus','退出未确认，请重试：'+String(e.message),'error')}finally{busy=false;buttons();}});
+addEventListener('pagehide',()=>{forget();});buttons();
+})();
+</script></body></html>

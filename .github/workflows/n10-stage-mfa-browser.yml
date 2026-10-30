@@ -1,0 +1,62 @@
+name: N10 Staging MFA Browser QA
+on:
+  push:
+    paths:
+      - 'n10-mfa-stage.html'
+      - 'tests/n10_stage_browser.spec.cjs'
+      - '.github/workflows/n10-stage-mfa-browser.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  offline-browser:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Install isolated pinned browser runner
+        run: |
+          npm install --no-save --ignore-scripts @playwright/test@1.64.1
+          npx playwright install --with-deps chromium
+      - name: Validate standalone QA HTML syntax
+        run: |
+          python3 - <<'PY'
+          from html.parser import HTMLParser
+          from pathlib import Path
+          import subprocess, tempfile
+          class InlineScript(HTMLParser):
+              def __init__(self):
+                  super().__init__()
+                  self.capture=False
+                  self.parts=[]
+                  self.scripts=[]
+              def handle_starttag(self,name,attrs):
+                  if name=="script":
+                      self.capture="src" not in dict(attrs)
+                      self.parts=[]
+              def handle_data(self,data):
+                  if self.capture:self.parts.append(data)
+              def handle_endtag(self,name):
+                  if name=="script":
+                      if self.capture:self.scripts.append("".join(self.parts))
+                      self.capture=False
+          parser=InlineScript()
+          parser.feed(Path("n10-mfa-stage.html").read_text(encoding="utf-8"))
+          assert len(parser.scripts)==1, "Expected one self-contained staging-only script"
+          with tempfile.TemporaryDirectory() as d:
+              f=Path(d)/"qa.js";f.write_text(parser.scripts[0],encoding="utf-8")
+              subprocess.run(["node","--check",str(f)],check=True)
+          print("Staging-only QA script syntax PASS")
+          PY
+      - name: Test UI with intercepted synthetic Auth responses
+        run: npx playwright test tests/n10_stage_browser.spec.cjs --reporter=line --workers=1
+      - name: Upload failed test evidence
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: n10-staging-qa-browser-failures
+          path: test-results/
+          if-no-files-found: ignore

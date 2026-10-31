@@ -10,8 +10,20 @@ const tests=[
  assert.match(js,/const QA_WINDOW_END_UTC = '1970-01-01T00:00:00.000Z'/);
  assert.match(js,/const QA_OPEN = QA_RELEASED &&/);
  assert.match(js,/Date\.now\(\) < Date\.parse\(QA_WINDOW_END_UTC\)/);
- assert.match(js,/if\(QA_OPEN\)\{/);
+ assert.match(js,/if\(qaWindowActive\(\)\)\{/);
  assert.match(js,/\$\('qaPassword'\)\.disabled=true/);
+}],
+['open tabs recheck QA expiry before actions and after async Auth calls',()=>{
+ assert.match(js,/function qaWindowActive\(\)\{return QA_OPEN && Date\.now\(\) < Date\.parse\(QA_WINDOW_END_UTC\);\}/);
+ assert.match(js,/function alive\(version\)\{return qaWindowActive\(\)&&version===flowVersion&&!document\.hidden;\}/);
+ assert.match(js,/if\(!qaWindowActive\(\)\|\|busy\)return;/);
+ assert.match(js,/if\(!qaWindowActive\(\)\|\|busy\|\|!enrollingFactor/);
+ assert.match(js,/if\(!qaWindowActive\(\)\)throw Error\('qa_closed'\)/);
+ assert.match(js,/const remaining=Math\.max\(0,Date\.parse\(QA_WINDOW_END_UTC\)-Date\.now\(\)\);/);
+ assert.match(js,/setTimeout\(expireWindow,remaining\+5\)/);
+ assert.match(js,/function expireWindow\(\)/);
+ assert.match(js,/if\(!alive\(ver\)\)\{await closeSession\(\);return;\}/);
+ assert.match(js,/if\(client\)void closeSession\(\)\.catch/);
 }],
 ['exact single synthetic A identity, isolated Staging project and QA path',()=>{
  assert.match(js,/https:\/\/ldivswlhtgmznzwhzsoi\.supabase\.co/);

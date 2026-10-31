@@ -38,7 +38,7 @@ small{color:#889eac;font-size:11px}.hidden{display:none!important}.muted{opacity
 <input id="email" type="text" readonly>
 <label for="password">该测试账户的密码</label>
 <input id="password" type="password" maxlength="20" autocomplete="off" placeholder="仅输入测试密码">
-<div class="actions"><button class="primary" id="login" type="button">登录 Staging</button><button id="logout" type="button" disabled>退出并清除</button></div>
+<div class="actions"><button class="primary" id="login" type="button">登录 Staging</button><button id="logout" type="button" disabled>退出并验证旧会话</button></div>
 <p class="status" id="state" role="status" aria-live="polite">未登录 · 恢复密钥服务当前可能仍处于锁定状态</p>
 </div>
 <div class="sheet">
@@ -112,9 +112,46 @@ function switchAccount(){
  setResult('尚未开始测试');
 }
 async function signout(){
- const oldToken=token;clearPrivate();
- if(oldToken){try{await fetch(BASE+'/auth/v1/logout',{method:'POST',headers:{apikey:API_KEY,authorization:'Bearer '+oldToken},cache:'no-store',credentials:'omit'})}catch(_){}}
- setState('已清除本页面会话；请确认服务器端登出状态。');
+ if(busy)return;
+ const oldToken=token;
+ busy=true;
+ clearPrivate();
+ if(!oldToken){
+  setState('已清除本页面会话。');
+  busy=false;updateControls();return;
+ }
+ try{
+  const logoutResponse=await fetch(BASE+'/auth/v1/logout',{
+   method:'POST',
+   headers:{apikey:API_KEY,authorization:'Bearer '+oldToken},
+   cache:'no-store',credentials:'omit'
+  });
+  if(!logoutResponse.ok){
+   setState('页面已清除登录信息，但服务器退出请求未确认（HTTP '+logoutResponse.status+'）。',true);
+   return;
+  }
+  // Hold the old signed bearer only in this function's transient closure.
+  // Do not render, store or log it. Server must reject after logout.
+  const probe=await fetch(EDGE,{
+   method:'POST',
+   headers:{'Content-Type':'application/json',apikey:API_KEY,Authorization:'Bearer '+oldToken},
+   body:JSON.stringify({action:'status'}),cache:'no-store',credentials:'omit'
+  });
+  let reply={};
+  try{reply=await probe.json()}catch(_){}
+  if(probe.status===401){
+   setState('退出后旧会话被服务器拒绝（HTTP 401）：通过。');
+  }else if(probe.status===503 && reply.code==='qa_window_closed'){
+   setState('已退出，测试窗口关闭；旧会话验证无法判定。',true);
+  }else{
+   setState('已退出，但旧会话状态需要复核：HTTP '+probe.status+'，'+String(reply.code||'unknown')+'。',true);
+  }
+ }catch(_){
+  setState('本页面已清除登录信息，但无法确认服务器退出和旧会话状态。',true);
+ }finally{
+  busy=false;
+  updateControls();
+ }
 }
 async function login(){
  if(busy)return;

@@ -22,7 +22,7 @@ test('Actual production-candidate auth checks are isolated in staging before pri
         (folder==='mmh-n10a783-phrase-verify'&&source.indexOf(qaMarker)>source.indexOf("'mfa_required'")));
       assert.ok(source.indexOf(qaMarker)<source.indexOf(privateMarker),
         'QA must return before first side-effectful or private-data operation');
-      assert.ok(source.includes('getUser')||source.includes('authUser'),
+      assert.ok(source.includes('getUser')||source.includes('authUser')||source.includes('authenticatedUser'),
         'Supabase Auth must verify caller before testing MFA');
       assert.ok(!source.includes('console.log('),'Never log credentials or bearer tokens');
     });

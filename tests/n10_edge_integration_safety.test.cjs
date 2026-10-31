@@ -32,14 +32,14 @@ test('Staging dependencies are pinned and MFA helpers cannot be skipped',async()
   const ai=read('mmh-financial-assistant');
   const push=read('mmh-push-test');
   const phrase=read('mmh-n10a783-phrase-verify');
-  assert.ok(ai.includes('npm:@supabase/supabase-js@2.57.4'));
+  assert.ok(ai.includes('async function authUser('));
   assert.ok(phrase.includes('npm:@supabase/supabase-js@2.57.4'));
   assert.ok(push.includes('npm:postgres@3.4.7'));
-  assert.ok(ai.includes('evaluateMfaAssurance(assurance, hasVerifiedFactor)'));
+  assert.ok(ai.includes('evaluateVerifiedAuthUserMfa(jwt, user, supabaseUrl)'));
   assert.ok(push.includes('evaluatePushMfa(mfaRequired, user.id, jwtClaims)'));
-  assert.ok(phrase.includes('evaluateMfaAssurance(data,hasVerifiedFactor)'));
-  assert.ok(ai.includes('if (!Array.isArray(user.factors))'));
-  assert.ok(phrase.includes('if(!Array.isArray(user?.factors))'));
+  assert.ok(phrase.includes('evaluateVerifiedAuthUserMfa(jwt,user,BASE)'));
+  assert.ok(read('mmh-financial-assistant','mfa-assurance.mjs').includes('!Array.isArray(verifiedUser.factors)'));
+  assert.ok(read('mmh-n10a783-phrase-verify','mfa-assurance.mjs').includes('!Array.isArray(verifiedUser.factors)'));
   assert.ok(!push.includes(String.raw`/^Bearer\\s+`));
   assert.ok(push.includes('parseVerifiedBearerClaims'));
   assert.ok(read('mmh-financial-assistant','mfa-assurance.mjs')===

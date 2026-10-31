@@ -14,6 +14,9 @@ const QA_OPEN = QA_RELEASED &&
   Date.now() < Date.parse(QA_WINDOW_END_UTC) &&
   location.origin === EXPECTED_ORIGIN &&
   location.pathname === EXPECTED_PATH;
+// A page may remain open past its QA deadline; re-evaluate time on EVERY
+// sensitive interaction and after asynchronous Auth calls, not just on load.
+function qaWindowActive(){return QA_OPEN && Date.now() < Date.parse(QA_WINDOW_END_UTC);}
 const $ = id => document.getElementById(id);
 let client = null;
 let enrollingFactor = '';
@@ -37,15 +40,15 @@ function resetVisible(){
   $('successPanel').hidden=true;
   $('loginForm').hidden=false;
 }
-function alive(version){return QA_OPEN&&version===flowVersion&&!document.hidden;}
+function alive(version){return qaWindowActive()&&version===flowVersion&&!document.hidden;}
 function lockBusy(on){
   busy=on;
-  $('loginButton').disabled=on||!QA_OPEN;
-  $('verifyButton').disabled=on||!QA_OPEN;
-  $('cancelButton').disabled=on||!QA_OPEN;
+  $('loginButton').disabled=on||!qaWindowActive();
+  $('verifyButton').disabled=on||!qaWindowActive();
+  $('cancelButton').disabled=on||!qaWindowActive();
 }
 async function getClient(){
-  if(!QA_OPEN)throw Error('qa_closed');
+  if(!qaWindowActive())throw Error('qa_closed');
   if(client)return client;
   const {createClient}=await import('https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.57.4/+esm');
   client=createClient(PROJECT,PUBLIC_KEY,{
@@ -83,7 +86,7 @@ async function closeSession({removePending=true}={}){
 function sessionError(){status('测试登录或验证未完成，请重新确认账户及网络。不要分享您的密码或动态验证码。');}
 async function doLogin(event){
   event.preventDefault();
-  if(!QA_OPEN||busy)return;
+  if(!qaWindowActive()||busy)return;
   const pass=$('qaPassword').value;
   $('qaPassword').value='';
   if(pass.length<6||pass.length>128){status('测试密码长度不符合要求。');return;}
@@ -94,9 +97,10 @@ async function doLogin(event){
     const {data,error}=await db.auth.signInWithPassword({email:ACCOUNT_EMAIL,password:pass});
     if(error||data?.user?.id!==ACCOUNT_UID||!data.session?.access_token)throw Error('auth_failed');
     if(!await verifyOwner(db))throw Error('owner_mismatch');
-    if(!alive(ver))return;
+    if(!alive(ver)){await closeSession();return;}
     const {data:factors,error:factorError}=await db.auth.mfa.listFactors();
     if(factorError||!factors)throw Error('factors_unavailable');
+    if(!alive(ver)){await closeSession();return;}
     if((factors.totp||[]).some(f=>f.status==='verified')){
       $('loginForm').hidden=true;$('successPanel').hidden=false;
       status('该测试账户已存在已验证的 TOTP，无需重复绑定。请先退出，后续等待受控联测。');
@@ -130,7 +134,7 @@ async function doLogin(event){
   }finally{lockBusy(false);}
 }
 async function doVerify(){
-  if(!QA_OPEN||busy||!enrollingFactor||$('qrBox').hidden)return;
+  if(!qaWindowActive()||busy||!enrollingFactor||$('qrBox').hidden)return;
   const code=$('totpCode').value.trim();
   if(!/^\d{6}$/.test(code)){status('请输入六位动态验证码。');return;}
   $('totpCode').value='';
@@ -177,13 +181,31 @@ document.addEventListener('visibilitychange',()=>{
     // Prevent a hidden-tab / stale async result from showing a QR later.
     flowVersion++;hideQr();
     $('qaPassword').value='';
-    if(QA_OPEN&&client){void closeSession().catch(()=>{});}
+    if(client){void closeSession().catch(()=>{});}
   }
 });
 window.addEventListener('pagehide',()=>{
   flowVersion++;clearPrivate();enrollingFactor='';
 });
-if(QA_OPEN){
+function expireWindow(){
+  if(qaWindowActive())return;
+  flowVersion++;
+  clearPrivate();
+  resetVisible();
+  $('qaPassword').disabled=true;
+  $('loginButton').disabled=true;
+  $('verifyButton').disabled=true;
+  $('cancelButton').disabled=true;
+  $('stateTitle').textContent='LOCKED · 测试窗口已结束';
+  $('stateNote').textContent='测试窗口已到期，不能再登录或绑定 MFA。';
+  status('测试窗口已结束。如需继续，必须重新获得授权。');
+  if(client)void closeSession().catch(()=>{});
+}
+if(qaWindowActive()){
+  // UI closes without requiring refresh. Runtime guards independently
+  // deny late requests even if this browser timer gets throttled.
+  const remaining=Math.max(0,Date.parse(QA_WINDOW_END_UTC)-Date.now());
+  if(remaining<=2147483000)setTimeout(expireWindow,remaining+5);
   $('qaPassword').disabled=false;
   $('stateTitle').textContent='Staging enrollment · 有效测试窗口';
   $('stateNote').textContent='仅用于审核通过的合成账户 A。测试不读取财务与 Vault 数据。';

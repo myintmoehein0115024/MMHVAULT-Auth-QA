@@ -78,14 +78,30 @@ Deno.serve(async(req:Request)=>{
   // enrolled factor state. Do not treat missing factors as "no MFA".
   let hasFactors:boolean|undefined=Array.isArray(user.factors)
     ? user.factors.some((f:any)=>f?.status==="verified") : undefined;
+  // Some SDK responses omit factors. Try the raw, Auth-validated /user
+  // endpoint using the SAME verified JWT; never guess "unenrolled".
+  if(hasFactors===undefined){
+    try{
+      const r=await fetch(BASE+"/auth/v1/user",{
+        headers:{"apikey":PUBLIC,"authorization":"Bearer "+bearer},
+        cache:"no-store"
+      });
+      if(r.ok){
+        const record=await r.json();
+        if(record?.id===user.id&&Array.isArray(record.factors))
+          hasFactors=record.factors.some((f:any)=>f?.status==="verified");
+      }
+    }catch(_){ /* fail closed below if unavailable */ }
+  }
   let assurance:any=null;
   try{
     const a=await sdk.auth.mfa.getAuthenticatorAssuranceLevel(bearer);
     if(!a.error&&a.data &&
        (a.data.nextLevel==="aal1"||a.data.nextLevel==="aal2"))assurance=a.data;
   }catch(_){ /* use independently verified /user factor state if present */ }
-  if(hasFactors===undefined && assurance)
-    hasFactors=assurance.nextLevel==="aal2";
+  // Do not infer absence of MFA from the SDK's nextLevel: some SDK
+  // versions default nextLevel to aal1 if factors are missing. That would
+  // incorrectly allow an enrolled AAL1 user through a privileged API.
   if(typeof hasFactors!=="boolean")return reply("FACTOR_STATE_UNAVAILABLE",503);
 
   const currentLevel=jwtClaims.aal||"aal1";

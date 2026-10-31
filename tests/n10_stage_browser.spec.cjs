@@ -65,6 +65,55 @@ for(const size of [{width:390,height:844},{width:1440,height:900}]){
     await page.locator('#logout').click();
     await expect(page.locator('#authStatus')).toContainText('已退出');
   });
+  test('real-JWT acceptance UI verifies RLS, RPC and Storage: '+size.width,async({page})=>{
+    await page.setViewportSize(size);await mockedPage(page);
+    const getAal=(request)=>{
+      const tok=request.headers()['authorization']?.replace(/^Bearer /i,'');
+      if(!tok) return null;
+      try{return JSON.parse(Buffer.from(tok.split('.')[1],'base64url').toString()).aal}catch{return null}
+    };
+    await page.route('**/rest/v1/**',route=>{
+      const a=getAal(route.request());
+      const path=new URL(route.request().url()).pathname;
+      const reply=(body,status=200)=>route.fulfill({
+        status,contentType:'application/json',
+        body:JSON.stringify(body),
+        headers:{'access-control-allow-origin':'*'}
+      });
+      if(path.includes('/rpc/mmh_n10_qa_privileged_read')){
+        const owner=route.request().postDataJSON()?.p_expected_uid;
+        if(a!=='aal2'||owner!==UID)return reply({code:'42501',message:'not authorized'},403);
+        return reply(true);
+      }
+      if(path.includes('/mmh_n10_signed_qa_entries')){
+        return reply(a==='aal2'?[{user_id:UID,marker:'N10-ISOLATED-STAGING-ONLY'}]:[]);
+      }
+      return reply({message:'unexpected route'},404);
+    });
+    await page.route('**/storage/v1/**',route=>{
+      const a=getAal(route.request());
+      if(a!=='aal2')return route.fulfill({status:403,contentType:'application/json',body:'{"message":"denied"}'});
+      const method=route.request().method();
+      if(method==='GET')return route.fulfill({status:200,contentType:'text/plain',body:'N10-STAGING-SYNTHETIC-FILE'});
+      return route.fulfill({status:200,contentType:'application/json',body:'{}'});
+    });
+    await page.locator('#email').fill('qa@example.test');
+    await page.locator('#password').fill('not-a-real-password');
+    await page.locator('#login').click();
+    await expect(page.locator('#acceptance')).toBeDisabled();
+    await page.locator('#enroll').click();
+    await page.locator('#otp').fill('123456');
+    await page.locator('#verify').click();
+    await expect(page.locator('#acceptance')).toBeEnabled();
+    await page.locator('#acceptance').click();
+    await expect(page.locator('#acceptanceStatus')).toContainText('全部 PASS');
+    const results=await page.locator('#acceptanceResults').textContent();
+    expect(results).not.toMatch(/FAIL|未完成/);
+    expect((results.match(/✅ PASS/g)||[]).length).toBe(11);
+    const stored=await page.evaluate(()=>[localStorage.length,sessionStorage.length]);
+    expect(stored).toEqual([0,0]);
+  });
+
   test('Staging credential error clears password: '+size.width,async({page})=>{
     await page.setViewportSize(size);await mockedPage(page,{failLogin:true});
     await page.locator('#email').fill('qa@example.test');

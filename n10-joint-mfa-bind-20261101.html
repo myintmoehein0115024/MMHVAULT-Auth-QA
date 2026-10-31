@@ -39,9 +39,10 @@ footer{text-align:center;color:var(--muted);font-size:11px;margin:24px 0}.hidden
 </section>
 <section class="card" id="enrollPanel" hidden>
 <h2>2 · 绑定验证器</h2>
-<p>请使用 Google Authenticator 或其他 TOTP 验证器扫描。此二维码包含临时二次认证密钥，请勿截图、分享或上传。</p>
+<p>请用<strong>电脑浏览器保持此页在前台</strong>，再用<strong>另外一部手机</strong>的 Google Authenticator 扫码。切换此页到后台会为了安全而退出测试会话，因此不要在同一台设备上来回切换应用。</p>
+<p>二维码包含临时二次认证密钥，请勿截图、分享或上传。输入新的六位动态验证码后，必须看到服务端验证成功且 AAL2/verified 才能算通过；如有错误，只告诉我错误提示文字，不发送验证码。</p>
 <div class="qrbox" id="qrBox"><img id="totpQr" alt="Private TOTP enrollment QR" referrerpolicy="no-referrer"></div>
-<p class="muted">二维码会自动隐藏；隐藏后可取消并重新开始绑定。</p>
+<p class="muted">二维码将在 90 秒后隐藏；若隐藏，请取消本轮后重新生成。本轮测试结束后由独立只读核对验证器状态。</p>
 <label for="totpCode">Six-digit code · 六位动态验证码</label><input id="totpCode" inputmode="numeric" type="text" maxlength="6" autocomplete="one-time-code" placeholder="000000" pattern="[0-9]{6}">
 <div class="actions"><button id="verifyButton" type="button">Verify · 完成绑定</button><button id="cancelButton" type="button" class="secondary">Cancel · 取消</button></div>
 </section>

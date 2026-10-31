@@ -53,6 +53,13 @@ button:disabled{opacity:.45;cursor:not-allowed}.row{display:flex;flex-wrap:wrap;
 <div class="status" id="acceptanceResults" style="white-space:pre-wrap" role="status" aria-live="polite">尚未检查真实 RLS、RPC、Storage。</div>
 <div class="status" id="edgeAcceptanceResults" style="white-space:pre-wrap" role="status" aria-live="polite">新增 Edge 验证尚未单独复测。</div>
 </section>
+<section class="panel" id="edgeIntegrationSection">
+<h2>05 · N10 实际 Edge 候选代码验收</h2>
+<p class="sub">检查三项真实部署的候选认证流程（6项）。接口只返回 MFA 安全决策，禁止财务读取、推送发送及恢复词验证。已完成 AAL2 后点击一次即可，不必重复上面的 17 项。</p>
+<div class="row"><button id="integrationAcceptance" disabled>验证实际 Edge · 6 项</button></div>
+<div class="status" id="integrationStatus" role="status" aria-live="polite">先登录 Staging 测试账号并完成 AAL2。</div>
+<div class="status" id="integrationResults" style="white-space:pre-wrap" role="status" aria-live="polite">尚未运行实际 Edge 验收。</div>
+</section>
 <footer>项目：<code>ldivswlhtgmznzwhzsoi</code> · 只连 Auth Staging，不连接生产环境。网页只传输凭证至该项目的 Auth API；页面关闭时清除内存中的令牌。实际财务表、Storage、特权 RPC 尚需独立服务器验收。</footer>
 </main>
 <script>
@@ -62,11 +69,11 @@ const BASE='https://'+PROJECT+'.supabase.co';
 const KEY='sb_publishable_LxIB8564OZD48HQ8Mfsc0A_apkgERZo'; // Public staging publishable key, NEVER service role.
 const EXPECTED_ORIGIN='https://myintmoehein0115024.github.io';
 const by=id=>document.getElementById(id);
-const login=by('login'),logout=by('logout'),inspect=by('inspect'),enroll=by('enroll'),verify=by('verify'),check=by('check'),acceptance=by('acceptance'),edgeAcceptance=by('edgeAcceptance');
+const login=by('login'),logout=by('logout'),inspect=by('inspect'),enroll=by('enroll'),verify=by('verify'),check=by('check'),acceptance=by('acceptance'),edgeAcceptance=by('edgeAcceptance'),integrationAcceptance=by('integrationAcceptance');
 let accessToken='',preMfaToken='',uid='',factorId='',qrSecret='',qrSvg='',qrObjectUrl='',busy=false,verifiedFactors=0;
 function status(id,msg,kind=''){const el=by(id);el.textContent=msg;el.className='status '+kind;}
 function clearPrivate(){by('private').hidden=true;by('privateQr').hidden=true;by('privateQr').removeAttribute('src');by('privateSecret').textContent='';by('privateSecret').hidden=true;by('reveal').hidden=false;by('conceal').hidden=true;if(qrObjectUrl){URL.revokeObjectURL(qrObjectUrl);qrObjectUrl='';}qrSvg='';qrSecret='';}
-function buttons(){login.disabled=busy||!!accessToken;logout.disabled=busy||!accessToken;inspect.disabled=busy||!accessToken;enroll.disabled=busy||!accessToken||!!factorId||verifiedFactors>0;verify.disabled=busy||!accessToken||!factorId;check.disabled=busy||!accessToken;acceptance.disabled=busy||!preMfaToken||!accessToken||verifiedFactors<1||decode(accessToken)?.aal!=='aal2';edgeAcceptance.disabled=acceptance.disabled;}
+function buttons(){login.disabled=busy||!!accessToken;logout.disabled=busy||!accessToken;inspect.disabled=busy||!accessToken;enroll.disabled=busy||!accessToken||!!factorId||verifiedFactors>0;verify.disabled=busy||!accessToken||!factorId;check.disabled=busy||!accessToken;acceptance.disabled=busy||!preMfaToken||!accessToken||verifiedFactors<1||decode(accessToken)?.aal!=='aal2';edgeAcceptance.disabled=acceptance.disabled;integrationAcceptance.disabled=acceptance.disabled;}
 function forget(){accessToken='';preMfaToken='';uid='';factorId='';verifiedFactors=0;by('password').value='';by('email').value='';by('otp').value='';by('setup').hidden=true;clearPrivate();buttons();}
 function requireSite(){if(location.origin!==EXPECTED_ORIGIN)throw Error('仅可在已发布的 Auth-QA GitHub Pages 页面执行。');}
 function decode(token){try{const p=token.split('.')[1];const raw=atob(p.replace(/-/g,'+').replace(/_/g,'/')+'='.repeat((4-p.length%4)%4));return JSON.parse(new TextDecoder().decode(Uint8Array.from(raw,c=>c.charCodeAt(0))));}catch{return null;}}
@@ -155,6 +162,48 @@ edgeAcceptance.addEventListener('click',async()=>{
   by('edgeAcceptanceResults').textContent=(done?'✅ Edge 6/6 PASS\n':'❌ Edge 未全部通过\n')+output.join('\n');
   busy=false;buttons();
 });
+
+integrationAcceptance.addEventListener('click',async()=>{
+  if(busy||!preMfaToken||!accessToken||verifiedFactors<1)return;
+  busy=true;buttons();
+  const results=[], target=by('integrationResults');
+  const show=()=>{target.textContent=results.join('\n');};
+  const routes=[
+    {name:'财务 AI',slug:'mmh-n10-qa-ai-integration-20261031',denied:'MFA_REQUIRED'},
+    {name:'Push 测试',slug:'mmh-n10-qa-push-integration-20261031',denied:'MFA_REQUIRED'},
+    {name:'恢复密钥',slug:'mmh-n10-qa-phrase-integration-20261031',denied:'mfa_required'}
+  ];
+  try{
+    const low=await validatedToken(preMfaToken),high=await validatedToken(accessToken);
+    if(low.aal!=='aal1'||high.aal!=='aal2'||low.user.id!==high.user.id)
+      throw Error('Auth-issued AAL1/AAL2 identity or assurance mismatch');
+    if(!Array.isArray(high.user.factors)||!high.user.factors.some(x=>x.status==='verified'))
+      throw Error('MFA enrollment cannot be confirmed');
+    status('integrationStatus','真实 Edge 认证请求执行中…','warn');
+    for(const entry of routes){
+      const url='/functions/v1/'+entry.slug;
+      const headers={'Content-Type':'application/json'};
+      const call1=await checkedResource(preMfaToken,url,'POST',
+        JSON.stringify({action:'status',mode:entry.name}),headers);
+      results.push((call1.status===403&&call1.data?.code===entry.denied?'✅ PASS':'❌ FAIL')+
+        ' · '+entry.name+' AAL1 拒绝 · HTTP '+call1.status+' · '+
+        String(call1.data?.code||'no_code').slice(0,52));
+      show();
+      const call2=await checkedResource(accessToken,url,'POST',
+        JSON.stringify({action:'status',mode:entry.name}),headers);
+      results.push((call2.status===200&&call2.data?.code==='MFA_ALLOWED'&&call2.data?.qa_only===true?'✅ PASS':'❌ FAIL')+
+        ' · '+entry.name+' AAL2 允许 · HTTP '+call2.status+' · '+
+        String(call2.data?.code||'no_code').slice(0,52));
+      show();
+    }
+  }catch(e){
+    results.push('❌ 运行中断 · '+String(e?.message||'unknown').slice(0,150));
+  }
+  const all=results.length===6&&results.every(x=>x.startsWith('✅ PASS'));
+  status('integrationStatus',all?'✅ 实际 Edge 集成 6/6 PASS':'❌ 尚有失败项；请仅发送结果文字，不要发送验证码或令牌',all?'pass':'error');
+  show();busy=false;buttons();
+});
+
 acceptance.addEventListener('click',async()=>{
   if(busy||!accessToken||!preMfaToken)return;
   busy=true;buttons();const results=[];let uploaded=false,path='',storageCleanupOK=true;

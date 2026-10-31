@@ -1,0 +1,155 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="robots" content="noindex,nofollow,noarchive"><meta name="referrer" content="no-referrer">
+<title>MMHVAULT · N10 MFA AAL1/AAL2 隔离验收</title>
+<style>
+:root{font-family:system-ui,-apple-system,"Segoe UI",sans-serif;color-scheme:dark;color:#f6f1e8;background:#061321}
+*{box-sizing:border-box}body{margin:0;min-height:100dvh;padding:32px 16px 55px;background:radial-gradient(ellipse at top left,#223748 0,transparent 55%),#061321}
+main{max-width:650px;margin:0 auto}.meta{font-weight:800;letter-spacing:.16em;text-transform:uppercase;color:#d9b87b;font-size:11px}
+h1{font-size:clamp(24px,5.5vw,34px);letter-spacing:-.04em;margin:12px 0}h2{font-size:17px;color:#efd4a8}
+p{font-size:13px;line-height:1.8;color:#aabccb}.card{border-radius:20px;border:1px solid #8d775752;background:#0d2130dc;padding:23px;margin-top:16px}
+label{display:block;font-size:12px;font-weight:700;color:#c6d3de;margin:13px 0 6px}
+input{width:100%;border-radius:11px;padding:13px 12px;font:inherit;background:#071725;color:#fff;border:1px solid #546a7a6b}
+button{padding:13px 14px;font:inherit;font-size:13px;font-weight:700;border:1px solid #bba07259;background:#203346;color:#f6e5c5;border-radius:12px;cursor:pointer}
+button.primary{background:#dfbd85;color:#0a1622;border-color:transparent}button:disabled{opacity:.4;cursor:not-allowed}
+.controls{display:grid;grid-template-columns:1fr 1fr;gap:9px;margin-top:15px}
+.status{padding:12px 14px;border-radius:12px;background:#091621;border:1px solid #53657b65;font-size:12px;line-height:1.8;overflow-wrap:anywhere}
+.status.pass{border-color:#63b68f60;color:#b3ebc8}.status.fail{border-color:#d18b8066;color:#f3b2a9}
+#qr{max-width:230px;width:100%;height:auto;background:white;padding:10px;border-radius:13px;display:block;margin:12px 0}
+.hidden{display:none!important}small{color:#a1b2bf;font-size:11px;line-height:1.6}
+@media(max-width:480px){.controls{grid-template-columns:1fr}.card{padding:18px}}
+</style>
+</head>
+<body><main>
+<div class="meta">MMHVAULT · Auth-Staging Only</div>
+<h1>N10 · MFA 二次认证验收</h1>
+<p>独立、临时的 AAL1 / AAL2 测试页面。仅使用专门创建的 Staging 合成账户，不接受正式账户。本页面不保存密码、登录令牌或验证器密钥到本地存储；不要截图或分享 QR、动态验证码、密码。</p>
+<div class="card"><h2>1 · 登录合成账户</h2>
+<label for="email">仅允许的 Staging 测试账户</label><input id="email" type="text" readonly value="n10-mfa-qa-20261101@no-mail.mmhvault.invalid">
+<label for="password">测试账户密码</label><input id="password" type="password" maxlength="30" autocomplete="off">
+<div class="controls"><button id="login" class="primary">登录 Staging</button><button id="logout">退出并清除</button></div>
+<p id="state" class="status" role="status" aria-live="polite">尚未登录</p>
+</div>
+<div class="card"><h2>2 · 绑定测试验证器（仅一次）</h2>
+<p>首次登录后，点击绑定并用 Google Authenticator 或其他 TOTP App 扫描。动态验证码及 QR 不要截图。验证成功后须退出、重新登录，以检查已绑定 MFA 的 AAL1 拒绝。</p>
+<button id="enroll">开始绑定 TOTP</button>
+<div id="qrbox" class="hidden">
+<img id="qr" alt="临时 TOTP 绑定 QR，请勿截图或分享"><small>QR 只在页面内临时显示；如果离开或退出，页面会清除。验证成功后立即隐藏。</small>
+</div>
+<label for="otp">当前动态验证码（6 位）</label><input id="otp" inputmode="numeric" type="text" maxlength="6" autocomplete="one-time-code" placeholder="仅在此页输入验证码">
+<div class="controls"><button id="verifyEnroll">确认绑定验证码</button><button id="elevate">将本次登录提升为 AAL2</button></div>
+</div>
+<div class="card"><h2>3 · 真实服务器授权验证</h2>
+<p>绑定 TOTP 后先退出，再用密码登录一次。先测 AAL1 拦截，然后输入新的六位验证码提升为 AAL2，最后验证放行。此处只调用独立 Staging MFA 检查服务，不读取财务数据或十词。</p>
+<div class="controls"><button id="aal1">测试 AAL1 必须拒绝</button><button id="aal2" class="primary">测试 AAL2 应当放行</button></div>
+<p id="result" class="status" role="status" aria-live="polite">尚未开始二次认证安全测试</p>
+</div>
+<small>如测试结束，先退出并由账户持有人删除该合成用户。本页面仅用于隔离 Staging，不是正式登录入口。</small>
+</main>
+<script type="module">
+import {createClient} from 'https://esm.sh/@supabase/supabase-js@2.57.4?bundle';
+const BASE='https://ldivswlhtgmznzwhzsoi.supabase.co';
+const KEY='sb_publishable_LxIB8564OZD48HQ8Mfsc0A_apkgERZo';
+const EMAIL='n10-mfa-qa-20261101@no-mail.mmhvault.invalid';
+const EDGE=BASE+'/functions/v1/mmh-n10-qa-edge-mfa-20261031';
+const sb=createClient(BASE,KEY,{auth:{persistSession:false,autoRefreshToken:false,detectSessionInUrl:false}});
+const $=id=>document.getElementById(id);
+let verifiedUid='',pendingFactor='',busy=false,qrData='',generation=0;
+function message(where,value,ok){$(where).textContent=value;$(where).className='status '+(ok===true?'pass':ok===false?'fail':'');}
+function wipeSensitive(){
+ generation++;pendingFactor='';qrData='';$('qr').removeAttribute('src');$('qrbox').classList.add('hidden');$('otp').value='';$('password').value='';
+}
+function setControls(){
+ for(const id of ['login','logout','enroll','verifyEnroll','elevate','aal1','aal2'])$(id).disabled=busy;
+}
+async function withBusy(fn){
+ if(busy)return;
+ busy=true;setControls();
+ try{await fn()}catch(_){message('result','网络或认证步骤失败；未通过验收。',false)}
+ finally{busy=false;setControls()}
+}
+async function getValidatedSession(){
+ const {data,error}=await sb.auth.getUser();
+ if(error||!data?.user?.id||data.user.email!==EMAIL||data.user.id!==verifiedUid)throw Error('identity_mismatch');
+ const {data:ses,error:se}=await sb.auth.getSession();
+ if(se||!ses?.session?.access_token)throw Error('session_missing');
+ return ses.session.access_token;
+}
+async function getMfaState(){
+ const {data,error}=await sb.auth.mfa.getAuthenticatorAssuranceLevel();
+ if(error||!data)throw Error('aal_unknown');
+ return data;
+}
+async function getVerifiedFactor(){
+ const {data,error}=await sb.auth.mfa.listFactors();
+ if(error||!data)throw Error('factor_unavailable');
+ return data.totp?.find(x=>x.status==='verified')?.id||'';
+}
+$('login').addEventListener('click',()=>withBusy(async()=>{
+ await sb.auth.signOut({scope:'local'});
+ wipeSensitive();verifiedUid='';
+ const pass=$('password').value;
+ if(pass.length<12||pass.length>30){message('state','请使用专用测试账户密码（12–30 字符）。',false);return}
+ const {data,error}=await sb.auth.signInWithPassword({email:EMAIL,password:pass});
+ $('password').value='';
+ if(error||!data?.user?.id||data.user.email!==EMAIL){await sb.auth.signOut({scope:'local'});message('state','测试账号登录失败或身份不符。',false);return}
+ verifiedUid=data.user.id;
+ const aal=await getMfaState();
+ const factor=await getVerifiedFactor();
+ message('state','测试账号登录成功。当前 '+String(aal.currentLevel||'unknown')+'；下一步 '+String(aal.nextLevel||'unknown')+'；已绑定验证器 '+(factor?'是':'否'),true);
+}));
+$('logout').addEventListener('click',()=>withBusy(async()=>{
+ wipeSensitive();verifiedUid='';
+ await sb.auth.signOut({scope:'global'});
+ message('state','已退出并清除本页面的临时敏感信息。',true);
+ message('result','请重新登录后继续测试。');
+}));
+$('enroll').addEventListener('click',()=>withBusy(async()=>{
+ await getValidatedSession();
+ if(await getVerifiedFactor()){message('result','本账户已绑定验证器，请退出后重新登录进行 AAL1/AAL2 验收。',false);return}
+ const {data,error}=await sb.auth.mfa.enroll({factorType:'totp',friendlyName:'N10 Synthetic Staging QA'});
+ if(error||!data?.id||!data.totp?.qr_code)throw Error('enroll_failed');
+ pendingFactor=data.id;
+ const svg=data.totp.qr_code;
+ qrData=svg.startsWith('data:image/')?svg:'data:image/svg+xml;charset=utf-8,'+encodeURIComponent(svg);
+ $('qr').src=qrData;$('qrbox').classList.remove('hidden');
+ message('result','TOTP QR 已生成。用验证器扫描并输入当前 6 位动态码，然后点击「确认绑定验证码」。',true);
+}));
+async function completeMfa(enrolling){
+ await getValidatedSession();
+ const code=$('otp').value.trim();$('otp').value='';
+ if(!/^\d{6}$/.test(code)){message('result','请输入当前 6 位验证码。',false);return}
+ const factorId=enrolling?pendingFactor:await getVerifiedFactor();
+ if(!factorId){message('result','没有可验证的 TOTP 因子。',false);return}
+ const {data,error}=await sb.auth.mfa.challengeAndVerify({factorId,code});
+ if(error||!data){message('result','动态验证码未通过，未提升为 AAL2。',false);return}
+ const next=await getMfaState();
+ if(enrolling){pendingFactor='';qrData='';$('qr').removeAttribute('src');$('qrbox').classList.add('hidden')}
+ message('result',next.currentLevel==='aal2'?(enrolling?'TOTP 绑定成功，已升至 AAL2；请退出后重新登录测试 AAL1。':'动态验证码正确，本次会话已升至 AAL2。'):'验证返回但当前 AAL2 尚未确认。',next.currentLevel==='aal2');
+}
+$('verifyEnroll').addEventListener('click',()=>withBusy(()=>completeMfa(true)));
+$('elevate').addEventListener('click',()=>withBusy(()=>completeMfa(false)));
+async function checkEdge(expectAAL2){
+ const jwt=await getValidatedSession();
+ const aal=await getMfaState();
+ const expectedLevel=expectAAL2?'aal2':'aal1';
+ if(aal.currentLevel!==expectedLevel||(!expectAAL2&&aal.nextLevel!=='aal2')){
+   message('result','不能判定：当前验证等级 '+String(aal.currentLevel)+' / '+String(aal.nextLevel)+'，请按步骤重新登录或输入验证码。',false);return;
+ }
+ const r=await fetch(EDGE,{method:'POST',cache:'no-store',credentials:'omit',
+   headers:{'content-type':'application/json','apikey':KEY,'authorization':'Bearer '+jwt},
+   body:JSON.stringify({mode:'recovery-phrase'})});
+ let reply=null;try{reply=await r.json()}catch(_){}
+ const code=String(reply?.code||'unknown');
+ const pass=expectAAL2?(r.status===200&&code==='MFA_ALLOWED'):(r.status===403&&code==='MFA_REQUIRED');
+ message('result',pass?('PASS：'+expectedLevel.toUpperCase()+' '+code+'（HTTP '+r.status+'）'):
+   ('尚未通过：'+expectedLevel.toUpperCase()+' '+code+'（HTTP '+r.status+'）'),pass);
+}
+$('aal1').addEventListener('click',()=>withBusy(()=>checkEdge(false)));
+$('aal2').addEventListener('click',()=>withBusy(()=>checkEdge(true)));
+document.addEventListener('visibilitychange',()=>{if(document.hidden){$('qr').removeAttribute('src');$('qrbox').classList.add('hidden');qrData='';$('otp').value=''}});
+window.addEventListener('pagehide',()=>{wipeSensitive();void sb.auth.signOut({scope:'local'})});
+</script>
+</body></html>

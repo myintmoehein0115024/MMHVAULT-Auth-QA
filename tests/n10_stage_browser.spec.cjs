@@ -126,6 +126,14 @@ for(const size of [{width:390,height:844},{width:1440,height:900}]){
     expect(stored).toEqual([0,0]);
   });
 
+  test('Stage 05 Edge integration panel is present and gated: '+size.width,async({page})=>{
+    await page.setViewportSize(size);
+    await mockedPage(page);
+    await expect(page.locator('#edgeIntegrationSection')).toBeVisible();
+    await expect(page.locator('#integrationAcceptance')).toBeDisabled();
+    await expect(page.locator('#integrationResults')).toContainText('尚未运行');
+  });
+
   test('Staging credential error clears password: '+size.width,async({page})=>{
     await page.setViewportSize(size);await mockedPage(page,{failLogin:true});
     await page.locator('#email').fill('qa@example.test');

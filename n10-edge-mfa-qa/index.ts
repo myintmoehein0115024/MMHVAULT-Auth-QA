@@ -106,8 +106,12 @@ Deno.serve(async(req:Request)=>{
 
   const currentLevel=jwtClaims.aal||"aal1";
   const nextLevel=hasFactors?"aal2":"aal1";
-  // When both trusted Auth evidence sources are available they must agree.
-  if(assurance && (assurance.nextLevel!==nextLevel ||
+  // Never override verified factor evidence with an SDK default "aal1"
+  // (some SDK versions interpret missing factors as an empty list).
+  // But a positive, independently verified SDK indication of MFA enrollment
+  // must not be ignored if /user reports none. Reject contradictory identity/AAL.
+  if(assurance && (
+      (assurance.nextLevel==="aal2" && !hasFactors) ||
       (assurance.currentLevel!==null &&
        assurance.currentLevel!==currentLevel)))
     return reply("MFA_ASSURANCE_CONFLICT",503);

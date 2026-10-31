@@ -172,10 +172,10 @@ acceptance.addEventListener('click',async()=>{
       const route='/functions/v1/mmh-n10-qa-edge-mfa-20261031';
       const headers={'Content-Type':'application/json'};
       const low=await checkedResource(preMfaToken,route,'POST',JSON.stringify({mode}),headers);
-      add('AAL1 → '+label+' Edge 拒绝',low.status===403&&low.data?.code==='MFA_REQUIRED','HTTP '+low.status);
+      add('AAL1 → '+label+' Edge 拒绝',low.status===403&&low.data?.code==='MFA_REQUIRED','HTTP '+low.status+' · '+String(low.data?.code||'no_code').slice(0,42));
       update();
       const high=await checkedResource(accessToken,route,'POST',JSON.stringify({mode}),headers);
-      add('AAL2 → '+label+' Edge 允许',high.ok&&high.data?.code==='MFA_ALLOWED','HTTP '+high.status);
+      add('AAL2 → '+label+' Edge 允许',high.ok&&high.data?.code==='MFA_ALLOWED','HTTP '+high.status+' · '+String(high.data?.code||'no_code').slice(0,42));
       update();
     }
 

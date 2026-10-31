@@ -71,6 +71,13 @@ const tests=[
  assert.match(js,/flowVersion\+\+;hideQr\(\)/);
  assert.match(js,/function closeSession/);
 }],
+['TOTP UI warns to use separate device and require server-verified result',()=>{
+ assert.match(html,/电脑浏览器保持此页在前台/);
+ assert.match(html,/另外一部手机/);
+ assert.match(html,/切换此页到后台会为了安全而退出测试会话/);
+ assert.match(html,/AAL2\/verified/);
+ assert.match(html,/只告诉我错误提示文字/);
+}],
 ['public HTML has lock-safe defaults and strict QA-only CSP',()=>{
  assert.match(html,/<input id="qaPassword"[^>]* disabled>/);
  assert.match(html,/<button type="submit" id="loginButton" disabled>/);

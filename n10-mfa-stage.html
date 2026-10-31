@@ -46,6 +46,12 @@ button:disabled{opacity:.45;cursor:not-allowed}.row{display:flex;flex-wrap:wrap;
 <section class="panel"><h2>03 · 真实 JWT 验收结果</h2><p class="sub">对 Auth 服务器验证过的访问令牌检查 AAL 和 UID，不显示任何原始令牌。此结果不代表 Storage / 生产 RLS 已通过。</p>
 <div class="row"><button id="check" class="secondary" disabled>重新核验 Auth 签发的 JWT</button></div>
 <div id="result" class="status" role="status">尚未认证。/ Not checked.</div></section>
+<section class="panel" id="signedTestSection"><h2>04 · 真实 JWT · RLS / 私有附件 / 特权接口</h2>
+<p class="sub">使用同一次测试登录得到的 AAL1、AAL2 两枚由 Auth 签发的令牌。只操作独立 Staging 的合成记录和私有测试文件，结束自动清除文件。绝不读取生产财务数据。</p>
+<div class="row"><button id="acceptance" disabled>运行真实 AAL1 / AAL2 权限验收</button></div>
+<div class="status" id="acceptanceStatus" role="status" aria-live="polite">先完成第 01、02、03 步的 AAL2 验证。之后仅点击这里一次。</div>
+<div class="status" id="acceptanceResults" style="white-space:pre-wrap" role="status" aria-live="polite">尚未检查真实 RLS、RPC、Storage。</div>
+</section>
 <footer>项目：<code>ldivswlhtgmznzwhzsoi</code> · 只连 Auth Staging，不连接生产环境。网页只传输凭证至该项目的 Auth API；页面关闭时清除内存中的令牌。实际财务表、Storage、特权 RPC 尚需独立服务器验收。</footer>
 </main>
 <script>
@@ -55,12 +61,12 @@ const BASE='https://'+PROJECT+'.supabase.co';
 const KEY='sb_publishable_LxIB8564OZD48HQ8Mfsc0A_apkgERZo'; // Public staging publishable key, NEVER service role.
 const EXPECTED_ORIGIN='https://myintmoehein0115024.github.io';
 const by=id=>document.getElementById(id);
-const login=by('login'),logout=by('logout'),inspect=by('inspect'),enroll=by('enroll'),verify=by('verify'),check=by('check');
-let accessToken='',uid='',factorId='',qrSecret='',qrSvg='',qrObjectUrl='',busy=false,verifiedFactors=0;
+const login=by('login'),logout=by('logout'),inspect=by('inspect'),enroll=by('enroll'),verify=by('verify'),check=by('check'),acceptance=by('acceptance');
+let accessToken='',preMfaToken='',uid='',factorId='',qrSecret='',qrSvg='',qrObjectUrl='',busy=false,verifiedFactors=0;
 function status(id,msg,kind=''){const el=by(id);el.textContent=msg;el.className='status '+kind;}
 function clearPrivate(){by('private').hidden=true;by('privateQr').hidden=true;by('privateQr').removeAttribute('src');by('privateSecret').textContent='';by('privateSecret').hidden=true;by('reveal').hidden=false;by('conceal').hidden=true;if(qrObjectUrl){URL.revokeObjectURL(qrObjectUrl);qrObjectUrl='';}qrSvg='';qrSecret='';}
-function buttons(){login.disabled=busy||!!accessToken;logout.disabled=busy||!accessToken;inspect.disabled=busy||!accessToken;enroll.disabled=busy||!accessToken||!!factorId||verifiedFactors>0;verify.disabled=busy||!accessToken||!factorId;check.disabled=busy||!accessToken;}
-function forget(){accessToken='';uid='';factorId='';verifiedFactors=0;by('password').value='';by('email').value='';by('otp').value='';by('setup').hidden=true;clearPrivate();buttons();}
+function buttons(){login.disabled=busy||!!accessToken;logout.disabled=busy||!accessToken;inspect.disabled=busy||!accessToken;enroll.disabled=busy||!accessToken||!!factorId||verifiedFactors>0;verify.disabled=busy||!accessToken||!factorId;check.disabled=busy||!accessToken;acceptance.disabled=busy||!preMfaToken||!accessToken||verifiedFactors<1||decode(accessToken)?.aal!=='aal2';}
+function forget(){accessToken='';preMfaToken='';uid='';factorId='';verifiedFactors=0;by('password').value='';by('email').value='';by('otp').value='';by('setup').hidden=true;clearPrivate();buttons();}
 function requireSite(){if(location.origin!==EXPECTED_ORIGIN)throw Error('仅可在已发布的 Auth-QA GitHub Pages 页面执行。');}
 function decode(token){try{const p=token.split('.')[1];const raw=atob(p.replace(/-/g,'+').replace(/_/g,'/')+'='.repeat((4-p.length%4)%4));return JSON.parse(new TextDecoder().decode(Uint8Array.from(raw,c=>c.charCodeAt(0))));}catch{return null;}}
 async function api(path,method='GET',payload,token=accessToken){
@@ -83,7 +89,7 @@ login.addEventListener('click',async()=>{if(busy||accessToken)return;busy=true;b
 try{if(!/^\S+@\S+\.\S+$/.test(email)||!password)throw Error('请输入 Staging 测试邮箱和测试密码。');
 const d=await api('/token?grant_type=password','POST',{email,password},'');
 by('password').value='';if(!d.access_token||!d.user?.id)throw Error('No Auth session');
-accessToken=d.access_token;uid=d.user.id;
+accessToken=d.access_token;preMfaToken=d.access_token;uid=d.user.id;
 await validatedToken();by('email').value='';status('authStatus','✅ Staging Auth 真实登录成功（未显示任何令牌）。','pass');
 const u=await api('/user');const f=Array.isArray(u.factors)?u.factors:[];const found=f.find(x=>x.factor_type==='totp'&&x.status==='verified');
 factorId=found?.id||'';verifiedFactors=f.filter(x=>x.factor_type==='totp'&&x.status==='verified').length;
@@ -109,6 +115,91 @@ await validatedToken(token);accessToken=token;by('setup').hidden=true;clearPriva
 }catch(e){status('factorStatus','❌ 动态码或会话验证失败：'+String(e.message),'error')}finally{busy=false;buttons();}
 });
 check.addEventListener('click',async()=>{if(busy||!accessToken)return;busy=true;buttons();try{await showResult()}catch(e){status('result','❌ '+String(e.message),'error')}finally{busy=false;buttons()}});
+// Real signed Auth JWT acceptance, restricted to synthetic staging resources.
+async function checkedResource(jwt,url,method='GET',body=null,extraHeaders={}){
+  requireSite();const controller=new AbortController(),timeout=setTimeout(()=>controller.abort(),17000);
+  try{
+    const headers={'apikey':KEY,'Authorization':'Bearer '+jwt,...extraHeaders};
+    const r=await fetch(BASE+url,{method,headers,body,mode:'cors',cache:'no-store',credentials:'omit',referrerPolicy:'no-referrer',signal:controller.signal});
+    let data;try{const raw=await r.text();data=raw?JSON.parse(raw):null}catch{data=null}
+    return {ok:r.ok,status:r.status,data};
+  }finally{clearTimeout(timeout)}
+}
+function denyObserved(r){return !r.ok&&(r.status===400||r.status===401||r.status===403||r.status===404);}
+acceptance.addEventListener('click',async()=>{
+  if(busy||!accessToken||!preMfaToken)return;
+  busy=true;buttons();const results=[];let uploaded=false,path='',storageCleanupOK=true;
+  const add=(name,pass,detail='')=>results.push((pass?'✅ PASS':'❌ FAIL')+' · '+name+(detail?' ('+detail+')':''));
+  const update=()=>{by('acceptanceResults').textContent=results.join('\n');};
+  try{
+    const a1=await validatedToken(preMfaToken),a2=await validatedToken(accessToken);
+    if(a1.aal!=='aal1'||a2.aal!=='aal2'||a1.user.id!==a2.user.id)
+      throw Error('AAL1 / AAL2 JWT mismatch; create a new Staging test session.');
+    if(!Array.isArray(a2.user.factors)||!a2.user.factors.some(f=>f.status==='verified'))
+      throw Error('Auth verified factor missing');
+    status('acceptanceStatus','已确认两枚真实 Auth JWT 和相同 UID，正在测试…','warn');
+    const url='/rest/v1/mmh_n10_signed_qa_entries?select=user_id,marker';
+    const deniedRls=await checkedResource(preMfaToken,url);
+    add('AAL1 已绑定 MFA → RLS 拒绝',
+      (deniedRls.ok&&Array.isArray(deniedRls.data)&&deniedRls.data.length===0)||denyObserved(deniedRls),
+      'HTTP '+deniedRls.status);
+    update();
+    const allowedRls=await checkedResource(accessToken,url);
+    add('AAL2 → RLS 可读本人合成记录',
+      allowedRls.ok&&Array.isArray(allowedRls.data)&&allowedRls.data.length===1&&
+      allowedRls.data[0]?.user_id===uid&&allowedRls.data[0]?.marker==='N10-ISOLATED-STAGING-ONLY',
+      'HTTP '+allowedRls.status);
+    update();
+    const rpcPath='/rest/v1/rpc/mmh_n10_qa_privileged_read';
+    const body=JSON.stringify({p_expected_uid:uid});
+    const lowRpc=await checkedResource(preMfaToken,rpcPath,'POST',body,{'Content-Type':'application/json'});
+    add('AAL1 → 特权测试 RPC 拒绝',denyObserved(lowRpc),'HTTP '+lowRpc.status);
+    const highRpc=await checkedResource(accessToken,rpcPath,'POST',body,{'Content-Type':'application/json'});
+    add('AAL2 → 特权测试 RPC 确认本人',highRpc.ok&&highRpc.data===true,'HTTP '+highRpc.status);
+    const crossRpc=await checkedResource(accessToken,rpcPath,'POST',
+      JSON.stringify({p_expected_uid:'00000000-0000-4000-8000-000000000001'}),{'Content-Type':'application/json'});
+    add('AAL2 → 不匹配 UID 被特权 RPC 拒绝',denyObserved(crossRpc),'HTTP '+crossRpc.status);
+    update();
+
+    const bucket='mmh-n10-qa-private';
+    path=uid+'/n10-'+crypto.randomUUID()+'.txt';
+    const object='/storage/v1/object/'+bucket+'/'+path;
+    const protectedObject='/storage/v1/object/authenticated/'+bucket+'/'+path;
+    const fileContent='N10-STAGING-SYNTHETIC-FILE';
+    const header={'Content-Type':'text/plain','x-upsert':'false'};
+    const uploadLow=await checkedResource(preMfaToken,object,'POST',fileContent,header);
+    add('AAL1 → 私有文件上传拒绝',denyObserved(uploadLow),'HTTP '+uploadLow.status);
+    update();
+    const uploadHigh=await checkedResource(accessToken,object,'POST',fileContent,header);
+    uploaded=uploadHigh.ok;
+    add('AAL2 → 私有文件上传成功',uploadHigh.ok,'HTTP '+uploadHigh.status);
+    update();
+    if(uploaded){
+      const getHigh=await checkedResource(accessToken,protectedObject);
+      // Text/plain response is not JSON, but HTTP 200 demonstrates authorized read.
+      add('AAL2 → 私有文件下载成功',getHigh.ok,'HTTP '+getHigh.status);
+      const getLow=await checkedResource(preMfaToken,protectedObject);
+      add('AAL1 → 已存在的私有文件无法读取',denyObserved(getLow),'HTTP '+getLow.status);
+      const deleteLow=await checkedResource(preMfaToken,object,'DELETE');
+      add('AAL1 → 私有文件无法删除',denyObserved(deleteLow),'HTTP '+deleteLow.status);
+      update();
+    }
+  }catch(err){
+    results.push('❌ 未完成：'+String(err?.message||'unknown_error').slice(0,180));
+  }finally{
+    if(uploaded&&path){
+      try{
+        const removed=await checkedResource(accessToken,'/storage/v1/object/mmh-n10-qa-private/'+path,'DELETE');
+        storageCleanupOK=removed.ok;
+        add('清理 Staging 测试文件',removed.ok,'HTTP '+removed.status);
+      }catch(_){storageCleanupOK=false;add('清理 Staging 测试文件',false,'请勿重复上传');}
+    }
+    update();const passed=results.length>0&&results.every(x=>x.startsWith('✅ PASS'))&&storageCleanupOK;
+    status('acceptanceStatus',passed?'✅ RLS / 特权 RPC / Storage 真实 JWT 验收全部 PASS':'尚有未通过项目，请仅发送结果区文字，不发送密钥。',passed?'pass':'error');
+    busy=false;buttons();
+  }
+});
+
 logout.addEventListener('click',async()=>{if(busy||!accessToken)return;busy=true;buttons();try{await api('/logout?scope=local','POST',{});forget();status('authStatus','已退出 Staging 测试会话。','pass');status('result','已退出。','');status('factorStatus','已清除本页会话。','');}catch(e){status('authStatus','退出未确认，请重试：'+String(e.message),'error')}finally{busy=false;buttons();}});
 addEventListener('pagehide',()=>{forget();});buttons();
 })();

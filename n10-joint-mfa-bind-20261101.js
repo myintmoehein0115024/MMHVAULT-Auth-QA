@@ -120,10 +120,21 @@ async function doLogin(event){
         if(gone.error)throw Error('pending_cleanup_failed');
       }
     }
-    if(!alive(ver))return;
+    if(!alive(ver)){await closeSession();return;}
+    // Re-fetch after cleanup to detect concurrent enrollment or failed
+    // factor removal. Do not create another factor if the old one remains.
+    stage='factor_recheck';
+    const {data:remaining,error:remainingError}=await db.auth.mfa.listFactors();
+    if(remainingError||!remaining)throw Error('recheck_unavailable');
+    if((remaining.totp||[]).length!==0)throw Error('stale_factor_remains');
+    if(!alive(ver)){await closeSession();return;}
     stage='enrollment';
+    // A fixed friendly name can collide with a previous unverified factor,
+    // producing mfa_factor_name_conflict (422) even for a synthetic user.
+    // Use a fresh random display suffix, never Auth identifiers or OTP values.
+    const friendlyName='MMHVAULT N10 Staging A '+crypto.randomUUID().slice(0,8);
     const enrolled=await db.auth.mfa.enroll({
-      factorType:'totp',friendlyName:'MMHVAULT N10 Staging A'
+      factorType:'totp',friendlyName
     });
     if(enrolled.error||!enrolled.data?.id||!enrolled.data?.totp?.qr_code)throw Error('enroll_failed');
     enrollingFactor=enrolled.data.id;
@@ -145,6 +156,7 @@ async function doLogin(event){
         stage==='identity'?'账户 A 身份确认失败':
         stage==='factor_lookup'?'无法查询验证器绑定状态':
         stage==='stale_factor_cleanup'?'无法清理上一次未验证的 TOTP（请停止尝试）':
+        stage==='factor_recheck'?'旧 TOTP 验证器仍然存在，请勿重复绑定':
         '无法创建新的 TOTP 二维码';
       await closeSession();
       status(reason+'。当前没有完成绑定。请把此提示文字告诉我，不要分享凭证。');

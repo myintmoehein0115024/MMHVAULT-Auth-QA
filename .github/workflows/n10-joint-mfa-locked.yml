@@ -1,0 +1,32 @@
+name: N10 joint MFA QA page - locked-only security checks
+on:
+  push:
+    paths:
+      - 'n10-joint-mfa-bind-20261101.html'
+      - 'n10-joint-mfa-bind-20261101.js'
+      - 'tests/n10_joint_mfa_locked.test.cjs'
+      - '.github/workflows/n10-joint-mfa-locked.yml'
+  pull_request:
+    paths:
+      - 'n10-joint-mfa-bind-20261101.html'
+      - 'n10-joint-mfa-bind-20261101.js'
+      - 'tests/n10_joint_mfa_locked.test.cjs'
+      - '.github/workflows/n10-joint-mfa-locked.yml'
+permissions:
+  contents: read
+jobs:
+  qa-locked:
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Install Node 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Verify JavaScript parse
+        run: node --check n10-joint-mfa-bind-20261101.js
+      - name: Verify disabled login, UID isolation, QR cleanup and MFA checks
+        run: node tests/n10_joint_mfa_locked.test.cjs
+# No environment secrets, no Supabase calls or live tests.

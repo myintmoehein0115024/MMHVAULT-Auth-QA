@@ -18,3 +18,45 @@ export function evaluateMfaAssurance(assurance, authHasVerifiedFactor = false) {
   // Either un-enrolled AAL1 or an old signed AAL2 JWT after unenrollment.
   return "allowed";
 }
+
+
+/**
+ * Only call AFTER /auth/v1/user or auth.getUser(jwt) has validated this
+ * exact JWT. JWT payload decoding here is NOT signature verification.
+ * Factors are from that Auth-validated user, not client-supplied metadata.
+ * The separate SDK assurance API may report missing/stale nextLevel in
+ * Edge/no-persist sessions; never use that as the source of enrollment truth.
+ */
+export function evaluateVerifiedAuthUserMfa(jwt, verifiedUser, supabaseBase) {
+  if (typeof jwt !== "string" || jwt.length > 8192 ||
+      typeof verifiedUser?.id !== "string" ||
+      verifiedUser.is_anonymous === true ||
+      !Array.isArray(verifiedUser.factors) ||
+      typeof supabaseBase !== "string") return "unavailable";
+  const segments = jwt.split(".");
+  if (segments.length !== 3 || !segments[1] || segments[1].length > 8192)
+    return "unavailable";
+  try {
+    const input = segments[1].replace(/-/g, "+").replace(/_/g, "/");
+    const raw = atob(input + "=".repeat((4 - input.length % 4) % 4));
+    const payload = JSON.parse(new TextDecoder().decode(
+      Uint8Array.from(raw, c => c.charCodeAt(0))
+    ));
+    if (!payload || typeof payload !== "object" ||
+        payload.sub !== verifiedUser.id ||
+        payload.iss !== supabaseBase.replace(/\/$/, "") + "/auth/v1" ||
+        !Number.isSafeInteger(payload.exp) ||
+        payload.exp <= Math.floor(Date.now() / 1000)) return "unavailable";
+    const current = payload.aal == null ? "aal1" : payload.aal;
+    if (current !== "aal1" && current !== "aal2") return "unavailable";
+    const hasVerified = verifiedUser.factors.some(
+      f => f?.status === "verified"
+    );
+    return evaluateMfaAssurance({
+      currentLevel: current,
+      nextLevel: hasVerified ? "aal2" : "aal1"
+    }, hasVerified);
+  } catch (_) {
+    return "unavailable";
+  }
+}

@@ -62,6 +62,13 @@ small{color:#889eac;font-size:11px}.hidden{display:none!important}.muted{opacity
 <p class="status" id="result" role="status" aria-live="polite">尚未开始测试</p>
 <small>如果显示“recovery_service_not_released”，说明安全开关仍关闭，这是预期行为。不要通过更改 URL 或复制 JWT 来尝试绕过。</small>
 </div>
+<div class="sheet">
+<h2>3 · 生成 Staging 专用安全密钥</h2>
+<p>仅在配置 Staging 时使用。点击按钮会在您的浏览器本地生成 32 字节随机密钥，并尝试复制到剪贴板。不要发送到聊天、截图、使用正式站点的密钥或保存到 GitHub。</p>
+<div class="actions"><button id="makeKey" type="button">生成并复制 Staging 专用密钥</button></div>
+<input id="keyFallback" class="hidden" type="text" readonly aria-label="无法自动复制时显示的临时随机密钥">
+<p class="status" id="keyStatus" aria-live="polite">尚未生成 · Supabase Secret 名称：N10_FIXED_RECOVERY_QA_HMAC_KEY</p>
+</div>
 <p>正式站点和生产账户不参与本测试。完成后需要退出并删除本轮合成测试账户与独立测试服务。</p>
 </main>
 <script>
@@ -152,7 +159,21 @@ $('reveal').addEventListener('click',()=>execute('reveal'));
 $('hide').addEventListener('click',clearWords);
 $('copy').addEventListener('click',async()=>{if(!visiblePhrase)return;try{await navigator.clipboard.writeText(visiblePhrase);setResult('测试词已复制到剪贴板；完成后请自行清除剪贴板。')}catch(_){setResult('当前浏览器无法复制，请在本页完成测试。',true)}});
 document.addEventListener('visibilitychange',()=>{if(document.hidden)clearWords()});
-window.addEventListener('pagehide',clearPrivate);
+$('makeKey').addEventListener('click',async()=>{
+ const bytes=crypto.getRandomValues(new Uint8Array(32));
+ const value=Array.from(bytes,x=>x.toString(16).padStart(2,'0')).join('');
+ bytes.fill(0);
+ try{
+  await navigator.clipboard.writeText(value);
+  $('keyStatus').textContent='已生成并复制 64 位随机测试密钥；请直接粘贴到 Staging Secrets 的 Value 栏，切勿发到聊天。';
+ }catch(_){
+  $('keyFallback').value=value;
+  $('keyFallback').classList.remove('hidden');
+  $('keyStatus').textContent='浏览器未允许自动复制；请在上面的临时输入框中手动复制到 Staging Secrets。';
+  setTimeout(()=>{$('keyFallback').value='';$('keyFallback').classList.add('hidden')},45000);
+ }
+});
+window.addEventListener('pagehide',()=>{$('keyFallback').value='';clearPrivate()});
 switchAccount();
 </script>
 </body>

@@ -66,6 +66,17 @@ async function verifyOwner(db){
     res.data.user.is_anonymous!==true&&
     res.data.user.app_metadata?.mmhvault_auth_kind==null;
 }
+// Supabase listFactors().totp contains ONLY verified TOTP factors.
+ // The all array is required to see unverified factors from failed setup.
+ // Fail closed if the shape changes; never silently create a duplicate.
+function classifyTotpFactors(data){
+  if(!data||!Array.isArray(data.all))throw Error('all_factors_unavailable');
+  const allTotp=data.all.filter(f=>f&&f.factor_type==='totp');
+  const verified=allTotp.filter(f=>f.status==='verified');
+  const unverified=allTotp.filter(f=>f.status==='unverified');
+  const unknown=allTotp.filter(f=>f.status!=='verified'&&f.status!=='unverified');
+  return {allTotp,verified,unverified,unknown};
+}
 async function closeSession({removePending=true}={}){
   flowVersion++;
   clearPrivate();
@@ -106,7 +117,9 @@ async function doLogin(event){
     const {data:factors,error:factorError}=await db.auth.mfa.listFactors();
     if(factorError||!factors)throw Error('factors_unavailable');
     if(!alive(ver)){await closeSession();return;}
-    if((factors.totp||[]).some(f=>f.status==='verified')){
+    const initial=classifyTotpFactors(factors);
+    if(initial.unknown.length)throw Error('unknown_factor_status');
+    if(initial.verified.length){
       $('loginForm').hidden=true;$('successPanel').hidden=false;
       status('该测试账户已存在已验证的 TOTP，无需重复绑定。请先退出，后续等待受控联测。');
       return;
@@ -114,11 +127,10 @@ async function doLogin(event){
     // Clean up only unverified factors owned by the signed-in fixture
     // before initiating a fresh enrollment.
     stage='stale_factor_cleanup';
-    for(const f of (factors.totp||[])){
-      if(f.status!=='verified'&&f.id){
-        const gone=await db.auth.mfa.unenroll({factorId:f.id});
-        if(gone.error)throw Error('pending_cleanup_failed');
-      }
+    for(const f of initial.unverified){
+      if(!f.id)throw Error('pending_factor_id_missing');
+      const gone=await db.auth.mfa.unenroll({factorId:f.id});
+      if(gone.error)throw Error('pending_cleanup_failed');
     }
     if(!alive(ver)){await closeSession();return;}
     // Re-fetch after cleanup to detect concurrent enrollment or failed
@@ -126,7 +138,8 @@ async function doLogin(event){
     stage='factor_recheck';
     const {data:remaining,error:remainingError}=await db.auth.mfa.listFactors();
     if(remainingError||!remaining)throw Error('recheck_unavailable');
-    if((remaining.totp||[]).length!==0)throw Error('stale_factor_remains');
+    const afterCleanup=classifyTotpFactors(remaining);
+    if(afterCleanup.allTotp.length!==0)throw Error('stale_factor_remains');
     if(!alive(ver)){await closeSession();return;}
     stage='enrollment';
     // A fixed friendly name can collide with a previous unverified factor,
@@ -154,7 +167,7 @@ async function doLogin(event){
     if(alive(ver)){
       const reason=stage==='password'?'测试密码或登录认证未通过':
         stage==='identity'?'账户 A 身份确认失败':
-        stage==='factor_lookup'?'无法查询验证器绑定状态':
+        stage==='factor_lookup'?'无法查询全部 TOTP 状态（无法确认未验证记录）':
         stage==='stale_factor_cleanup'?'无法清理上一次未验证的 TOTP（请停止尝试）':
         stage==='factor_recheck'?'旧 TOTP 验证器仍然存在，请勿重复绑定':
         '无法创建新的 TOTP 二维码';

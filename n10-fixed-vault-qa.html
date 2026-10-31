@@ -1,0 +1,159 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="robots" content="noindex,nofollow,noarchive">
+<meta name="referrer" content="no-referrer">
+<title>MMHVAULT · N10 Isolated Recovery QA</title>
+<style>
+:root{color-scheme:dark;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;background:#061221;color:#f5eee3}
+*{box-sizing:border-box}body{margin:0;min-height:100dvh;background:radial-gradient(ellipse at 20% -5%,#23394a 0%,transparent 44%),linear-gradient(135deg,#091828,#040c15);padding:max(22px,env(safe-area-inset-top)) 16px 40px}
+main{max-width:620px;margin:0 auto}h1{font-size:clamp(24px,5vw,34px);margin:14px 0 6px;letter-spacing:-.04em}h2{font-size:17px;margin:3px 0 15px;color:#f6daa9}
+.eyebrow{color:#d8b877;font-weight:800;letter-spacing:.19em;text-transform:uppercase;font-size:11px}
+p{color:#aebdcb;font-size:13px;line-height:1.65}.sheet{border:1px solid #be9c634b;border-radius:23px;background:#0a1928da;box-shadow:0 20px 65px #0006;backdrop-filter:blur(18px);padding:24px;margin-top:19px}
+label{display:block;font-size:12px;font-weight:700;margin:15px 0 7px;color:#d5e2ec}
+input,select{display:block;width:100%;padding:14px 13px;background:#06111d;color:#fff;border:1px solid #576a765c;border-radius:12px;font-size:14px;outline:none}
+input:focus,select:focus,button:focus-visible{outline:2px solid #d7b779;outline-offset:2px}
+button{border:1px solid #cdb07b58;background:#192b3c;color:#f3e4cd;padding:13px 16px;border-radius:13px;font-size:13px;font-weight:750;cursor:pointer}
+button.primary{background:linear-gradient(120deg,#e9c993,#c9a76c);color:#071422;border:0}
+button:disabled{opacity:.45;cursor:not-allowed}.actions{display:flex;flex-wrap:wrap;gap:9px;margin-top:16px}.actions button{flex:1 1 170px}
+.status{padding:13px 14px;background:#071321;border:1px solid #566d7b42;border-radius:13px;color:#a7bccc;font-size:12px;line-height:1.6;overflow-wrap:anywhere}
+.status.good{border-color:#3ca87570;color:#9ee3bb}.status.bad{border-color:#c76d6970;color:#f0aaaa}
+.key{font-size:14px;letter-spacing:.04em;line-height:2.1;white-space:pre-wrap;overflow-wrap:anywhere;padding:14px;border:1px solid #d7b6774d;border-radius:12px;background:#040d17;color:#f9dfb2}
+small{color:#889eac;font-size:11px}.hidden{display:none!important}.muted{opacity:.7}
+@media(max-width:480px){.sheet{padding:18px;border-radius:20px}.actions button{flex-basis:100%}}
+</style>
+</head>
+<body>
+<main>
+<div class="eyebrow">MMHVAULT · PRIVATE AUTH TEST</div>
+<h1>N10 固定十词 · 隔离验收</h1>
+<p>仅供两个指定的 Staging 合成账户使用。不要输入正式 MMHVAULT 账户密码。本页面不保存密码、JWT 或恢复词到浏览器存储；十词显示最多 45 秒，隐藏页面时立即清除。</p>
+<div class="sheet">
+<h2>1 · 登录测试账户</h2>
+<label for="which">选择账户</label>
+<select id="which"><option value="A">测试账户 A</option><option value="B">测试账户 B</option></select>
+<label for="email">Staging 测试邮箱</label>
+<input id="email" type="text" readonly>
+<label for="password">该测试账户的密码</label>
+<input id="password" type="password" maxlength="20" autocomplete="off" placeholder="仅输入测试密码">
+<div class="actions"><button class="primary" id="login" type="button">登录 Staging</button><button id="logout" type="button" disabled>退出并清除</button></div>
+<p class="status" id="state" role="status" aria-live="polite">未登录 · 恢复密钥服务当前可能仍处于锁定状态</p>
+</div>
+<div class="sheet">
+<h2>2 · Vault 恢复密钥测试</h2>
+<p>先登录，再初始化一套随机合成十词，随后测试旧词校验、加密保存和本人读取。所有操作均须经过 Staging 服务端当前密码、MFA 和会话核验。</p>
+<div class="actions">
+<button id="status" type="button" disabled>查看备份状态</button>
+<button id="initialize" type="button" disabled>生成一次性合成十词</button>
+</div>
+<label for="phrase">合成十词（仅本次测试）</label>
+<input id="phrase" type="text" autocomplete="off" autocapitalize="none" spellcheck="false" placeholder="仅输入合成测试词，不使用真实密钥">
+<div class="actions">
+<button id="backup" class="primary" type="button" disabled>验证并加密保存</button>
+<button id="reveal" type="button" disabled>再次验证密码并查看</button>
+</div>
+<div id="secretBox" class="hidden">
+<p>临时显示的测试词（45 秒后自动清除）：</p>
+<div id="words" class="key" aria-live="off"></div>
+<div class="actions"><button id="copy" type="button">复制合成测试词</button><button id="hide" type="button">立即隐藏</button></div>
+</div>
+<p class="status" id="result" role="status" aria-live="polite">尚未开始测试</p>
+<small>如果显示“recovery_service_not_released”，说明安全开关仍关闭，这是预期行为。不要通过更改 URL 或复制 JWT 来尝试绕过。</small>
+</div>
+<p>正式站点和生产账户不参与本测试。完成后需要退出并删除本轮合成测试账户与独立测试服务。</p>
+</main>
+<script>
+'use strict';
+const BASE='https://ldivswlhtgmznzwhzsoi.supabase.co';
+const API_KEY='sb_publishable_LxIB8564OZD48HQ8Mfsc0A_apkgERZo';
+const EDGE=BASE+'/functions/v1/mmh-n10-fixed-vault-qa-locked';
+const QA={
+ A:{email:'n10-vault-qa-a-20261101@no-mail.mmhvault.invalid',uid:'bbfa4e52-2ad0-4c8f-a635-6bdcd89b6990'},
+ B:{email:'n10-vault-qa-b-20261101@no-mail.mmhvault.invalid',uid:'bda2b4a3-ffab-4b00-883b-8a31bb1c6129'}
+};
+const $=id=>document.getElementById(id);
+let token='',uid='',busy=false,cleanupTimeout=null,visiblePhrase='';
+const BUTTONS=['status','initialize','backup','reveal'];
+function setState(text,bad=false){$('state').textContent=text;$('state').className='status '+(bad?'bad':'good');}
+function setResult(text,bad=false){$('result').textContent=text;$('result').className='status '+(bad?'bad':'good');}
+function clearWords(){
+ if(cleanupTimeout!==null){clearTimeout(cleanupTimeout);cleanupTimeout=null}
+ visiblePhrase='';$('words').textContent='';$('secretBox').classList.add('hidden');$('phrase').value='';
+}
+function clearPrivate(){
+ clearWords();$('password').value='';token='';uid='';$('logout').disabled=true;updateControls();
+}
+function updateControls(){
+ $('login').disabled=busy; $('logout').disabled=busy||!token;
+ for(const id of BUTTONS)$(id).disabled=busy||!token;
+}
+function showWords(words){
+ clearWords();
+ if(!Array.isArray(words)||words.length!==10||words.some(w=>typeof w!=='string'))return;
+ visiblePhrase=words.join(' ');
+ $('words').textContent=words.map((w,i)=>String(i+1)+'. '+w).join('    ');
+ $('phrase').value=visiblePhrase;
+ $('secretBox').classList.remove('hidden');
+ cleanupTimeout=setTimeout(clearWords,45000);
+}
+function switchAccount(){
+ clearPrivate();
+ const slot=QA[$('which').value];
+ $('email').value=slot.email;setState('未登录 · 请使用该合成账户密码登录',true);
+ setResult('尚未开始测试');
+}
+async function signout(){
+ const oldToken=token;clearPrivate();
+ if(oldToken){try{await fetch(BASE+'/auth/v1/logout',{method:'POST',headers:{apikey:API_KEY,authorization:'Bearer '+oldToken},cache:'no-store',credentials:'omit'})}catch(_){}}
+ setState('已清除本页面会话；请确认服务器端登出状态。');
+}
+async function login(){
+ if(busy)return;
+ const slot=QA[$('which').value],pass=$('password').value;
+ if(pass.length<6||pass.length>20){setState('请输入 6–20 位的测试密码。',true);return}
+ busy=true;updateControls();
+ try{
+  const r=await fetch(BASE+'/auth/v1/token?grant_type=password',{method:'POST',headers:{'Content-Type':'application/json',apikey:API_KEY},body:JSON.stringify({email:slot.email,password:pass}),cache:'no-store',credentials:'omit'});
+  const data=await r.json();
+  if(!r.ok||!data.access_token||data.user?.id!==slot.uid){clearPrivate();setState('登录未通过：测试密码错误或账户与白名单不匹配。',true);return}
+  token=data.access_token;uid=data.user.id;
+  setState('测试账户 '+$('which').value+' 已取得 Staging 登录会话。密码和 JWT 不会显示在页面。');
+ }catch(_){clearPrivate();setState('无法连接 Staging 登录服务。',true)}
+ finally{busy=false;updateControls()}
+}
+async function execute(action){
+ if(busy||!token)return;
+ const pass=$('password').value;
+ if(action!=='status'&&(pass.length<6||pass.length>20)){setResult('操作需要重新输入当前测试密码。',true);return}
+ const details={action};
+ if(action!=='status')details.password=pass;
+ if(action==='backup_existing')details.phrase=$('phrase').value.trim();
+ busy=true;updateControls();
+ try{
+  const r=await fetch(EDGE,{method:'POST',headers:{'Content-Type':'application/json',apikey:API_KEY,Authorization:'Bearer '+token},body:JSON.stringify(details),cache:'no-store',credentials:'omit'});
+  let data=null;try{data=await r.json()}catch(_){}
+  const code=data?.code||('http_'+r.status);
+  if(!r.ok){setResult('操作未通过：'+code+'（HTTP '+r.status+'）',true);return}
+  if(action==='qa_initialize'||action==='reveal'){showWords(data?.words);setResult(code+' · 十词最多显示 45 秒')}
+  else if(action==='status')setResult('当前账户已备份：'+(data?.backed_up===true?'是':'否'));
+  else if(action==='backup_existing'){clearWords();setResult('加密备份已完成；可使用查看功能复验。')}
+ }catch(_){setResult('请求失败：请检查网络和服务状态。',true)}
+ finally{busy=false;updateControls()}
+}
+$('which').addEventListener('change',()=>{void signout().then(switchAccount)});
+$('login').addEventListener('click',login);
+$('logout').addEventListener('click',signout);
+$('status').addEventListener('click',()=>execute('status'));
+$('initialize').addEventListener('click',()=>execute('qa_initialize'));
+$('backup').addEventListener('click',()=>execute('backup_existing'));
+$('reveal').addEventListener('click',()=>execute('reveal'));
+$('hide').addEventListener('click',clearWords);
+$('copy').addEventListener('click',async()=>{if(!visiblePhrase)return;try{await navigator.clipboard.writeText(visiblePhrase);setResult('测试词已复制到剪贴板；完成后请自行清除剪贴板。')}catch(_){setResult('当前浏览器无法复制，请在本页完成测试。',true)}});
+document.addEventListener('visibilitychange',()=>{if(document.hidden)clearWords()});
+window.addEventListener('pagehide',clearPrivate);
+switchAccount();
+</script>
+</body>
+</html>

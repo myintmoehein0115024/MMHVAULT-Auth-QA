@@ -39,6 +39,23 @@ const tests=[
  assert.doesNotMatch(js,/localStorage|sessionStorage|indexedDB|fetch\(/);
  assert.match(js,/persistSession:false,autoRefreshToken:false,detectSessionInUrl:false/);
 }],
+['safe diagnostic stages and bounded invalid-code retry path',()=>{
+ assert.match(js,/let stage='password';/);
+ assert.match(js,/stage='stale_factor_cleanup';/);
+ assert.match(js,/stage='enrollment';/);
+ assert.match(js,/let stage='identity';/);
+ assert.match(js,/stage='verify_code';/);
+ assert.match(js,/stage='aal2';/);
+ assert.match(js,/stage='factor_status';/);
+ assert.match(js,/if\(stage==='verify_code'&&alive\(ver\)\)/);
+ assert.match(js,/codeFailures\+\+;/);
+ assert.match(js,/if\(codeFailures<3\)/);
+ assert.match(js,/const http=Number\(e\?\.status\);/);
+ assert.match(js,/if\(factors\.error\|\|!\(factors\.data\?\.totp\|\|\[\]\)\.some\(f=>f\.id===factor&&f\.status==='verified'\)\)/);
+ assert.match(js,/currentLevel!=='aal2'/);
+ assert.match(js,/\$\('verifyButton'\)\.disabled=true;/);
+ assert.doesNotMatch(js,/\$\('message'\)\.textContent\s*=\s*(?:e\.message|String\(e\))/);
+}],
 ['server-signed Auth identity, TOTP verification and AAL2 gates',()=>{
  for(const snippet of ['auth.signInWithPassword','auth.getUser','auth.mfa.listFactors','auth.mfa.enroll','auth.mfa.challenge','auth.mfa.verify','auth.mfa.getAuthenticatorAssuranceLevel',"currentLevel!=='aal2'",'auth.signOut']){
   assert.ok(js.includes(snippet),'missing '+snippet);

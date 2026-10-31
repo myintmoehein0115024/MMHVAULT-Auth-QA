@@ -131,7 +131,7 @@ edgeAcceptance.addEventListener('click',async()=>{
   if(busy||!preMfaToken||!accessToken||verifiedFactors<1)return;
   busy=true;buttons();const output=[];
   const add=(label,pass,detail)=>output.push((pass?'✅ PASS':'❌ FAIL')+' · '+label+' ('+detail+')');
-  const render=()=>{by('edgeAcceptanceResults').textContent=output.join('\\n');};
+  const render=()=>{by('edgeAcceptanceResults').textContent=output.join('\n');};
   try{
     const first=await validatedToken(preMfaToken),second=await validatedToken(accessToken);
     if(first.aal!=='aal1'||second.aal!=='aal2'||first.user.id!==second.user.id)
@@ -152,7 +152,7 @@ edgeAcceptance.addEventListener('click',async()=>{
     }
   }catch(err){output.push('❌ 未完成：'+String(err?.message||'unknown_error').slice(0,120));}
   const done=output.length===6&&output.every(x=>x.startsWith('✅ PASS'));
-  by('edgeAcceptanceResults').textContent=(done?'✅ Edge 6/6 PASS\\n':'❌ Edge 未全部通过\\n')+output.join('\\n');
+  by('edgeAcceptanceResults').textContent=(done?'✅ Edge 6/6 PASS\n':'❌ Edge 未全部通过\n')+output.join('\n');
   busy=false;buttons();
 });
 acceptance.addEventListener('click',async()=>{

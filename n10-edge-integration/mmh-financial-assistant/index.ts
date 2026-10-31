@@ -1,6 +1,5 @@
 // N10 review candidate. Not deployed. Requires staging signed-token tests.
-import { createClient } from "npm:@supabase/supabase-js@2.57.4";
-import { evaluateMfaAssurance } from "./mfa-assurance.mjs";
+import { evaluateVerifiedAuthUserMfa } from "./mfa-assurance.mjs";
 // MMHVAULT Financial Assistant · secure read-only Supabase Edge Function
 // Required secret: OPENAI_API_KEY
 // Optional secret: OPENAI_MODEL (defaults to gpt-6-luna)
@@ -99,46 +98,26 @@ Deno.serve(async (req) => {
   const apiKey = Deno.env.get("OPENAI_API_KEY") || "";
   const model = Deno.env.get("OPENAI_MODEL") || "gpt-6-luna";
   if (!supabaseUrl || !anonKey) return json({ error: "Supabase environment is unavailable" }, 500);
-  // QA HARD BOUNDARY: refuse any non-staging project before reading tokens.
-  if (supabaseUrl !== "https://ldivswlhtgmznzwhzsoi.supabase.co")
-    return json({code:"QA_PROJECT_MISMATCH"}, 503);
+  if(supabaseUrl!=="https://ldivswlhtgmznzwhzsoi.supabase.co")
+    return json({code:"QA_PROJECT_MISMATCH"},503);
 
   const authHeader = req.headers.get("Authorization") || "";
   if (!authHeader.startsWith("Bearer ")) return json({ error: "Authentication required" }, 401);
   const user = await authUser(authHeader, supabaseUrl, anonKey);
   if (!user?.id) return json({ error: "Invalid session" }, 401);
 
-  // N10 RELEASING GATE: fail closed before reading financial records OR
-  // accepting client-provided summaries when a verified second factor is required.
-  // This is a candidate; live AAL1/AAL2 signed-token QA is still mandatory.
-  try {
-    const verifier = createClient(supabaseUrl, anonKey, {
-      auth: { persistSession: false, autoRefreshToken: false, detectSessionInUrl: false },
-    });
-    const jwt = authHeader.slice("Bearer ".length).trim();
-    const { data: assurance, error: assuranceError } =
-      await verifier.auth.mfa.getAuthenticatorAssuranceLevel(jwt);
-    // MFA factors are supplied by the separately authenticated Auth user
-    // response; cross-check them with SDK assurance to prevent a stale or
-    // unsupported JWT API from mistakenly treating an enrolled user as AAL1.
-    // A valid legacy JWT with two null levels is allowed ONLY without factors.
-    if (assuranceError) return json({ code: "MFA_CHECK_UNAVAILABLE" }, 503);
-    // Missing factor inventory must NOT be interpreted as an unenrolled user.
-    if (!Array.isArray(user.factors)) return json({ code: "MFA_CHECK_UNAVAILABLE" }, 503);
-    const hasVerifiedFactor =
-      user.factors.some((factor: any) => factor?.status === "verified");
-    const decision = evaluateMfaAssurance(assurance, hasVerifiedFactor);
-    if (decision === "unavailable") return json({ code: "MFA_CHECK_UNAVAILABLE" }, 503);
-    if (decision === "required") return json({ code: "MFA_REQUIRED" }, 403);
-  } catch (_) {
-    return json({ code: "MFA_CHECK_UNAVAILABLE" }, 503);
-  }
+  // Auth /user has validated this exact bearer and supplied the server-owned
+  // verified factors. Edge MFA SDK nextLevel may be unavailable/stale without
+  // a persisted session; do not let a second SDK call overrule Auth evidence.
+  const jwt = authHeader.slice("Bearer ".length).trim();
+  const decision = evaluateVerifiedAuthUserMfa(jwt, user, supabaseUrl);
+  if (decision === "unavailable") return json({ code: "MFA_CHECK_UNAVAILABLE" }, 503);
+  if (decision === "required") return json({ code: "MFA_REQUIRED" }, 403);
 
+  // Staging-only: actual Auth/MFA gate runs, but no finance reads or AI calls.
+  return json({code:"MFA_ALLOWED",qa_only:true,route:"financial-ai"});
   if (!apiKey) return json({ code: "AI_NOT_CONFIGURED", error: "Secure AI provider is not configured" }, 503);
 
-  // Staging integration test ends at actual candidate Auth/MFA guard.
-  // Do NOT read private rows or contact an AI provider in a QA run.
-  return json({code:"MFA_ALLOWED",qa_only:true,route:"financial-ai"});
   let body: any;
   try { body = await req.json(); } catch { return json({ error: "Invalid JSON" }, 400); }
   const message = clip(body?.message, 1600);

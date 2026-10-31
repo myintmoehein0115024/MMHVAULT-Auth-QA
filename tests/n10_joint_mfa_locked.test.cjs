@@ -56,6 +56,23 @@ const tests=[
  assert.match(js,/\$\('verifyButton'\)\.disabled=true;/);
  assert.doesNotMatch(js,/\$\('message'\)\.textContent\s*=\s*(?:e\.message|String\(e\))/);
 }],
+['re-enrollment checks that stale factor was removed and gives each factor a unique friendly name',()=>{
+ const seq=[
+  "stage='stale_factor_cleanup';",
+  "await db.auth.mfa.unenroll({factorId:f.id})",
+  "stage='factor_recheck';",
+  "const {data:remaining,error:remainingError}=await db.auth.mfa.listFactors();",
+  "if((remaining.totp||[]).length!==0)throw Error('stale_factor_remains');",
+  "const friendlyName='MMHVAULT N10 Staging A '+crypto.randomUUID().slice(0,8);",
+  "const enrolled=await db.auth.mfa.enroll({"
+ ];
+ let last=-1;
+ for(const item of seq){const at=js.indexOf(item);assert.ok(at>last,'Missing/misordered factor reuse guard: '+item);last=at;}
+ assert.match(js,/factorType:'totp',friendlyName/);
+ assert.match(js,/stage==='factor_recheck'\?'旧 TOTP 验证器仍然存在/);
+ assert.doesNotMatch(js,/factorType:'totp',friendlyName:'MMHVAULT N10 Staging A'/);
+ assert.match(js,/const QA_RELEASED = false;/);
+}],
 ['server-signed Auth identity, TOTP verification and AAL2 gates',()=>{
  for(const snippet of ['auth.signInWithPassword','auth.getUser','auth.mfa.listFactors','auth.mfa.enroll','auth.mfa.challenge','auth.mfa.verify','auth.mfa.getAuthenticatorAssuranceLevel',"currentLevel!=='aal2'",'auth.signOut']){
   assert.ok(js.includes(snippet),'missing '+snippet);

@@ -65,7 +65,7 @@ for(const size of [{width:390,height:844},{width:1440,height:900}]){
     await page.locator('#logout').click();
     await expect(page.locator('#authStatus')).toContainText('已退出');
   });
-  test('real-JWT acceptance UI verifies RLS, RPC and Storage: '+size.width,async({page})=>{
+  test('real-JWT acceptance UI verifies RLS, RPC, Storage and Edge: '+size.width,async({page})=>{
     await page.setViewportSize(size);await mockedPage(page);
     const getAal=(request)=>{
       const tok=request.headers()['authorization']?.replace(/^Bearer /i,'');
@@ -90,6 +90,18 @@ for(const size of [{width:390,height:844},{width:1440,height:900}]){
       }
       return reply({message:'unexpected route'},404);
     });
+    await page.route('**/functions/v1/mmh-n10-qa-edge-mfa-20261031',route=>{
+      const a=getAal(route.request());
+      const mode=route.request().postDataJSON()?.mode;
+      const accepted=['financial-ai','push-test','recovery-phrase'].includes(mode);
+      const allowed=accepted&&a==='aal2';
+      const status=allowed?200:accepted?403:400;
+      return route.fulfill({
+        status,contentType:'application/json',
+        body:JSON.stringify({code:allowed?'MFA_ALLOWED':accepted?'MFA_REQUIRED':'UNKNOWN_MODE'}),
+        headers:{'access-control-allow-origin':'*'}
+      });
+    });
     await page.route('**/storage/v1/**',route=>{
       const a=getAal(route.request());
       if(a!=='aal2')return route.fulfill({status:403,contentType:'application/json',body:'{"message":"denied"}'});
@@ -109,7 +121,7 @@ for(const size of [{width:390,height:844},{width:1440,height:900}]){
     await expect(page.locator('#acceptanceStatus')).toContainText('全部 PASS');
     const results=await page.locator('#acceptanceResults').textContent();
     expect(results).not.toMatch(/FAIL|未完成/);
-    expect((results.match(/✅ PASS/g)||[]).length).toBe(11);
+    expect((results.match(/✅ PASS/g)||[]).length).toBe(17);
     const stored=await page.evaluate(()=>[localStorage.length,sessionStorage.length]);
     expect(stored).toEqual([0,0]);
   });

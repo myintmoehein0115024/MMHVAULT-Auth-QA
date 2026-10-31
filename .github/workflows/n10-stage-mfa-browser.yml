@@ -4,6 +4,8 @@ on:
     paths:
       - 'n10-mfa-stage.html'
       - 'tests/n10_stage_browser.spec.cjs'
+      - 'tests/n10_edge_integration_safety.test.cjs'
+      - 'n10-edge-integration/**'
       - '.github/workflows/n10-stage-mfa-browser.yml'
   workflow_dispatch:
 permissions:
@@ -21,6 +23,8 @@ jobs:
         run: |
           npm install --no-save --ignore-scripts @playwright/test@1.64.1
           npx playwright install --with-deps chromium
+      - name: Verify integrated Edge QA cannot access production data
+        run: node --test tests/n10_edge_integration_safety.test.cjs
       - name: Validate standalone QA HTML syntax
         run: |
           python3 - <<'PY'

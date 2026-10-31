@@ -46,8 +46,8 @@ button:disabled{opacity:.45;cursor:not-allowed}.row{display:flex;flex-wrap:wrap;
 <section class="panel"><h2>03 · 真实 JWT 验收结果</h2><p class="sub">对 Auth 服务器验证过的访问令牌检查 AAL 和 UID，不显示任何原始令牌。此结果不代表 Storage / 生产 RLS 已通过。</p>
 <div class="row"><button id="check" class="secondary" disabled>重新核验 Auth 签发的 JWT</button></div>
 <div id="result" class="status" role="status">尚未认证。/ Not checked.</div></section>
-<section class="panel" id="signedTestSection"><h2>04 · 真实 JWT · RLS / 私有附件 / 特权接口</h2>
-<p class="sub">使用同一次测试登录得到的 AAL1、AAL2 两枚由 Auth 签发的令牌。只操作独立 Staging 的合成记录和私有测试文件，结束自动清除文件。绝不读取生产财务数据。</p>
+<section class="panel" id="signedTestSection"><h2>04 · 真实 JWT · RLS / 附件 / RPC / Edge</h2>
+<p class="sub">使用同一次测试登录得到的 AAL1、AAL2 两枚真实令牌，一次验证 11 项数据/附件权限及 6 项 Edge MFA 判断。只操作独立 Staging 的合成记录和私有测试文件，结束自动清除文件，不读取生产财务数据。</p>
 <div class="row"><button id="acceptance" disabled>运行真实 AAL1 / AAL2 权限验收</button></div>
 <div class="status" id="acceptanceStatus" role="status" aria-live="polite">先完成第 01、02、03 步的 AAL2 验证。之后仅点击这里一次。</div>
 <div class="status" id="acceptanceResults" style="white-space:pre-wrap" role="status" aria-live="polite">尚未检查真实 RLS、RPC、Storage。</div>
@@ -161,6 +161,24 @@ acceptance.addEventListener('click',async()=>{
     add('AAL2 → 不匹配 UID 被特权 RPC 拒绝',denyObserved(crossRpc),'HTTP '+crossRpc.status);
     update();
 
+    // Three production-candidate decisions, real Auth-verified staging JWT.
+    // These probes never read private finance data or exercise privileged writes.
+    const edgeModes=[
+      ['financial-ai','财务 AI'],
+      ['push-test','Push 测试'],
+      ['recovery-phrase','恢复密钥']
+    ];
+    for(const [mode,label] of edgeModes){
+      const route='/functions/v1/mmh-n10-qa-edge-mfa-20261031';
+      const headers={'Content-Type':'application/json'};
+      const low=await checkedResource(preMfaToken,route,'POST',JSON.stringify({mode}),headers);
+      add('AAL1 → '+label+' Edge 拒绝',low.status===403&&low.data?.code==='MFA_REQUIRED','HTTP '+low.status);
+      update();
+      const high=await checkedResource(accessToken,route,'POST',JSON.stringify({mode}),headers);
+      add('AAL2 → '+label+' Edge 允许',high.ok&&high.data?.code==='MFA_ALLOWED','HTTP '+high.status);
+      update();
+    }
+
     const bucket='mmh-n10-qa-private';
     path=uid+'/n10-'+crypto.randomUUID()+'.txt';
     const object='/storage/v1/object/'+bucket+'/'+path;
@@ -195,7 +213,7 @@ acceptance.addEventListener('click',async()=>{
       }catch(_){storageCleanupOK=false;add('清理 Staging 测试文件',false,'请勿重复上传');}
     }
     update();const passed=results.length>0&&results.every(x=>x.startsWith('✅ PASS'))&&storageCleanupOK;
-    status('acceptanceStatus',passed?'✅ RLS / 特权 RPC / Storage 真实 JWT 验收全部 PASS':'尚有未通过项目，请仅发送结果区文字，不发送密钥。',passed?'pass':'error');
+    status('acceptanceStatus',passed?'✅ RLS / RPC / Storage / 三类 Edge 真实 JWT 验收全部 PASS':'尚有未通过项目，请仅发送结果区文字，不发送密钥。',passed?'pass':'error');
     busy=false;buttons();
   }
 });

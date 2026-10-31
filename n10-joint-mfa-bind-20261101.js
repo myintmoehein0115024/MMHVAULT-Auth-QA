@@ -23,6 +23,7 @@ let enrollingFactor = '';
 let flowVersion = 0;
 let qrTimer = null;
 let busy = false;
+let codeFailures = 0;
 function status(message){$('message').textContent=message;}
 function hideQr(){
   if(qrTimer!==null){clearTimeout(qrTimer);qrTimer=null;}
@@ -71,6 +72,7 @@ async function closeSession({removePending=true}={}){
   resetVisible();
   const pending=enrollingFactor;
   enrollingFactor='';
+  codeFailures=0;
   const db=client;
   if(db){
     if(removePending&&pending){
@@ -120,6 +122,7 @@ async function doLogin(event){
     });
     if(enrolled.error||!enrolled.data?.id||!enrolled.data?.totp?.qr_code)throw Error('enroll_failed');
     enrollingFactor=enrolled.data.id;
+    codeFailures=0;
     if(!alive(ver)){await closeSession();return;}
     $('totpQr').src=enrolled.data.totp.qr_code;
     $('qrBox').hidden=false;
@@ -128,7 +131,7 @@ async function doLogin(event){
     qrTimer=setTimeout(()=>{
       hideQr();status('二维码已自动隐藏，请取消绑定并重新开始以获取新二维码。');
     },90000);
-    status('请扫描二维码并输入六位验证码。二维码会在 90 秒后隐藏，切换到其他标签页也会隐藏。');
+    status('请扫描本次新显示的二维码，旧验证器条目不能用于本次绑定。输入六位数字后点击 Verify；只有服务器确认为 verified/AAL2 才算成功。二维码 90 秒后隐藏。');
   }catch(_){
     if(alive(ver)){sessionError();await closeSession();}
   }finally{lockBusy(false);}
@@ -136,32 +139,63 @@ async function doLogin(event){
 async function doVerify(){
   if(!qaWindowActive()||busy||!enrollingFactor||$('qrBox').hidden)return;
   const code=$('totpCode').value.trim();
-  if(!/^\d{6}$/.test(code)){status('请输入六位动态验证码。');return;}
+  if(!/^\\d{6}$/.test(code)){status('请输入六位动态验证码（不含空格）。');return;}
   $('totpCode').value='';
   const ver=flowVersion;
-  lockBusy(true);status('正在验证 TOTP 和安全等级…');
+  let stage='identity';
+  lockBusy(true);status('正在核对账户并发送 TOTP 验证请求…');
   try{
     const db=await getClient();
     if(!await verifyOwner(db)||!alive(ver))throw Error('owner_changed');
     const factor=enrollingFactor;
+    stage='challenge';
     const challenge=await db.auth.mfa.challenge({factorId:factor});
-    if(challenge.error||!challenge.data?.id||!alive(ver))throw Error('challenge_failed');
+    if(challenge.error)throw challenge.error;
+    if(!challenge.data?.id||!alive(ver))throw Error('challenge_failed');
+    stage='verify_code';
     const proof=await db.auth.mfa.verify({factorId:factor,challengeId:challenge.data.id,code});
-    if(proof.error||!alive(ver))throw Error('verify_failed');
+    if(proof.error)throw proof.error;
+    if(!alive(ver))throw Error('window_closed');
+    stage='aal2';
     const level=await db.auth.mfa.getAuthenticatorAssuranceLevel();
     if(level.error||level.data?.currentLevel!=='aal2')throw Error('aal2_missing');
     if(!await verifyOwner(db)||!alive(ver))throw Error('identity_changed');
+    stage='factor_status';
     const factors=await db.auth.mfa.listFactors();
     if(factors.error||!(factors.data?.totp||[]).some(f=>f.id===factor&&f.status==='verified'))
       throw Error('verified_factor_missing');
-    // This token never leaves the in-memory Supabase client. Vault is not queried.
+    // Display success ONLY after live Auth factor=verified AND AAL2.
     enrollingFactor='';
+    codeFailures=0;
     hideQr();
     $('enrollPanel').hidden=true;$('successPanel').hidden=false;
-    status('PASS：测试账户 A 的 TOTP 绑定与 AAL2 验证完成。本页面没有访问 Vault 或财务 API。请选择退出。');
-  }catch(_){
-    sessionError();
-    await closeSession({removePending:false});
+    status('PASS：当前测试会话已达到 AAL2，且 Auth 已返回 TOTP verified。请点击 Sign out，之后由服务端只读复核最终状态。');
+  }catch(e){
+    // Verification failures may be a mistyped/expired 6-digit code. Allow
+    // at most 2 retries with a fresh challenge, keeping this factor/session.
+    // Do not expose the code, TOTP seed, JWT, factor UUID, or backend details.
+    if(stage==='verify_code'&&alive(ver)){
+      codeFailures++;
+      const http=Number(e?.status);
+      const hint=Number.isInteger(http)&&http>=400&&http<600?('HTTP '+http):'验证未接受';
+      if(codeFailures<3){
+        status('验证码未通过（'+hint+'）。可能是验证码过期或设备时间不同步。请等待手机产生新六位码后重新输入，剩余尝试 '+(3-codeFailures)+' 次。');
+        return;
+      }
+      status('连续 3 次验证码未通过，测试会话已关闭。请不要重复尝试。');
+      await closeSession();
+      return;
+    }
+    if(qaWindowActive()&&ver===flowVersion){
+      const message=stage==='challenge'?'TOTP 挑战未建立':
+        stage==='aal2'?'验证码请求已返回，但 AAL2 尚未确认':
+        stage==='factor_status'?'AAL2 检查后，TOTP 仍未标记为 verified':
+        '测试会话或账户身份验证失败';
+      status(message+'。本次不能标记 PASS。请停止操作并告知我该提示。');
+    }
+    await closeSession({removePending:stage!=='aal2'&&stage!=='factor_status'});
+    // Closing the session resets the panel, but leaves sanitized evidence.
+    if(!qaWindowActive())expireWindow();
   }finally{lockBusy(false);}
 }
 $('loginForm').addEventListener('submit',doLogin);

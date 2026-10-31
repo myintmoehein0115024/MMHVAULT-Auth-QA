@@ -54,7 +54,6 @@ Deno.serve(async(req:Request)=>{
   const {data:current,error:authError}=await sdk.auth.getUser(bearer);
   const user=current?.user;
   if(authError||!user?.id||user.is_anonymous)return reply("LOGIN_REQUIRED",401);
-  if(!Array.isArray(user.factors))return reply("FACTOR_STATE_UNAVAILABLE",503);
   let mode:string;
   try{
     const request=await req.json();
@@ -62,20 +61,50 @@ Deno.serve(async(req:Request)=>{
     mode=request.mode;
   }catch(_){return reply("INVALID_REQUEST",400);}
   if(!["financial-ai","push-test","recovery-phrase"].includes(mode))return reply("UNKNOWN_MODE",400);
-  const hasFactors=user.factors.some((f:any)=>f&&f.status==="verified");
-  const {data:assurance,error}=await sdk.auth.mfa.getAuthenticatorAssuranceLevel(bearer);
-  if(error||!assurance)return reply("MFA_CHECK_UNAVAILABLE",503);
-  let decision="unavailable";
+
+  // The exact bearer has just passed Auth verification. Decode its JWT
+  // *only then*: its AAL claim is trustworthy only in this validated context.
+  const jwtClaims=readJwtClaims(bearer);
+  if(!jwtClaims || jwtClaims.sub!==user.id ||
+     jwtClaims.iss!==BASE+"/auth/v1" ||
+     !Number.isSafeInteger(jwtClaims.exp) ||
+     jwtClaims.exp<=Math.floor(Date.now()/1000))return reply("JWT_ASSERTION_UNAVAILABLE",503);
+  if(jwtClaims.aal!==undefined&&jwtClaims.aal!=="aal1"&&jwtClaims.aal!=="aal2")
+    return reply("JWT_ASSURANCE_UNRECOGNIZED",503);
+
+  // Auth's /user payload may not always include a `factors` array in
+  // certain SDK/GoTrue combinations. Independently request assurance in
+  // that case, but fail CLOSED if neither trusted source provides the
+  // enrolled factor state. Do not treat missing factors as "no MFA".
+  let hasFactors:boolean|undefined=Array.isArray(user.factors)
+    ? user.factors.some((f:any)=>f?.status==="verified") : undefined;
+  let assurance:any=null;
+  try{
+    const a=await sdk.auth.mfa.getAuthenticatorAssuranceLevel(bearer);
+    if(!a.error&&a.data &&
+       (a.data.nextLevel==="aal1"||a.data.nextLevel==="aal2"))assurance=a.data;
+  }catch(_){ /* use independently verified /user factor state if present */ }
+  if(hasFactors===undefined && assurance)
+    hasFactors=assurance.nextLevel==="aal2";
+  if(typeof hasFactors!=="boolean")return reply("FACTOR_STATE_UNAVAILABLE",503);
+
+  const currentLevel=jwtClaims.aal||"aal1";
+  const nextLevel=hasFactors?"aal2":"aal1";
+  // When both trusted Auth evidence sources are available they must agree.
+  if(assurance && (assurance.nextLevel!==nextLevel ||
+      (assurance.currentLevel!==null &&
+       assurance.currentLevel!==currentLevel)))
+    return reply("MFA_ASSURANCE_CONFLICT",503);
+
+  const state={currentLevel,nextLevel};
+  const mfa=evaluateMfaAssurance(state,hasFactors);
+  let decision=mfa;
   if(mode==="push-test"){
-    // Use the same pure Push decision as the production branch, with factor
-    // state sourced from verified Auth user rather than a QA SQL proxy.
-    decision=evaluatePushMfa(hasFactors,user.id,readJwtClaims(bearer));
-    const mfa=evaluateMfaAssurance(assurance,hasFactors);
-    if(mfa==="unavailable"||decision==="unavailable")decision="unavailable";
-    else if(mfa==="required"||decision==="required")decision="required";
-  }else{
-    // Both financial AI and saved recovery-phrase branches reuse this exact helper.
-    decision=evaluateMfaAssurance(assurance,hasFactors);
+    // Reuse production-candidate Push decision on the SAME Auth-verified bearer.
+    const push=evaluatePushMfa(hasFactors,user.id,jwtClaims);
+    if(push==="unavailable"||mfa==="unavailable")decision="unavailable";
+    else if(push==="required"||mfa==="required")decision="required";
+    else decision="allowed";
   }
   if(decision==="unavailable")return reply("MFA_CHECK_UNAVAILABLE",503);
   if(decision==="required")return reply("MFA_REQUIRED",403);

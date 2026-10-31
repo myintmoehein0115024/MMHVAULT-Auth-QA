@@ -93,13 +93,16 @@ async function doLogin(event){
   $('qaPassword').value='';
   if(pass.length<6||pass.length>128){status('测试密码长度不符合要求。');return;}
   const ver=++flowVersion;
+  let stage='password';
   lockBusy(true);status('正在验证 Staging 合成账户…');
   try{
     const db=await getClient();if(!alive(ver))return;
     const {data,error}=await db.auth.signInWithPassword({email:ACCOUNT_EMAIL,password:pass});
     if(error||data?.user?.id!==ACCOUNT_UID||!data.session?.access_token)throw Error('auth_failed');
+    stage='identity';
     if(!await verifyOwner(db))throw Error('owner_mismatch');
     if(!alive(ver)){await closeSession();return;}
+    stage='factor_lookup';
     const {data:factors,error:factorError}=await db.auth.mfa.listFactors();
     if(factorError||!factors)throw Error('factors_unavailable');
     if(!alive(ver)){await closeSession();return;}
@@ -110,6 +113,7 @@ async function doLogin(event){
     }
     // Clean up only unverified factors owned by the signed-in fixture
     // before initiating a fresh enrollment.
+    stage='stale_factor_cleanup';
     for(const f of (factors.totp||[])){
       if(f.status!=='verified'&&f.id){
         const gone=await db.auth.mfa.unenroll({factorId:f.id});
@@ -117,6 +121,7 @@ async function doLogin(event){
       }
     }
     if(!alive(ver))return;
+    stage='enrollment';
     const enrolled=await db.auth.mfa.enroll({
       factorType:'totp',friendlyName:'MMHVAULT N10 Staging A'
     });
@@ -129,11 +134,21 @@ async function doLogin(event){
     $('loginForm').hidden=true;
     $('enrollPanel').hidden=false;
     qrTimer=setTimeout(()=>{
-      hideQr();status('二维码已自动隐藏，请取消绑定并重新开始以获取新二维码。');
+      hideQr();
+      $('verifyButton').disabled=true;
+      status('二维码已自动隐藏，本轮验证码不再接受；请点 Cancel 后重新登录，获取新的二维码。');
     },90000);
     status('请扫描本次新显示的二维码，旧验证器条目不能用于本次绑定。输入六位数字后点击 Verify；只有服务器确认为 verified/AAL2 才算成功。二维码 90 秒后隐藏。');
   }catch(_){
-    if(alive(ver)){sessionError();await closeSession();}
+    if(alive(ver)){
+      const reason=stage==='password'?'测试密码或登录认证未通过':
+        stage==='identity'?'账户 A 身份确认失败':
+        stage==='factor_lookup'?'无法查询验证器绑定状态':
+        stage==='stale_factor_cleanup'?'无法清理上一次未验证的 TOTP（请停止尝试）':
+        '无法创建新的 TOTP 二维码';
+      await closeSession();
+      status(reason+'。当前没有完成绑定。请把此提示文字告诉我，不要分享凭证。');
+    }
   }finally{lockBusy(false);}
 }
 async function doVerify(){

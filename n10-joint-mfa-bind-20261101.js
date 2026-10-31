@@ -207,6 +207,7 @@ if(qaWindowActive()){
   const remaining=Math.max(0,Date.parse(QA_WINDOW_END_UTC)-Date.now());
   if(remaining<=2147483000)setTimeout(expireWindow,remaining+5);
   $('qaPassword').disabled=false;
+  $('loginButton').disabled=false;
   $('stateTitle').textContent='Staging enrollment · 有效测试窗口';
   $('stateNote').textContent='仅用于审核通过的合成账户 A。测试不读取财务与 Vault 数据。';
   status('测试窗口已启用：请只使用 A 合成测试密码。');

@@ -2,6 +2,7 @@
 // Offline only: no network, credentials, Auth, or Vault requests.
 const assert=require('node:assert/strict');
 const fs=require('node:fs');
+const vm=require('node:vm');
 const html=fs.readFileSync('n10-joint-mfa-bind-20261101.html','utf8');
 const js=fs.readFileSync('n10-joint-mfa-bind-20261101.js','utf8');
 const tests=[
@@ -59,10 +60,12 @@ const tests=[
 ['re-enrollment checks that stale factor was removed and gives each factor a unique friendly name',()=>{
  const seq=[
   "stage='stale_factor_cleanup';",
+  "for(const f of initial.unverified)",
   "await db.auth.mfa.unenroll({factorId:f.id})",
   "stage='factor_recheck';",
   "const {data:remaining,error:remainingError}=await db.auth.mfa.listFactors();",
-  "if((remaining.totp||[]).length!==0)throw Error('stale_factor_remains');",
+  "const afterCleanup=classifyTotpFactors(remaining);",
+  "if(afterCleanup.allTotp.length!==0)throw Error('stale_factor_remains');",
   "const friendlyName='MMHVAULT N10 Staging A '+crypto.randomUUID().slice(0,8);",
   "const enrolled=await db.auth.mfa.enroll({"
  ];
@@ -72,6 +75,35 @@ const tests=[
  assert.match(js,/stage==='factor_recheck'\?'旧 TOTP 验证器仍然存在/);
  assert.doesNotMatch(js,/factorType:'totp',friendlyName:'MMHVAULT N10 Staging A'/);
  assert.match(js,/const QA_RELEASED = false;/);
+}],
+['MFA all versus verified-only arrays: synthetic behavioral tests',()=>{
+ const source=js.match(/function classifyTotpFactors\(data\)\{[\s\S]*?\n\}/)?.[0];
+ assert.ok(source,'classification helper must exist');
+ const classify=vm.runInNewContext('('+source+')',Object.create(null));
+ const stub={all:[
+   {id:'pending',factor_type:'totp',status:'unverified'},
+   {id:'verified',factor_type:'totp',status:'verified'},
+   {id:'phone',factor_type:'phone',status:'verified'}
+ ],totp:[{id:'verified',factor_type:'totp',status:'verified'}]};
+ const x=classify(stub);
+ assert.equal(x.unverified.length,1);
+ assert.equal(x.unverified[0].id,'pending');
+ assert.equal(x.verified.length,1);
+ assert.equal(x.verified[0].id,'verified');
+ assert.equal(x.allTotp.length,2);
+ assert.equal(x.unknown.length,0);
+ const onlyPending=classify({all:[{id:'only-pending',factor_type:'totp',status:'unverified'}],totp:[]});
+ assert.equal(onlyPending.unverified.length,1);
+ assert.equal(onlyPending.verified.length,0);
+ assert.equal(classify({all:[],totp:[]}).allTotp.length,0);
+ assert.equal(classify({all:[{id:'unknown',factor_type:'totp',status:'other'}]}).unknown.length,1);
+ assert.throws(()=>classify({totp:[]}),/all_factors_unavailable/);
+ assert.throws(()=>classify(null),/all_factors_unavailable/);
+ assert.match(js,/const initial=classifyTotpFactors\(factors\)/);
+ assert.match(js,/for\(const f of initial.unverified\)/);
+ assert.match(js,/const afterCleanup=classifyTotpFactors\(remaining\)/);
+ assert.match(js,/if\(afterCleanup.allTotp.length!==0\)throw Error\('stale_factor_remains'\)/);
+ assert.doesNotMatch(js,/for\(const f of \(factors.totp\|\|\[\]\)\)/);
 }],
 ['server-signed Auth identity, TOTP verification and AAL2 gates',()=>{
  for(const snippet of ['auth.signInWithPassword','auth.getUser','auth.mfa.listFactors','auth.mfa.enroll','auth.mfa.challenge','auth.mfa.verify','auth.mfa.getAuthenticatorAssuranceLevel',"currentLevel!=='aal2'",'auth.signOut']){

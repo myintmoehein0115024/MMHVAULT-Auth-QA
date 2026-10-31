@@ -1,24 +1,18 @@
 // N10 MFA candidate — NOT DEPLOYED. Review/test separately before production.
 
 import { createClient } from 'npm:@supabase/supabase-js@2.57.4';
-import { evaluateMfaAssurance } from "./mfa-assurance.mjs";
+import { evaluateVerifiedAuthUserMfa } from "./mfa-assurance.mjs";
 const BASE='https://ldivswlhtgmznzwhzsoi.supabase.co',ORIGIN='https://myintmoehein0115024.github.io';
 const SERVICE=Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')||'';
 const RATEKEY=Deno.env.get('N10A740_RATE_HMAC_KEY')||'';
 const admin=createClient(BASE,SERVICE||'placeholder',{auth:{persistSession:false,autoRefreshToken:false,detectSessionInUrl:false}});
 // N10 candidate ONLY; not deployed. Conditional MFA must guard both status
 // and phrase verification because this is a sensitive account-recovery endpoint.
-let PUBLIC='';
-try{PUBLIC=JSON.parse(Deno.env.get('SUPABASE_PUBLISHABLE_KEYS')||'{}')?.default||'';}catch(_){}
-PUBLIC=PUBLIC||Deno.env.get('SUPABASE_ANON_KEY')||'';
-const verifier=PUBLIC?createClient(BASE,PUBLIC,{auth:{persistSession:false,autoRefreshToken:false,detectSessionInUrl:false}}):null;
-async function checkMfa(jwt:string,user:any){
- if(!verifier)return 'unavailable';
- const {data,error}=await verifier.auth.mfa.getAuthenticatorAssuranceLevel(jwt);
- if(error||!data)return 'unavailable';
- if(!Array.isArray(user?.factors))return 'unavailable';
- const hasVerifiedFactor=user.factors.some((factor:any)=>factor?.status==='verified');
- return evaluateMfaAssurance(data,hasVerifiedFactor);
+// The service-role Auth client has already validated this bearer in getUser.
+// Its verified factors are server-owned; SDK nextLevel can be unavailable in
+// stateless Edge calls. The helper checks JWT subject, issuer, expiry and AAL.
+function checkMfa(jwt:string,user:any){
+ return evaluateVerifiedAuthUserMfa(jwt,user,BASE);
 }
 
 const enc=new TextEncoder();
@@ -37,8 +31,8 @@ Deno.serve(async req=>{
  const mfaDecision=await checkMfa(match[1],user);
  if(mfaDecision==='unavailable')return out(origin,503,'mfa_state_unavailable');
  if(mfaDecision==='required')return out(origin,403,'mfa_required');
- // QA stops after real candidate JWT + MFA enforcement.
- // No saved-phrase lookup, rate counters, user data or HMAC operations.
+ // QA-only short circuit AFTER actual Auth user verification + MFA gate.
+ // No recovery words, identifiers or persistent rows will be inspected.
  return out(origin,200,'MFA_ALLOWED',{qa_only:true});
  let body;try{const raw=await req.text();if(raw.length>700)return out(origin,400,'bad_request');body=JSON.parse(raw)}catch{return out(origin,400,'bad_request')}
  if(body?.action==='status'){

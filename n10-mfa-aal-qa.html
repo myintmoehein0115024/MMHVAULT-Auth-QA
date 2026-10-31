@@ -88,9 +88,10 @@ async function getVerifiedFactor(){
  return data.totp?.find(x=>x.status==='verified')?.id||'';
 }
 $('login').addEventListener('click',()=>withBusy(async()=>{
+ // Read credentials only into ephemeral local memory before clearing inputs.
+ const pass=$('password').value;
  await sb.auth.signOut({scope:'local'});
  wipeSensitive();verifiedUid='';
- const pass=$('password').value;
  if(pass.length<12||pass.length>30){message('state','请使用专用测试账户密码（12–30 字符）。',false);return}
  const {data,error}=await sb.auth.signInWithPassword({email:EMAIL,password:pass});
  $('password').value='';

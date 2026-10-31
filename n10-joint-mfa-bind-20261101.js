@@ -1,8 +1,8 @@
 // N10 isolated Auth-Staging MFA enrollment UI. PUBLISHED LOCKED, NOT QA-APPROVED.
 // No secret/service key, session persistence, analytics, or production endpoints.
 // Change BOTH time window and flag ONLY after new explicit owner approval.
-const QA_RELEASED = false;
-const QA_WINDOW_END_UTC = '1970-01-01T00:00:00.000Z';
+const QA_RELEASED = true;
+const QA_WINDOW_END_UTC = '2026-10-31T18:35:00.000Z';
 const PROJECT = 'https://ldivswlhtgmznzwhzsoi.supabase.co';
 const PUBLIC_KEY = 'sb_publishable_LxIB8564OZD48HQ8Mfsc0A_apkgERZo'; // Staging publishable/browser key, NOT a secret.
 const EXPECTED_ORIGIN = 'https://myintmoehein0115024.github.io';

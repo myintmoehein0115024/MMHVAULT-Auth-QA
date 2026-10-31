@@ -6,8 +6,8 @@ const html=fs.readFileSync('n10-joint-mfa-bind-20261101.html','utf8');
 const js=fs.readFileSync('n10-joint-mfa-bind-20261101.js','utf8');
 const tests=[
 ['QA disabled and expired',()=>{
- assert.match(js,/const QA_RELEASED = true;/);
- assert.match(js,/const QA_WINDOW_END_UTC = '2026-10-31T18:35:00.000Z'/);
+ assert.match(js,/const QA_RELEASED = false;/);
+ assert.match(js,/const QA_WINDOW_END_UTC = '1970-01-01T00:00:00.000Z'/);
  assert.match(js,/const QA_OPEN = QA_RELEASED &&/);
  assert.match(js,/Date\.now\(\) < Date\.parse\(QA_WINDOW_END_UTC\)/);
  assert.match(js,/if\(qaWindowActive\(\)\)\{/);
